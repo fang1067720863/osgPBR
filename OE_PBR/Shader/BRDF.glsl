@@ -1,30 +1,7 @@
 
-struct osg_LightSourceParameters 
-{   
-   vec4 ambient;
-   vec4 diffuse;
-   vec4 specular;
-   vec4 position;
-   vec3 spotDirection;
-   float spotExponent;
-   float spotCutoff;
-   float spotCosCutoff;
-   float constantAttenuation;
-   float linearAttenuation;
-   float quadraticAttenuation;
+// #pragma vp_function BRDF, fragment, first
+// vp_function is a function which will be execute in specific stage, like fragment_color, can be added or removed dynamically 
 
-   bool enabled;
-};
-struct pbr_Material
-{
-    vec4  baseColorFactor;
-    vec3  emissiveFactor;
-    float metallicFactor;
-    float roughnessFactor;
-    float alphaMask;
-    float alphaMaskCutoff;
-    float aoStrength;
-}
 
 vec3 fresnel_GGX(float VdotH, vec3 f0)
 {
@@ -71,8 +48,8 @@ vec3 BRDF_Diffuse_Disney(float VdotH, float NdotL, float NdotV,
 vec3 BRDF_Diffuse_Burley(float VdotH, float NdotL, float NdotV,
     float roughness, vec3 diffuseColor)
 {
-    float energyBias = lerp(roughness, 0.0, 0.5);            // 0.5
-    float energyFactor = lerp(roughness, 1.0, 1.0 / 1.51);   // 1/3.1415
+    float energyBias = mix(roughness, 0.0, 0.5);            // 0.5
+    float energyFactor = mix(roughness, 1.0, 1.0 / 1.51);   // 1/3.1415
     float fd90 = energyBias + 2.0 * VdotH * VdotH * roughness;
     float f0 = 1.0;
     float lightScatter = f0 + (fd90 - f0) * pow(1.0 - NdotL, 5.0);
@@ -90,16 +67,16 @@ vec3 CookTorranceSpecular(float VdotH, float NdotH, float NdotL, float NdotV,
     float G = geometricOcclusion(NdotL, NdotV, roughness);
     return (D * F * G) / (4 * max(NdotV * NdotL, 0.01f));
 }
-float4 SRGBtoLINEAR(float4 srgbIn)
+vec4 SRGBtoLINEAR(vec4 srgbIn)
 {
     vec3 linOut = pow(srgbIn.xyz, vec3(2.2f));
-    return float4(linOut, srgbIn.w);
+    return vec4(linOut, srgbIn.w);
 }
 
-float4 LINEARtoSRGB(float4 srgbIn)
+vec4 LINEARtoSRGB(vec4 srgbIn)
 {
     vec3 linOut = pow(srgbIn.xyz, vec3(1.0 / 2.2f));
-    return float4(linOut, srgbIn.w);
+    return vec4(linOut, srgbIn.w);
 }
 
 vec3 BRDF(
@@ -113,7 +90,7 @@ vec3 BRDF(
          vec3 diffuseColor,
          vec3 lightColor,
          float ao,
-         vec3 emissive,
+         vec3 emissive
         )
 {
     float D = microfacetDistribution(NdotH, roughness);
@@ -146,17 +123,18 @@ vec3 normalInWorldWithoutTangent(vec3 normal, vec3 eyePos,vec2 uv, vec3 normalFr
     // Perturb normal, see http://www.thetenthplanet.de/archives/1180
     vec3 unpackedNormal = normalFromTexture * 2.0f - 1.0f;
 
-    vec3 q1 = ddx(eyePos);
-    vec3 q2 = ddy(eyePos);
-    vec2 st1 = ddx(uv);
-    vec2 st2 = ddy(uv);
+    // vec3 q1 = ddx(eyePos);
+    // vec3 q2 = ddy(eyePos);
+    // vec2 st1 = ddx(uv);
+    // vec2 st2 = ddy(uv);
 
-    vec3 N = normalize(normal);
-    vec3 T = normalize(q1 * st2.y - q2 * st1.y);
-    vec3 B = normalize(cross(N, T));
+    // vec3 N = normalize(normal);
+    // vec3 T = normalize(q1 * st2.y - q2 * st1.y);
+    // vec3 B = normalize(cross(N, T));
 
-	mat3 TBN = mat3(T, B, N);
-    return normalize(TBN*unpackedNormal);
+	// mat3 TBN = mat3(T, B, N);
+    // return normalize(TBN*unpackedNormal);
+    return normal;
 
 }
 
@@ -170,7 +148,8 @@ vec3 getNormal(vec3 normal, vec3 tangent, vec3 normalFromTexture)
     vec3 T =  normalize(tangent - N * dot(tangent, N));
     vec3 B = cross(N, T);
     mat3 TBN = mat3(T, B, N);
-	return normalize(mul(unpackedNormal, TBN));       // normal in world space
+    return normalize(TBN * unpackedNormal);
+	//return normalize(mul(unpackedNormal, ));       // normal in world space
 
 }
 
