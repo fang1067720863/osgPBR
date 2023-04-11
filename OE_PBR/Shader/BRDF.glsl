@@ -111,7 +111,7 @@ vec3 BRDF(
     
     vec3 Lo = NdotL * lightColor * (diffuseContrib + specContrib);
 
-    Lo *= ao;
+    //Lo *= ao;
 
     return Lo;
     

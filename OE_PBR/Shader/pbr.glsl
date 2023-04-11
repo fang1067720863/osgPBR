@@ -36,7 +36,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR)
 #pragma import_defines(OE_NUM_LIGHTS)
-#pragma import_defines(OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
+#pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
 #pragma include BRDF.glsl
 
 
@@ -46,11 +46,31 @@ in vec3 oe_normal;  // world space
 
 // stage global
 in vec3 vp_Normal;
+// in pbr_Material oe_pbr;
 
 
 // flat in oe_tex_lod_index
 // varying decorated with flat, the data will not change when pass from vs to ps, and not introplote ,every fragment share same data
-
+struct pbr_Material
+{
+    vec4  baseColorFactor;
+    vec3  emissiveFactor;
+    float metallicFactor;
+    float roughnessFactor;
+    float alphaMask;
+    float alphaMaskCutoff;
+    float aoStrength;
+}oe_pbr;
+void pbr_material_input(inout vec4 ignore_me)
+{
+    oe_pbr.baseColorFactor = vec4(1.0,1.0,1.0,1.0);
+    oe_pbr.emissiveFactor = vec3(0.0,0.0,1.0);
+    oe_pbr.metallicFactor = 0.0;
+    oe_pbr.roughnessFactor = 0.5;
+    oe_pbr.alphaMask = 0.1;
+    oe_pbr.alphaMaskCutoff = 0.1;
+    oe_pbr.aoStrength = 0.1;
+}
 struct osg_LightSourceParameters 
 {   
    vec4 ambient;
@@ -69,23 +89,9 @@ struct osg_LightSourceParameters
 };
 
 uniform osg_LightSourceParameters osg_LightSource[OE_NUM_LIGHTS];
-// uniform pbr_Material oe_pbr;
-#ifdef OE_ENABLE_BASECOLOR_MAP
-    uniform sampler2D oe_basecolor_map ;
+#ifdef cascade
+    uniform sampler2DArray pbrMaps;
 #endif
-#ifdef OE_ENABLE_NORMAL_MAP
-    uniform sampler2D oe_normal_map ;
-#endif
-#ifdef OE_ENABLE_MR_MAP    //metal roughness
-    uniform sampler2D oe_mr_map ;
-#endif
-#ifdef OE_ENABLE_AO_MAP
-    uniform sampler2D oe_ao_map ;
-#endif
-#ifdef OE_ENABLE_EMISSIVE_MAP
-    uniform sampler2D oe_emissive_map ;
-#endif
-
 
 #ifdef OE_USE_PBR
 void fragment_main_pbr(inout vec4 color)
@@ -93,7 +99,7 @@ void fragment_main_pbr(inout vec4 color)
 #ifndef OE_LIGHTING
     return;
 #endif
-
+    pbr_material_input(color);
     vec3  baseColor = color.rgb;
     float lightIntensity = 5.0;
     vec3  f0 = vec3(0.04);
@@ -108,40 +114,12 @@ void fragment_main_pbr(inout vec4 color)
     float ao = oe_pbr.aoStrength;
     vec3 emissive = emissiveFactor;
     vec3 diffuseColor =vec3(0.0);
-    
-    
 
     f0 = mix(f0, baseColor, vec3(oe_pbr.metallicFactor));
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
     diffuseColor *= 1.0 - metallic;
 
-    
-    #ifdef OE_ENABLE_BASECOLOR_MAP
-        diffuseColor *= texture(oe_basecolor_map, oe_texcoord);
-    #endif
-
-    #ifdef OE_ENABLE_MR_MAP
-        vec3 tmp = texture(oe_basecolor_map, oe_texcoord).rgb;
-        metallic = metallicFactor * tmp.x;
-        roughness = roughnessFactor * tmp.y;
-    #endif
-
-    #ifdef OE_ENABLE_NORMAL_MAP
-
-        vec3 tangent = vec3(1.0,0.0,0.0);
-        vec3 tangentNormal = texture(oe_normal_map, oe_texcoord).rgb;  // normal in tangent space
-        normal = getNormal(oe_normal, tangent, tangentNormal);
-    #endif
-
-    #ifdef OE_ENABLE_AO_MAP
-        float aoFromMap = texture(oe_ao_map, oe_texcoord).r;  // normal in tangent space
-        ao *= aoFromMap;
-    #endif
-
-     #ifdef OE_ENABLE_EMISSIVE_MAP
-        vec3 emissiveFromMap = texture(oe_emissive_map, oe_texcoord).rgb;  // normal in tangent space
-        emissive *= emissiveFromMap;
-    #endif
+    #pragma include material.glsl
 
     vec3 n = normalize(oe_normal);
     vec3 v = normalize(-oe_posView);
@@ -192,6 +170,7 @@ void fragment_main_pbr(inout vec4 color)
 void fragment_main_pbr(inout vec4 color)
 {
     // debug
-    color = color * vec4(1.0,0.0,0.0,1.0);
+    //color = color * vec4(1.0,0.0,0.0,1.0);
+    color = texture(pbrMaps, vec3(oe_texcoord,4));
 }
 #endif

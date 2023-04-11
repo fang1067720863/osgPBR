@@ -34,6 +34,49 @@
 
 
 namespace osgEarth {
+
+    /** PointSprite base class which encapsulates enabling of point sprites .*/
+    //class OSG_EXPORT osgEarth::PbrMaterial : public osg::StateAttribute {
+    //public:
+
+    //    PointSprite();
+
+    //    /** Copy constructor using CopyOp to manage deep vs shallow copy.*/
+    //    PointSprite(const PointSprite& ps, const osg::CopyOp& copyop = osg::CopyOp::SHALLOW_COPY) :
+    //        StateAttribute(ps, copyop),
+    //        _coordOriginMode(ps._coordOriginMode) {}
+
+
+    //    META_StateAttribute(osg, PointSprite, POINTSPRITE);
+
+    //    /** return -1 if *this < *rhs, 0 if *this==*rhs, 1 if *this>*rhs.*/
+    //    virtual int compare(const StateAttribute& sa) const;
+
+    //    virtual bool getModeUsage(StateAttribute::ModeUsage& usage) const
+    //    {
+    //        usage.usesMode(GL_POINT_SPRITE_ARB);
+    //        return true;
+    //    }
+
+    //    virtual bool checkValidityOfAssociatedModes(osg::State&) const;
+
+    //    virtual bool isTextureAttribute() const { return true; }
+
+    //    virtual void apply(osg::State& state) const;
+
+    //    enum CoordOriginMode {
+    //        UPPER_LEFT = GL_UPPER_LEFT,
+    //        LOWER_LEFT = GL_LOWER_LEFT
+    //    };
+
+    //    inline void setCoordOriginMode(CoordOriginMode mode) { _coordOriginMode = mode; }
+    //    inline CoordOriginMode getCoordOriginMode() const { return _coordOriginMode; }
+
+    //protected:
+    //    virtual ~PointSprite();
+
+    //    CoordOriginMode _coordOriginMode;
+    //};
     namespace Util
     {
         struct BasicPbrShaders : public osgEarth::Util::ShaderPackage
@@ -47,43 +90,6 @@ namespace osgEarth {
             using SourceMap = std::map<std::string, std::string>;
             SourceMap _sourceMap;
 
-            //std::string load_raw_source(
-            //    const std::string& filename,
-            //    const osgDB::Options* dbOptions = 0L)
-            //{
-            //    std::string output;
-
-            //    SourceMap::const_iterator iter = _sourceMap.find(filename);
-            //    if (iter != _sourceMap.end())
-            //    {
-            //        output = iter->second;
-            //    }
-
-            //    if (!filename.empty())
-            //    {
-            //        URIContext context(dbOptions);
-            //        URI uri(filename, context);
-
-            //        // searches OSG_FILE_PATH
-            //        std::string path = osgDB::findDataFile(uri.full(), dbOptions);
-            //        if (!path.empty())
-            //        {
-            //            std::string externalSource = URI(path, context).getString(dbOptions);
-            //            if (!externalSource.empty())
-            //            {
-            //                OE_DEBUG << "Loaded external shader " << filename << " from " << path << "\n";
-            //                output = externalSource;
-            //            }
-            //        }
-            //    }
-
-            //    if (output.empty())
-            //    {
-            //        OE_WARN << "No shader source found for \"" << filename << "\"" << std::endl;
-            //    }
-
-            //    return output;
-            //}
         };
 
         struct ShadersGL3 : public BasicPbrShaders

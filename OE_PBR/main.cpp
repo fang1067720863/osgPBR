@@ -21,6 +21,7 @@
 #include<osgEarth/Registry>
 #include<osgEarth/Capabilities>
 #include <osgEarth/Metrics>
+#include<osgEarth/Lighting>
 
 #include<osgEarth/GLUtils>
 #include<osgEarth/Sky>
@@ -60,15 +61,38 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
     osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
 
 
-    sd->setColor(osg::Vec4(1, 0, 0, 1));
+    //sd->setColor(osg::Vec4(1, 0, 0, 1));
     geode->addDrawable(sd);
-    geode->getOrCreateStateSet()->setTextureAttribute(0, new osg::Texture2D(osgDB::readImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_baseColor.png")), osg::StateAttribute::ON);
+    //geode->getOrCreateStateSet()->setTextureAttribute(0, new osg::Texture2D(osgDB::readImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_baseColor.png")), osg::StateAttribute::ON);
+   
+    bool usePhong = false;
+    bool usePBR = true;
+    if (usePhong)
+    {
+      
+        auto* phong = new PhongLightingEffect();
+        phong->attach(geode->getOrCreateStateSet());
 
-    auto* phong = new PhongLightingEffect();
-    phong->attach(geode->getOrCreateStateSet());
+        osg::ref_ptr<osg::Material> m = new osgEarth::MaterialGL3();
+        m->setAmbient(m->FRONT_AND_BACK, osg::Vec4(.5, .5, .5, 1));
+        m->setDiffuse(m->FRONT_AND_BACK, osg::Vec4(1, 1, 1, 1));
+        m->setSpecular(m->FRONT_AND_BACK, osg::Vec4(0.2, 0.2, 0.2, 1));
+        m->setEmission(m->FRONT_AND_BACK, osg::Vec4(0, 0, 0, 1));
+        m->setShininess(m->FRONT_AND_BACK, 40.0);
+        geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        MaterialCallback().operator()(m, 0L);
+       
 
-   auto* vp = osgEarth::VirtualProgram::get(geode->getOrCreateStateSet());
-   vp->setShaderLogging(true);
+    }
+    else if (usePBR){
+        auto* phong = new PbrLightEffect();
+        phong->attach(geode->getOrCreateStateSet());
+        auto* vp = osgEarth::VirtualProgram::get(geode->getOrCreateStateSet());
+        vp->setShaderLogging(true);
+    }
+    
+
+
 
     return geode;
 
@@ -114,6 +138,16 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet)
 
     lightS2->setStateSetModes(*rootStateSet, osg::StateAttribute::ON);
     lightGroup->addChild(lightS2);
+
+#ifdef NDEBUG
+    GenerateGL3LightingUniforms gen;
+    std::cout << "========================================";
+    lightGroup->accept(gen);
+
+#endif // DEBUG
+
+
+ /*   _lightSource->setCullingActive(false);*/
     return lightGroup;
 }
 
@@ -178,10 +212,13 @@ int main(int argc, char** argv)
     auto group = new osg::Group();
 
     auto node = CreatePbrSphere();
-     auto light = CreateLight(node->getOrCreateStateSet());
-      group->addChild(light);
+    auto light = CreateLight(node->getOrCreateStateSet());
+    group->addChild(light);
 
     group->addChild(node);
+
+   
+
     viewer.setSceneData(group);
 
     viewer.setCameraManipulator(new osgGA::TrackballManipulator);
