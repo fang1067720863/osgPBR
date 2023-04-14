@@ -2,7 +2,7 @@
 //#define NOMINMAX
 #include<Windows.h>
 
-//
+#include <osgEarth/ImGui/ImGuiApp>
 
 #include<osg/GLExtensions>
 #include <osgViewer/Viewer>
@@ -29,12 +29,14 @@
 #include<osgEarth/VirtualProgram>
 
 #include"PbrLightEffect.h"
+#include"PbrMaterial.h"
+
 
 #define LC "[viewer] "
 
-#ifndef OSG_GL_FIXED_FUNCTION_AVAILABLE
-#define OSG_GL_FIXED_FUNCTION_AVAILABLE
-#endif // !1
+//#ifndef OSG_GL_FIXED_FUNCTION_AVAILABLE
+//#define OSG_GL_FIXED_FUNCTION_AVAILABLE
+//#endif // !1
 
 
 
@@ -52,6 +54,86 @@ usage(const char* name)
     return 0;
 }
 
+class TestGUI :public osgEarth::GUI::BaseGUI
+{
+public:
+    float metal = 1.0;
+    float roughness = 0.0;
+    struct UniformSpec {
+        std::string _name;
+        float _minval, _maxval, _value;
+        //osg::ref_ptr<osg::Uniform> _u;
+    };
+    
+
+    struct DefineSpec {
+        std::string _name;
+        std::string _val;
+        bool _checked;
+    };
+    std::vector<DefineSpec> _defines;
+    std::vector<UniformSpec> _uniforms;
+    osg::Node* _node;
+public:
+    TestGUI(osg::Node* node) :GUI::BaseGUI("PBR")
+    {
+        _node = node;
+        UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
+        UniformSpec roughness{ "oe_pbr.roughnessFactor" ,0.0f,1.0f,0.5f };
+        DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "0",true};
+        DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"1", true};
+        DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true};
+        DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"3", true};
+        DefineSpec baseColor{ "OE_ENABLE_BASECOLOR_MAP" ,"4", true};
+
+        _uniforms.emplace_back(metallic);
+        _uniforms.emplace_back(roughness);
+        _defines.emplace_back(normal);
+        _defines.emplace_back(mr);
+        _defines.emplace_back(ao);
+        _defines.emplace_back(emssive);
+        _defines.emplace_back(baseColor);
+
+    }
+
+    void draw(osg::RenderInfo& ri)override {
+        if (!isVisible()) {
+            return;
+        }
+        ImGui::Begin(name(), visible());
+        {
+            if (!_uniforms.empty())
+            {
+                ImGui::Text("Uniforms:");
+            }
+        }
+        for (auto& def : _uniforms)
+        {
+            if (ImGui::SliderFloat(def._name.c_str(), &def._value, def._minval, def._maxval))
+            {
+                //std::cout << "def._value" << def._value << std::endl;
+               
+                _node->getOrCreateStateSet()->getOrCreateUniform(def._name, osg::Uniform::FLOAT)->set(def._value);
+            }
+        }
+        for (auto& def : _defines)
+        {
+            if (ImGui::Checkbox(def._name.c_str(), &def._checked))
+            {
+                std::cout << "def._value" << def._val << std::endl;
+
+                if (def._checked)
+                {
+                    _node->getOrCreateStateSet()->setDefine(def._name, def._val, osg::StateAttribute::ON);
+                }
+                else {
+                    _node->getOrCreateStateSet()->setDefine(def._name, osg::StateAttribute::OFF);
+                }
+            }
+        }
+        ImGui::End();
+    }
+};
 
 osg::ref_ptr<osg::Node> CreatePbrSphere()
 {
@@ -87,8 +169,16 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
     else if (usePBR){
         auto* phong = new PbrLightEffect();
         phong->attach(geode->getOrCreateStateSet());
+
+
+     /*   osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
+        geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        MaterialCallback().operator()(m, 0L);*/
         auto* vp = osgEarth::VirtualProgram::get(geode->getOrCreateStateSet());
         vp->setShaderLogging(true);
+
+      
+
     }
     
 
@@ -108,8 +198,8 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet)
     osg::Light* myLight1 = new osg::Light;
     myLight1->setLightNum(0);
     myLight1->setPosition(osg::Vec4(1.0f, 1.0f, 0.0f, 0.0f));
-    myLight1->setAmbient(osg::Vec4(1.0f, 0.0f, 0.0f, 1.0f));
-    myLight1->setDiffuse(osg::Vec4(1.0f, 0.0f, 0.0f, 1.0f));
+    myLight1->setAmbient(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    myLight1->setDiffuse(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
     myLight1->setSpotCutoff(20.0f);
     myLight1->setSpotExponent(50.0f);
     myLight1->setDirection(osg::Vec3(1.0f, 1.0f, -1.0f));
@@ -123,21 +213,21 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet)
 
 
     // create a local light.
-    osg::Light* myLight2 = new osg::Light;
-    myLight2->setLightNum(1);
-    myLight2->setPosition(osg::Vec4(0.0, 0.0, 0.0, 1.0f));
-    myLight2->setAmbient(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f));
-    myLight2->setDiffuse(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f));
-    myLight2->setConstantAttenuation(1.0f);
-    myLight2->setLinearAttenuation(2.0f / modelSize);
-    myLight2->setQuadraticAttenuation(2.0f / osg::square(modelSize));
+    //osg::Light* myLight2 = new osg::Light;
+    //myLight2->setLightNum(1);
+    //myLight2->setPosition(osg::Vec4(0.0, 0.0, 0.0, 1.0f));
+    //myLight2->setAmbient(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f));
+    //myLight2->setDiffuse(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f));
+    //myLight2->setConstantAttenuation(1.0f);
+    //myLight2->setLinearAttenuation(2.0f / modelSize);
+    //myLight2->setQuadraticAttenuation(2.0f / osg::square(modelSize));
 
-    osg::LightSource* lightS2 = new osg::LightSource;
-    lightS2->setLight(myLight2);
-    lightS2->setLocalStateSetModes(osg::StateAttribute::ON);
+    //osg::LightSource* lightS2 = new osg::LightSource;
+    //lightS2->setLight(myLight2);
+    //lightS2->setLocalStateSetModes(osg::StateAttribute::ON);
 
-    lightS2->setStateSetModes(*rootStateSet, osg::StateAttribute::ON);
-    lightGroup->addChild(lightS2);
+    //lightS2->setStateSetModes(*rootStateSet, osg::StateAttribute::ON);
+    //lightGroup->addChild(lightS2);
 
 #ifdef NDEBUG
     GenerateGL3LightingUniforms gen;
@@ -213,10 +303,19 @@ int main(int argc, char** argv)
 
     auto node = CreatePbrSphere();
     auto light = CreateLight(node->getOrCreateStateSet());
+
+    
     group->addChild(light);
 
     group->addChild(node);
+    viewer.setReleaseContextAtEndOfFrameHint(false);
 
+    // Call this to enable ImGui rendering.
+    // If you use the MapNodeHelper, call this first.
+    viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
+
+    GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
+    gui->add("Demo", new TestGUI(node));
    
 
     viewer.setSceneData(group);
@@ -228,6 +327,9 @@ int main(int argc, char** argv)
     node->accept(gen);
     viewer.setUpViewInWindow(100, 100, 800, 600);
     viewer.realize();
+
+    //viewer.getEventHandlers().push_front(gui);
+    viewer.getEventHandlers().push_front(gui);
     viewer.run();
     return 0;
 }

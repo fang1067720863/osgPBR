@@ -127,12 +127,12 @@ namespace osgEarth {
         struct PbrMaterial
         {
             osg::Vec4f  baseColorFactor{ 1.0f,1.0f,1.0f,1.0f };
-            osg::Vec4f  emissiveFactor{ 0.1f,0.1f,0.1f,1.0f };
-            float metallicFactor;
-            float roughnessFactor;
-            float alphaMask;
-            float alphaMaskCutoff;
-            float aoStrength;
+            osg::Vec3f  emissiveFactor{ 0.1f,0.1f,1.0f };
+            float metallicFactor{ 0.5f };
+            float roughnessFactor { 0.5f };
+            float alphaMask{ 0.5f };
+            float alphaMaskCutoff{ 0.5f };
+            float aoStrength{ 0.5f };
         };
 
         struct MaterialURI

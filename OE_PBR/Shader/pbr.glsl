@@ -60,17 +60,17 @@ struct pbr_Material
     float alphaMask;
     float alphaMaskCutoff;
     float aoStrength;
-}oe_pbr;
-void pbr_material_input(inout vec4 ignore_me)
-{
-    oe_pbr.baseColorFactor = vec4(1.0,1.0,1.0,1.0);
-    oe_pbr.emissiveFactor = vec3(0.0,0.0,1.0);
-    oe_pbr.metallicFactor = 0.0;
-    oe_pbr.roughnessFactor = 0.5;
-    oe_pbr.alphaMask = 0.1;
-    oe_pbr.alphaMaskCutoff = 0.1;
-    oe_pbr.aoStrength = 0.1;
-}
+};
+// void pbr_material_input(inout vec4 ignore_me)
+// {
+//     oe_pbr.baseColorFactor = vec4(1.0,1.0,1.0,1.0);
+//     oe_pbr.emissiveFactor = vec3(0.0,0.0,1.0);
+//     oe_pbr.metallicFactor = 0.0;
+//     oe_pbr.roughnessFactor = 0.5;
+//     oe_pbr.alphaMask = 0.1;
+//     oe_pbr.alphaMaskCutoff = 0.1;
+//     oe_pbr.aoStrength = 0.1;
+// }
 struct osg_LightSourceParameters 
 {   
    vec4 ambient;
@@ -89,6 +89,7 @@ struct osg_LightSourceParameters
 };
 
 uniform osg_LightSourceParameters osg_LightSource[OE_NUM_LIGHTS];
+uniform pbr_Material oe_pbr;
 #ifdef cascade
     uniform sampler2DArray pbrMaps;
 #endif
@@ -99,8 +100,8 @@ void fragment_main_pbr(inout vec4 color)
 #ifndef OE_LIGHTING
     return;
 #endif
-    pbr_material_input(color);
-    vec3  baseColor = color.rgb;
+    //pbr_material_input(color);
+    vec3  baseColor = vec3(1.0);
     float lightIntensity = 5.0;
     vec3  f0 = vec3(0.04);
 
@@ -109,13 +110,13 @@ void fragment_main_pbr(inout vec4 color)
     vec3 emissiveFactor = oe_pbr.emissiveFactor;
 
     
-    float roughness = 0.0;
-    float metallic = 0.0;
+    float roughness = roughnessFactor;
+    float metallic = metallicFactor;
     float ao = oe_pbr.aoStrength;
     vec3 emissive = emissiveFactor;
     vec3 diffuseColor =vec3(0.0);
 
-    f0 = mix(f0, baseColor, vec3(oe_pbr.metallicFactor));
+    f0 = mix(f0, pow(baseColor,vec3(2.2)), vec3(oe_pbr.metallicFactor));
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
     diffuseColor *= 1.0 - metallic;
 
@@ -154,7 +155,9 @@ void fragment_main_pbr(inout vec4 color)
     color.rgb = color.rgb / (color.rgb + vec3(1.0));
 
     // boost:
-    color.rgb *= 2.2;
+    //color.rgb *= 2.2;
+    color.rgb = pow(color.rgb, vec3(1.0/2.2));
+    
 
     // add in the haze
     //color.rgb += atmos_color;

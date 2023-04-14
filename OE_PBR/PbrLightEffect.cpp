@@ -171,25 +171,7 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
         //auto functions = "..//OE_PBR/Shader//BRDF.glsl";
         auto shaderPath = "..//..//OE_PBR//Shader";
         auto shaderPath2 = "..//OE_PBR//Shader";
-        //auto texPath1 = osgEarth::getAbsolutePath(functions);
-       // std::cout << texPath1 << texPath2<< std::endl;
-        
 
-        //std::string vert = shaders.vert();
-        //std::string frag = shaders.brdf()+ shaders.frag();
-
-        //pbrVP->setName("PBR");
-        //pbrVP->setFunction(
-        //    "vertex_main_pbr",
-        //    vert,
-        //    VirtualProgram::LOCATION_VERTEX_VIEW,
-        //    1.1f);
-
-        //pbrVP->setFunction(
-        //    "fragment_main_pbr",
-        //    frag,
-        //    VirtualProgram::LOCATION_FRAGMENT_LIGHTING,
-        //    0.8f);
         osg::ref_ptr<osgDB::Options> dbo = new osgDB::Options();
         
         
