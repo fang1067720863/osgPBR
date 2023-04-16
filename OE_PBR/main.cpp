@@ -80,11 +80,11 @@ public:
         _node = node;
         UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
         UniformSpec roughness{ "oe_pbr.roughnessFactor" ,0.0f,1.0f,0.5f };
-        DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "0",true};
-        DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"1", true};
+        DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true};
+        DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true};
         DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true};
-        DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"3", true};
-        DefineSpec baseColor{ "OE_ENABLE_BASECOLOR_MAP" ,"4", true};
+        DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"1", true};
+        DefineSpec baseColor{ "OE_ENABLE_BASECOLOR_MAP" ,"0", true};
 
         _uniforms.emplace_back(metallic);
         _uniforms.emplace_back(roughness);
@@ -166,14 +166,30 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
        
 
     }
-    else if (usePBR){
+    else if (usePBR) {
+       
+
+
+        osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
+
+        /*  osg::ref_ptr<osg::Image> image_0 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_normal.png");
+        osg::ref_ptr<osg::Image> image_1 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_roughnessMetallic.png");
+        osg::ref_ptr<osg::Image> image_2 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_occlusion.png");
+        osg::ref_ptr<osg::Image> image_3 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_emissive.png");
+        osg::ref_ptr<osg::Image> image_4 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_baseColor.png");*/
+
+        osgEarth::StandardPBRMaterial::TextureMaps maps =
+        { {osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, "D:/GitProject/FEngine/Assets/PbrBox/BoomBox_normal.png"} ,
+        {osgEarth::StandardPBRMaterial::TextureEnum::MetalRoughenssMap, "D:/GitProject/FEngine/Assets/PbrBox/BoomBox_roughnessMetallic.png"} ,
+        {osgEarth::StandardPBRMaterial::TextureEnum::OcclusionMap, "D:/GitProject/FEngine/Assets/PbrBox/BoomBox_occlusion.png"} ,
+        {osgEarth::StandardPBRMaterial::TextureEnum::EmissiveMap, "D:/GitProject/FEngine/Assets/PbrBox/BoomBox_emissive.png"} ,
+        {osgEarth::StandardPBRMaterial::TextureEnum::BaseColorMap, "D:/GitProject/FEngine/Assets/PbrBox/BoomBox_baseColor.png"} };
+        m->setTextures(maps);
+        geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        PBRMaterialCallback().operator()(m, 0L);
+
         auto* phong = new PbrLightEffect();
         phong->attach(geode->getOrCreateStateSet());
-
-
-     /*   osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
-        geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
-        MaterialCallback().operator()(m, 0L);*/
         auto* vp = osgEarth::VirtualProgram::get(geode->getOrCreateStateSet());
         vp->setShaderLogging(true);
 
