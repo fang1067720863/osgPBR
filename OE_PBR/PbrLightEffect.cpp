@@ -20,70 +20,70 @@ using namespace osgEarth::Util;
 ShadersGL3 osgEarth::Util::PbrShadersFactory::s_gl3;
 ShadersGL4 osgEarth::Util::PbrShadersFactory::s_gl4;
 
-osg::Texture* createTextureAtlas()
-{
-    // Creates a texture array containing all the billboard images.
-    // Each image is included only once.
-    osg::Texture2DArray* tex = new osg::Texture2DArray();
-
-    int arrayIndex = 0;
-    float s = -1.0f, t = -1.0f;
-    osg::ref_ptr<osg::Image> image_0 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_normal.png");
-    osg::ref_ptr<osg::Image> image_1 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_roughnessMetallic.png");
-    osg::ref_ptr<osg::Image> image_2 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_occlusion.png");
-    osg::ref_ptr<osg::Image> image_3 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_emissive.png");
-    osg::ref_ptr<osg::Image> image_4 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_baseColor.png");
-
-    s = osgEarth::nextPowerOf2(image_0->s());
-    t = osgEarth::nextPowerOf2(image_0->t());
-    std::cout << s << "" << t;
-    tex->setTextureSize(s, t, 5);
-    tex->setImage(0, image_0.get());
-    tex->setImage(1, image_1.get());
-    tex->setImage(2, image_2.get());
-    tex->setImage(3, image_3.get());
-    tex->setImage(4, image_4.get());
-
-    //for (unsigned i = 0; i < _atlasImages.size(); ++i)
-    //{
-    //    osg::Image* image = _atlasImages[i].get();
-
-    //    osg::ref_ptr<osg::Image> temp;
-
-    //    // make sure the texture array is POT - required now for mipmapping to work
-    //    if (s < 0)
-    //    {
-    //        s = osgEarth::nextPowerOf2(image->s());
-    //        t = osgEarth::nextPowerOf2(image->t());
-    //        tex->setTextureSize(s, t, _atlasImages.size());
-    //    }
-
-    //    if (image->s() != s || image->t() != t)
-    //    {
-    //        ImageUtils::resizeImage(image, s, t, temp);
-    //    }
-    //    else
-    //    {
-    //        temp = image;
-    //    }
-
-    //    tex->setImage(i, temp.get());
-    //}
-
-    //OE_INFO << LC << "Created atlas with " << _atlasImages.size() << " unique images" << std::endl;
-
-    tex->setFilter(tex->MIN_FILTER, tex->NEAREST_MIPMAP_LINEAR);
-    tex->setFilter(tex->MAG_FILTER, tex->LINEAR);
-    tex->setWrap(tex->WRAP_S, tex->CLAMP_TO_BORDER);
-    tex->setWrap(tex->WRAP_T, tex->CLAMP_TO_EDGE);
-    tex->setUnRefImageDataAfterApply(Registry::instance()->unRefImageDataAfterApply().get());
-    tex->setMaxAnisotropy(4.0);
-
-    // Let the GPU do it since we only download this at startup
-    tex->setUseHardwareMipMapGeneration(true);
-
-    return tex;
-}
+//osg::Texture* createTextureAtlas()
+//{
+//    // Creates a texture array containing all the billboard images.
+//    // Each image is included only once.
+//    osg::Texture2DArray* tex = new osg::Texture2DArray();
+//
+//    int arrayIndex = 0;
+//    float s = -1.0f, t = -1.0f;
+//    osg::ref_ptr<osg::Image> image_0 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_normal.png");
+//    osg::ref_ptr<osg::Image> image_1 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_roughnessMetallic.png");
+//    osg::ref_ptr<osg::Image> image_2 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_occlusion.png");
+//    osg::ref_ptr<osg::Image> image_3 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_emissive.png");
+//    osg::ref_ptr<osg::Image> image_4 = osgDB::readRefImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_baseColor.png");
+//
+//    s = osgEarth::nextPowerOf2(image_0->s());
+//    t = osgEarth::nextPowerOf2(image_0->t());
+//    std::cout << s << "" << t;
+//    tex->setTextureSize(s, t, 5);
+//    tex->setImage(0, image_0.get());
+//    tex->setImage(1, image_1.get());
+//    tex->setImage(2, image_2.get());
+//    tex->setImage(3, image_3.get());
+//    tex->setImage(4, image_4.get());
+//
+//    //for (unsigned i = 0; i < _atlasImages.size(); ++i)
+//    //{
+//    //    osg::Image* image = _atlasImages[i].get();
+//
+//    //    osg::ref_ptr<osg::Image> temp;
+//
+//    //    // make sure the texture array is POT - required now for mipmapping to work
+//    //    if (s < 0)
+//    //    {
+//    //        s = osgEarth::nextPowerOf2(image->s());
+//    //        t = osgEarth::nextPowerOf2(image->t());
+//    //        tex->setTextureSize(s, t, _atlasImages.size());
+//    //    }
+//
+//    //    if (image->s() != s || image->t() != t)
+//    //    {
+//    //        ImageUtils::resizeImage(image, s, t, temp);
+//    //    }
+//    //    else
+//    //    {
+//    //        temp = image;
+//    //    }
+//
+//    //    tex->setImage(i, temp.get());
+//    //}
+//
+//    //OE_INFO << LC << "Created atlas with " << _atlasImages.size() << " unique images" << std::endl;
+//
+//    tex->setFilter(tex->MIN_FILTER, tex->NEAREST_MIPMAP_LINEAR);
+//    tex->setFilter(tex->MAG_FILTER, tex->LINEAR);
+//    tex->setWrap(tex->WRAP_S, tex->CLAMP_TO_BORDER);
+//    tex->setWrap(tex->WRAP_T, tex->CLAMP_TO_EDGE);
+//    tex->setUnRefImageDataAfterApply(Registry::instance()->unRefImageDataAfterApply().get());
+//    tex->setMaxAnisotropy(4.0);
+//
+//    // Let the GPU do it since we only download this at startup
+//    tex->setUseHardwareMipMapGeneration(true);
+//
+//    return tex;
+//}
 
 
 osgEarth::Util::PbrLightEffect::PbrLightEffect()
@@ -101,7 +101,6 @@ osgEarth::Util::PbrLightEffect::PbrLightEffect(osg::StateSet* stateset)
 void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
 {
 
-
     if (stateset && _supported)
     {
         _statesets.push_back(stateset);
@@ -114,8 +113,6 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
         stateset->setDefine("OE_USE_PBR", "1");
         stateset->setDefine("cascade", "1");
 
-
-  
 
         BasicPbrShaders& shaders = PbrShadersFactory::get(false);
         VirtualProgram* pbrVP = VirtualProgram::getOrCreate(stateset);

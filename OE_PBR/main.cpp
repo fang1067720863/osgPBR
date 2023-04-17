@@ -30,9 +30,10 @@
 
 #include"PbrLightEffect.h"
 #include"PbrMaterial.h"
+#include"GLTFV2Reader.h"
 
 
-#define LC "[viewer] "
+//#define LC "[viewer] "
 
 //#ifndef OSG_GL_FIXED_FUNCTION_AVAILABLE
 //#define OSG_GL_FIXED_FUNCTION_AVAILABLE
@@ -80,17 +81,17 @@ public:
         _node = node;
         UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
         UniformSpec roughness{ "oe_pbr.roughnessFactor" ,0.0f,1.0f,0.5f };
-        DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true};
+     /*   DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true};
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true};
-        DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true};
-        DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"1", true};
+        DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true};*/
+        DefineSpec emssive{ "OE_ENABLE_MR_MAP" ,"1", true};
         DefineSpec baseColor{ "OE_ENABLE_BASECOLOR_MAP" ,"0", true};
 
         _uniforms.emplace_back(metallic);
         _uniforms.emplace_back(roughness);
-        _defines.emplace_back(normal);
+     /*   _defines.emplace_back(normal);
         _defines.emplace_back(mr);
-        _defines.emplace_back(ao);
+        _defines.emplace_back(ao);*/
         _defines.emplace_back(emssive);
         _defines.emplace_back(baseColor);
 
@@ -114,6 +115,8 @@ public:
                 //std::cout << "def._value" << def._value << std::endl;
                
                 _node->getOrCreateStateSet()->getOrCreateUniform(def._name, osg::Uniform::FLOAT)->set(def._value);
+                _node->getOrCreateStateSet()->addUniform(new osg::Uniform(def._name.c_str(), def._value), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+               
 
                // _node->getOrCreateStateSet()->getAttribute(osgEarth::StandardPBRMaterial::SA_TYPE)
             }
@@ -126,10 +129,10 @@ public:
 
                 if (def._checked)
                 {
-                    _node->getOrCreateStateSet()->setDefine(def._name, def._val, osg::StateAttribute::ON);
+                    _node->getOrCreateStateSet()->setDefine(def._name, def._val, osg::StateAttribute::ON|osg::StateAttribute::OVERRIDE);
                 }
                 else {
-                    _node->getOrCreateStateSet()->setDefine(def._name, osg::StateAttribute::OFF);
+                    _node->getOrCreateStateSet()->setDefine(def._name, osg::StateAttribute::OFF|osg::StateAttribute::OVERRIDE);
                 }
             }
         }
@@ -313,13 +316,23 @@ int main(int argc, char** argv)
 
     auto group = new osg::Group();
 
-    auto node = CreatePbrSphere();
-    auto light = CreateLight(node->getOrCreateStateSet());
+    //auto node = CreatePbrSphere();
+
+    GLTFReaderV2 reader;
+    auto gltfModel = reader.read("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\glTFBox\\BoomBox.gltf", false,new osgDB::Options("..//..//OE_PBR//Asset//gltfBox"));
+    auto node = gltfModel.getNode();
+    auto* phong = new PbrLightEffect();
+    phong->attach(gltfModel.getNode()->getOrCreateStateSet());
+    auto* vp = osgEarth::VirtualProgram::get(gltfModel.getNode()->getOrCreateStateSet());
+    vp->setShaderLogging(true);
+
+    group->addChild(gltfModel.getNode());
+    auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet());
 
     
     group->addChild(light);
 
-    group->addChild(node);
+    //group->addChild(node);
     viewer.setReleaseContextAtEndOfFrameHint(false);
 
     // Call this to enable ImGui rendering.
@@ -327,210 +340,22 @@ int main(int argc, char** argv)
     viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
 
     GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
-    gui->add("Demo", new TestGUI(node));
+    gui->add("Demo", new TestGUI(gltfModel.getNode()));
    
 
     viewer.setSceneData(group);
 
     viewer.setCameraManipulator(new osgGA::TrackballManipulator);
     osgUtil::Optimizer opt;
-    opt.optimize(node, osgUtil::Optimizer::INDEX_MESH);
-    ShaderGenerator gen;
-    node->accept(gen);
+    //opt.optimize(node, osgUtil::Optimizer::INDEX_MESH);
+    //ShaderGenerator gen;
+    //node->accept(gen);
     viewer.setUpViewInWindow(100, 100, 800, 600);
     viewer.realize();
 
-    //viewer.getEventHandlers().push_front(gui);
     viewer.getEventHandlers().push_front(gui);
     viewer.run();
     return 0;
 }
 
 
-//int main(int argc, char** argv)
-//{
-//    osgEarth::initialize();
-//    osg::ArgumentParser arguments(&argc, argv);
-//    GLUtils::enableGLDebugging();
-//    VirtualProgram::enableGLDebugging();
-//
-//   /* osg::ref_ptr<osg::Node> root = CreatePbrSphere();
-//    if (root == NULL)
-//    {
-//        osg::notify(osg::FATAL) << "Unable to load model from command line." << std::endl;
-//        return(1);
-//    }
-//
-//    osgUtil::Optimizer optimizer;
-//    optimizer.optimize(root.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS | osgUtil::Optimizer::TESSELLATE_GEOMETRY);*/
-//
-//    //configureShaders(root->getOrCreateStateSet());
-//
-//   /* const int width(800), height(450);
-//    const std::string version("3.3");
-//    osg::ref_ptr< osg::GraphicsContext::Traits > traits = new osg::GraphicsContext::Traits();
-//    traits->x = 20; traits->y = 30;
-//    traits->width = width; traits->height = height;
-//    traits->windowDecoration = true;
-//    traits->glContextVersion = version;
-//    traits->glContextProfileMask = 0X1;
-//    traits->doubleBuffer = true;
-//    traits->glContextVersion = version;
-//    traits->readDISPLAY();
-//    traits->setUndefinedScreenDetailsToDefaultScreen();
-//    osg::ref_ptr< osg::GraphicsContext > gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-//    if (!gc.valid())
-//    {
-//        osg::notify(osg::FATAL) << "Unable to create OpenGL v" << version << " context." << std::endl;
-//        return(1);
-//    }*/
-//
-//    osgViewer::Viewer viewer;
-//
-//    // Create a Camera that uses the above OpenGL context.
-//    osg::Camera* cam = viewer.getCamera();
-//    //cam->setGraphicsContext(gc.get());
-//    //// Must set perspective projection for fovy and aspect.
-//    //cam->setProjectionMatrix(osg::Matrix::perspective(30., (double)width / (double)height, 1., 100.));
-//    //// Unlike OpenGL, OSG viewport does *not* default to window dimensions.
-//    //cam->setViewport(new osg::Viewport(0, 0, width, height));
-//
-//
-//
-//        // install our default manipulator (do this before calling load)
-//    viewer.setCameraManipulator(new EarthManipulator(arguments));
-//
-//    // disable the small-feature culling
-//    viewer.getCamera()->setSmallFeatureCullingPixelSize(-1.0f);
-//
-//    // load an earth file, and support all or our example command-line options
-//    auto node = MapNodeHelper().load(arguments, &viewer);
-//
-//
-//    viewer.setUpViewInWindow(100, 100, 800, 600);
-//    auto& cap = osgEarth::Registry::instance()->capabilities();
-//        std::cout << " " << cap.getGLSLVersion() << std::endl;
-//    std::cout << " " << cap.isCoreProfile() << std::endl;
-//    std::cout << " " << cap.getMaxGPUTextureUnits() << std::endl;
-//    std::cout << " " << cap.getMaxGPUTextureUnits() << std::endl;
-//    std::cout << " getMaxFastTextureSize " << cap.getMaxFastTextureSize() << std::endl;
-//    std::cout << " supportsNVGL " << cap.supportsNVGL() << std::endl;
-//    if (node.valid())
-//    {
-//        viewer.setSceneData(node);
-//
-//        if (!MapNode::get(node))
-//        {
-//            // not an earth file? Just view as a normal OSG node or image
-//            viewer.setCameraManipulator(new osgGA::TrackballManipulator);
-//            osgUtil::Optimizer opt;
-//            opt.optimize(node, osgUtil::Optimizer::INDEX_MESH);
-//            ShaderGenerator gen;
-//            node->accept(gen);
-//        }
-//        Metrics::setEnabled(true);
-//        return Metrics::run(viewer);
-//    }
-//    return 0;
-//   /* viewer.setSceneData(root);
-//
-//    gc->getState()->setUseVertexAttributeAliasing(false);
-//
-//    return(viewer.run());*/
-//}
-
-//
-//int
-//main(int argc, char** argv)
-//{
-//    osgEarth::initialize();
-//
-//    osg::ArgumentParser arguments(&argc, argv);
-//
-//    //arguments.read("D:\\LocalSDK\\osgearth\\tests\\annotation.earth");
-//    // help?
-//    if (arguments.read("--help"))
-//        return usage(argv[0]);
-//
-//    osg::DisplaySettings::instance()->setGLContextVersion("4.0");
-//    osg::DisplaySettings::instance()->setGLContextProfileMask(0x1);
-//
-//   /* GLUtils::enableGLDebugging();
-//    VirtualProgram::enableGLDebugging();*/
-//
-//    const int width(800), height(450);
-//    const std::string version("3.3");
-//    osg::ref_ptr< osg::GraphicsContext::Traits > traits = new osg::GraphicsContext::Traits();
-//    traits->x = 20; traits->y = 30;
-//    traits->width = width; traits->height = height;
-//    traits->windowDecoration = true;
-//    traits->glContextVersion = version;
-//    traits->glContextProfileMask = 0X1;
-//    traits->doubleBuffer = true;
-//    traits->glContextVersion = version;
-//    traits->readDISPLAY();
-//    traits->setUndefinedScreenDetailsToDefaultScreen();
-//    osg::ref_ptr< osg::GraphicsContext > gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-//    if (!gc.valid())
-//    {
-//        osg::notify(osg::FATAL) << "Unable to create OpenGL v" << version << " context." << std::endl;
-//        return(1);
-//    }
-//    // create a viewer:
-//    osgViewer::Viewer viewer(arguments);
-//    // This is normally called by Viewer::run but we are running our frame loop manually so we need to call it here.
-//    viewer.setReleaseContextAtEndOfFrameHint(false);
-//
-//    // Tell the database pager to not modify the unref settings
-//    viewer.getDatabasePager()->setUnrefImageDataAfterApplyPolicy(true, false);
-//
-//    // thread-safe initialization of the OSG wrapper manager. Calling this here
-//    // prevents the "unsupported wrapper" messages from OSG
-//    osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
-//
-//
-//
-//
-//        // Create a Camera that uses the above OpenGL context.
-//    osg::Camera* cam = viewer.getCamera();
-//    cam->setGraphicsContext(gc.get());
-//    // Must set perspective projection for fovy and aspect.
-//    //cam->setProjectionMatrix(osg::Matrix::perspective(30., (double)width / (double)height, 1., 100.));
-//    //// Unlike OpenGL, OSG viewport does *not* default to window dimensions.
-//    //cam->setViewport(new osg::Viewport(0, 0, width, height));
-//
-//
-//    // install our default manipulator (do this before calling load)
-//    viewer.setCameraManipulator(new EarthManipulator(arguments));
-//
-//    // disable the small-feature culling
-//    viewer.getCamera()->setSmallFeatureCullingPixelSize(-1.0f);
-//
-//    // load an earth file, and support all or our example command-line options
-//    auto node = MapNodeHelper().load(arguments, &viewer);
-//
-//   /* osgEarth::SkyNode* sky = osgEarth::Util::SkyNode::create(opt);
-//    sky->attach(&viewer);
-//    sky->setAtmosphereVisible(true);
-//    sky->addChild(node);*/
-//
-//    viewer.setUpViewInWindow(100, 100, 800, 600);
-//    if (node.valid())
-//    {
-//        viewer.setSceneData(node);
-//
-//        if (!MapNode::get(node))
-//        {
-//            // not an earth file? Just view as a normal OSG node or image
-//            viewer.setCameraManipulator(new osgGA::TrackballManipulator);
-//            osgUtil::Optimizer opt;
-//            opt.optimize(node, osgUtil::Optimizer::INDEX_MESH);
-//            ShaderGenerator gen;
-//            node->accept(gen);
-//        }
-//        Metrics::setEnabled(true);
-//        return Metrics::run(viewer);
-//    }
-//
-//    return usage(argv[0]);
-//}
