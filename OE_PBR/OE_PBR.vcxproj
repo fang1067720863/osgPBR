@@ -160,8 +160,10 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="osgearth\ImGui.cpp" />
     <ClCompile Include="PbrLightEffect.cpp" />
+    <ClCompile Include="PbrMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FlyCameraManipulator.h" />
     <ClInclude Include="GLTFV2Reader.h" />
     <ClInclude Include="PbrLightEffect.h" />
     <ClInclude Include="PbrMaterial.h" />

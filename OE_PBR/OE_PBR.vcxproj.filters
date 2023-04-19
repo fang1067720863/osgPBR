@@ -42,6 +42,9 @@
     <ClCompile Include="osgearth\ImGui.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="PbrMaterial.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PbrLightEffect.h">
@@ -51,6 +54,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="GLTFV2Reader.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="FlyCameraManipulator.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -6,9 +6,10 @@
 
 #include<osg/GLExtensions>
 #include <osgViewer/Viewer>
-#include <osgGA/FlightManipulator>
+//#include <osgGA/FirstPersonManipulator>
 #include<osg/ShapeDrawable>
 #include<osgGA/TrackballManipulator>
+//#include <osgGA/DriveManipulator>
 #include <osgEarth/Notify>
 #include <osgEarth/EarthManipulator>
 #include <osgEarth/ExampleResources>
@@ -16,7 +17,7 @@
 #include <osgEarth/Threading>
 #include <osgEarth/ShaderGenerator>
 #include <osgDB/ReadFile>
-#include <osgGA/DriveManipulator>
+
 #include <osgUtil/Optimizer>
 #include <iostream>
 #include<osgEarth/Registry>
@@ -32,7 +33,7 @@
 #include"PbrLightEffect.h"
 #include"PbrMaterial.h"
 #include"GLTFV2Reader.h"
-
+#include"FlyCameraManipulator.h"
 
 //#define LC "[viewer] "
 
