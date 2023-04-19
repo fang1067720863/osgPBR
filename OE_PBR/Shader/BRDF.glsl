@@ -111,7 +111,8 @@ vec3 BRDF(
     
     vec3 Lo = NdotL * lightColor * (diffuseContrib + specContrib);
 
-    //Lo *= ao;
+    Lo *= ao;
+    Lo += emissive;
 
     return Lo;
     
@@ -138,11 +139,11 @@ vec3 normalInWorldWithoutTangent(vec3 normal, vec3 eyePos,vec2 uv, vec3 normalFr
 
 }
 
-vec3 getNormal(vec3 normal, vec3 tangent, vec3 normalFromTexture)
+vec3 getNormal(vec3 normal, vec3 normalFromTexture)
 {
 
     vec3 unpackedNormal = normalFromTexture*2.0 -1.0;  // normal in tangent space
-    //vec3 tangent = vec3(1.0,0.0,0.0);
+    vec3 tangent = vec3(1.0,0.0,0.0);
 
     vec3 N = normalize(normal);
     vec3 T =  normalize(tangent - N * dot(tangent, N));

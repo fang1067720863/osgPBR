@@ -6,6 +6,7 @@
 
 #include<osg/GLExtensions>
 #include <osgViewer/Viewer>
+#include <osgGA/FlightManipulator>
 #include<osg/ShapeDrawable>
 #include<osgGA/TrackballManipulator>
 #include <osgEarth/Notify>
@@ -15,7 +16,7 @@
 #include <osgEarth/Threading>
 #include <osgEarth/ShaderGenerator>
 #include <osgDB/ReadFile>
-#include <osgGA/TrackballManipulator>
+#include <osgGA/DriveManipulator>
 #include <osgUtil/Optimizer>
 #include <iostream>
 #include<osgEarth/Registry>
@@ -81,17 +82,18 @@ public:
         _node = node;
         UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
         UniformSpec roughness{ "oe_pbr.roughnessFactor" ,0.0f,1.0f,0.5f };
-     /*   DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true};
+        DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true};
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true};
-        DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true};*/
-        DefineSpec emssive{ "OE_ENABLE_MR_MAP" ,"1", true};
+        DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true};
+        DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"1", true};
         DefineSpec baseColor{ "OE_ENABLE_BASECOLOR_MAP" ,"0", true};
 
         _uniforms.emplace_back(metallic);
         _uniforms.emplace_back(roughness);
-     /*   _defines.emplace_back(normal);
+
+        _defines.emplace_back(normal);
         _defines.emplace_back(mr);
-        _defines.emplace_back(ao);*/
+        _defines.emplace_back(ao);
         _defines.emplace_back(emssive);
         _defines.emplace_back(baseColor);
 
@@ -125,7 +127,7 @@ public:
         {
             if (ImGui::Checkbox(def._name.c_str(), &def._checked))
             {
-                std::cout << "def._value" << def._val << std::endl;
+                //std::cout << "def._value" << def._val << std::endl;
 
                 if (def._checked)
                 {
@@ -319,7 +321,8 @@ int main(int argc, char** argv)
     //auto node = CreatePbrSphere();
 
     GLTFReaderV2 reader;
-    auto gltfModel = reader.read("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\glTFBox\\BoomBox.gltf", false,new osgDB::Options("..//..//OE_PBR//Asset//gltfBox"));
+    //Sponza BoomBox
+    auto gltfModel = reader.read("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\BoomBox\\BoomBox.gltf", false,new osgDB::Options("..//..//OE_PBR//Asset//BoomBox"));
     auto node = gltfModel.getNode();
     auto* phong = new PbrLightEffect();
     phong->attach(gltfModel.getNode()->getOrCreateStateSet());

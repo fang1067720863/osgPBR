@@ -105,6 +105,8 @@ void fragment_main_pbr(inout vec4 color)
     float lightIntensity = 5.0;
     vec3  f0 = vec3(0.04);
 
+    vec3 normal = oe_normal;
+
     float roughnessFactor = oe_pbr.roughnessFactor;
     float metallicFactor = oe_pbr.metallicFactor;
     vec3 emissiveFactor = oe_pbr.emissiveFactor;
@@ -122,7 +124,7 @@ void fragment_main_pbr(inout vec4 color)
 
     #pragma include material.glsl
 
-    vec3 n = normalize(oe_normal);
+    vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
     float NdotV = max(dot(n, v), 0.0f);
 
