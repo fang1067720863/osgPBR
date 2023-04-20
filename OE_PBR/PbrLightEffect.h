@@ -1,6 +1,7 @@
 #pragma once
-#pragma once
-
+//author:1067720863@qq.com
+//create date:2023/04
+//decription: Cook_BRDF Light
 #ifndef OSGEARTH_PBR_LIGHTING_EFFECT_H
 #define OSGEARTH_PBR_LIGHTING_EFFECT_H
 #include<Windows.h>
@@ -15,6 +16,7 @@
 #include<osgEarth/Threading>
 #include<osgEarth/URI>
 #include <osgEarth/ShaderLoader>
+#include"Export.h"
 
 
 
@@ -35,119 +37,58 @@
 
 namespace osgEarth {
 
-    /** PointSprite base class which encapsulates enabling of point sprites .*/
-    //class OSG_EXPORT osgEarth::PbrMaterial : public osg::StateAttribute {
-    //public:
-
-    //    PointSprite();
-
-    //    /** Copy constructor using CopyOp to manage deep vs shallow copy.*/
-    //    PointSprite(const PointSprite& ps, const osg::CopyOp& copyop = osg::CopyOp::SHALLOW_COPY) :
-    //        StateAttribute(ps, copyop),
-    //        _coordOriginMode(ps._coordOriginMode) {}
-
-
-    //    META_StateAttribute(osg, PointSprite, POINTSPRITE);
-
-    //    /** return -1 if *this < *rhs, 0 if *this==*rhs, 1 if *this>*rhs.*/
-    //    virtual int compare(const StateAttribute& sa) const;
-
-    //    virtual bool getModeUsage(StateAttribute::ModeUsage& usage) const
-    //    {
-    //        usage.usesMode(GL_POINT_SPRITE_ARB);
-    //        return true;
-    //    }
-
-    //    virtual bool checkValidityOfAssociatedModes(osg::State&) const;
-
-    //    virtual bool isTextureAttribute() const { return true; }
-
-    //    virtual void apply(osg::State& state) const;
-
-    //    enum CoordOriginMode {
-    //        UPPER_LEFT = GL_UPPER_LEFT,
-    //        LOWER_LEFT = GL_LOWER_LEFT
-    //    };
-
-    //    inline void setCoordOriginMode(CoordOriginMode mode) { _coordOriginMode = mode; }
-    //    inline CoordOriginMode getCoordOriginMode() const { return _coordOriginMode; }
-
-    //protected:
-    //    virtual ~PointSprite();
-
-    //    CoordOriginMode _coordOriginMode;
-    //};
     namespace Util
     {
-        struct BasicPbrShaders : public osgEarth::Util::ShaderPackage
-        {
-            virtual std::string materialInput() = 0;
-            virtual std::string elevation() = 0;
-            virtual std::string vert() = 0;
-            virtual std::string frag() = 0;
-            virtual std::string brdf() = 0;
+        //struct BasicPbrShaders : public osgEarth::Util::ShaderPackage
+        //{
+        //    virtual std::string materialInput() = 0;
+        //    virtual std::string elevation() = 0;
+        //    virtual std::string vert() = 0;
+        //    virtual std::string frag() = 0;
+        //    virtual std::string brdf() = 0;
 
-            using SourceMap = std::map<std::string, std::string>;
-            SourceMap _sourceMap;
+        //    using SourceMap = std::map<std::string, std::string>;
+        //    SourceMap _sourceMap;
 
-        };
+        //};
 
-        struct ShadersGL3 : public BasicPbrShaders
-        {
-            std::string materialInput() { return ""; }
-            std::string elevation() { return ""; }
-            std::string vert() {
-                return "";
-            } //return load_raw_source(osgEarth::getAbsolutePath("..//OE_PBR/Shader//vert.glsl")); }
-            std::string frag() { return "";} //return load_raw_source(osgEarth::getAbsolutePath("..//OE_PBR/Shader//.glsl")); 
-            std::string brdf() { return ""; }//return load_raw_source(osgEarth::getAbsolutePath("..//OE_PBR/Shader//BRDF.glsl")); }
-        };
-        struct ShadersGL4 : public BasicPbrShaders
-        {
-            std::string materialInput() { return ""; }
-            std::string elevation() { return ""; }
-            std::string vert() { return ""; }
-            std::string frag() { return ""; }
-            std::string brdf() { return ""; }
-        };
+        //struct ShadersGL3 : public BasicPbrShaders
+        //{
+        //    std::string materialInput() { return ""; }
+        //    std::string elevation() { return ""; }
+        //    std::string vert() {
+        //        return "";
+        //    }
+        //    std::string frag() { return "";} 
+        //    std::string brdf() { return ""; }
+        //};
+        //struct ShadersGL4 : public BasicPbrShaders
+        //{
+        //    std::string materialInput() { return ""; }
+        //    std::string elevation() { return ""; }
+        //    std::string vert() { return ""; }
+        //    std::string frag() { return ""; }
+        //    std::string brdf() { return ""; }
+        //};
 
-        struct PbrShadersFactory
-        {
-            PbrShadersFactory()
-            {
+        //struct PbrShadersFactory
+        //{
+        //    PbrShadersFactory()
+        //    {
 
-            }
-            static ShadersGL3 s_gl3;
-            static ShadersGL4 s_gl4;
-            static BasicPbrShaders& get(bool use_gl4) { return use_gl4 ? (BasicPbrShaders&)s_gl4 : (BasicPbrShaders&)s_gl3; }
-        };
+        //    }
+        //    static ShadersGL3 s_gl3;
+        //    static ShadersGL4 s_gl4;
+        //    static BasicPbrShaders& get(bool use_gl4) { return use_gl4 ? (BasicPbrShaders&)s_gl4 : (BasicPbrShaders&)s_gl3; }
+        //};
 
 
 
-        struct PbrMaterial
-        {
-            osg::Vec4f  baseColorFactor{ 1.0f,1.0f,1.0f,1.0f };
-            osg::Vec3f  emissiveFactor{ 0.1f,0.1f,1.0f };
-            float metallicFactor{ 0.5f };
-            float roughnessFactor { 0.5f };
-            float alphaMask{ 0.5f };
-            float alphaMaskCutoff{ 0.5f };
-            float aoStrength{ 0.5f };
-        };
-
-        struct MaterialURI
-        {
-            std::string baseColorMap;
-            std::string normalMap;
-            std::string emissiveMap;
-            std::string metalRoughnessMap;
-            std::string occulusionMap;
-        };
 
         /**
          * Shader effect that performs simple Phong lighting.
          */
-        class PbrLightEffect : public osg::Referenced
+        class OE_MATERIAL_PULGIN PbrLightEffect : public osg::Referenced
         {
         public:
             /** constructs a new effect */
@@ -174,7 +115,7 @@ namespace osgEarth {
 
             
             typedef std::list< osg::observer_ptr<osg::StateSet> > StateSetList;
-            void enableTextureUnit(osg::StateSet* stateset, unsigned int texUnit, const osgEarth::URI& uri, const std::string& define, const std::string& texName);
+            
 
             bool _supported;
             StateSetList _statesets;
@@ -192,4 +133,4 @@ namespace osgEarth {
     }
 } // namespace osgEarth::Util
 
-#endif // OSGEARTH_PHONG_LIGHTING_EFFECT_H
+#endif 

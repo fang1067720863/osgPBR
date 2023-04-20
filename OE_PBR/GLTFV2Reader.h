@@ -3,6 +3,7 @@
 #ifndef OSGEARTH_GLTF_READER_V2_H
 #define OSGEARTH_GLTF_READER_V2_H
 
+
 #include <osg/Node>
 #include <osg/Geometry>
 #include <osg/MatrixTransform>
@@ -22,9 +23,10 @@
 #include <osgEarth/ShaderUtils>
 #include <osgEarth/InstanceBuilder>
 #include <osgEarth/StateTransition>
+
+#include"Export.h"
 #include"PbrMaterial.h"
 
-//#define REQUIRE_VERSION 330
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define TINYGLTF_NO_STB_IMAGE_WRITE
@@ -39,7 +41,7 @@ using namespace osgEarth::Util;
 #define LC "[GLTFWriter] "
 
 
-class GLTFReaderV2
+class OE_MATERIAL_PULGIN GLTFReaderV2
 {
 public:
     using TextureCache = osgEarth::Mutexed<
@@ -505,9 +507,6 @@ public:
                     OE_DEBUG << "    " << paramItr->first << "=" << paramItr->second.string_value << std::endl;
                 }
                 pbrMat->setEmissiveFactor(osg::Vec3(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]));
-                /*auto metalRoughness = material.pbrMetallicRoughness;
-                pbrMat->setMetallicFactor(metalRoughness.metallicFactor);
-                pbrMat->setMetallicFactor(metalRoughness.roughnessFactor);*/
 
                 int index = material.emissiveTexture.index;
                 if (index > 0)

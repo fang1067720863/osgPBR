@@ -1,3 +1,9 @@
+
+
+
+//author:1067720863@qq.com
+//create date:2023/04
+//decription: PBR Material
 #include<Windows.h>
 #include "PbrMaterial.h"
 

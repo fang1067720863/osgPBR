@@ -146,14 +146,10 @@ public:
 osg::ref_ptr<osg::Node> CreatePbrSphere()
 {
     osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-    //osg::ref_ptr<osg::Geode> geode = new osg::Geode();
 
     osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
 
-
-    //sd->setColor(osg::Vec4(1, 0, 0, 1));
     geode->addDrawable(sd);
-    //geode->getOrCreateStateSet()->setTextureAttribute(0, new osg::Texture2D(osgDB::readImageFile("D:/GitProject/FEngine/Assets/PbrBox/BoomBox_baseColor.png")), osg::StateAttribute::ON);
    
     bool usePhong = false;
     bool usePBR = true;
@@ -179,6 +175,13 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
 
 
         osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
+        m->setName("PBR_MATERIAL");
+
+        m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+        m->setEmissiveFactor(osg::Vec3f(1.0f, 1.0f, 1.0f));
+        m->setMetallicFactor(0.56f);
+        m->setRoughnessFactor(0.22f);
+        m->setAoStrength(0.15f);
 
         std::string dir = "D:/GitProject/FEngine/Assets/PbrBox/", format = ".png";
         m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "BoomBox_normal" + format);
@@ -187,20 +190,18 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
         m->setTextureAttribute(osgEarth::StandardPBRMaterial::EmissiveMap, dir + "BoomBox_emissive" + format);
         m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
 
+        
+
         geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
         PBRMaterialCallback().operator()(m, 0L);
 
-        auto* phong = new PbrLightEffect();
-        phong->attach(geode->getOrCreateStateSet());
+        auto* pbr = new PbrLightEffect();
+        pbr->attach(geode->getOrCreateStateSet());
         auto* vp = osgEarth::VirtualProgram::get(geode->getOrCreateStateSet());
         vp->setShaderLogging(true);
 
-      
-
     }
     
-
-
 
     return geode;
 

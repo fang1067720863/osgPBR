@@ -1,17 +1,22 @@
 #pragma once
 
+//author:1067720863@qq.com
+//create date:2023/04
+//decription: PBR Material
+
+#include <set>
 #include <osg/Node>
 #include <osg/NodeVisitor>
 #include <osg/LightSource>
 #include <osg/Light>
 #include<osg/Texture>
-#include <set>
 #include<osg/Vec4>
 #include<osg/State>
 #include<osg/StateAttribute>
 
 #include <osgEarth/Common>
 #include <osgEarth/Threading>
+#include"Export.h"
 
 
 
@@ -26,7 +31,7 @@
 namespace osgEarth {
     using namespace osg;
     #define OE_MATERIAL (osg::StateAttribute::Type)(osg::StateAttribute::MATERIAL)
-    class StandardPBRMaterial : public osg::StateAttribute
+    class OE_MATERIAL_PULGIN StandardPBRMaterial : public osg::StateAttribute
     {
         friend class PBRMaterialCallback;
     public:
@@ -41,7 +46,7 @@ namespace osgEarth {
             CustomMap = 6,
             Undefined = 7
         };
-        enum AlphaMode {
+        enum class AlphaMode {
             Opaque = 0,
             Blend =1,
             Mask =2 
@@ -106,7 +111,7 @@ namespace osgEarth {
        
     };
 
-    class PBRMaterialCallback : public osg::StateAttributeCallback {
+    class OE_MATERIAL_PULGIN PBRMaterialCallback : public osg::StateAttributeCallback {
     public:
         virtual void operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv);
 

@@ -59,5 +59,8 @@
     <ClInclude Include="FlyCameraManipulator.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Export.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
