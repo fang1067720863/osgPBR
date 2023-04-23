@@ -6,10 +6,10 @@
 
 #include<osg/GLExtensions>
 #include <osgViewer/Viewer>
-//#include <osgGA/FirstPersonManipulator>
 #include<osg/ShapeDrawable>
 #include<osgGA/TrackballManipulator>
-//#include <osgGA/DriveManipulator>
+
+#include<osg/MatrixTransform>
 #include <osgEarth/Notify>
 #include <osgEarth/EarthManipulator>
 #include <osgEarth/ExampleResources>
@@ -37,11 +37,16 @@
 
 //#define LC "[viewer] "
 
-//#ifndef OSG_GL_FIXED_FUNCTION_AVAILABLE
-//#define OSG_GL_FIXED_FUNCTION_AVAILABLE
-//#endif // !1
-
-
+template<typename T>
+struct CB : public osg::NodeCallback
+{
+    using F = std::function<void(T*, osg::NodeVisitor*)>;
+    F _func;
+    CB(F func) : _func(func) { }
+    void operator()(osg::Node* node, osg::NodeVisitor* nv) {
+        _func(static_cast<T*>(node), nv);
+    }
+};
 
 using namespace osgEarth;
 using namespace osgEarth::Util;
@@ -83,6 +88,7 @@ public:
         _node = node;
         UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
         UniformSpec roughness{ "oe_pbr.roughnessFactor" ,0.0f,1.0f,0.5f };
+        UniformSpec aoStrength{ "oe_pbr.aoStrength" ,0.0f,1.0f,0.5f };
         DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true};
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true};
         DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true};
@@ -91,6 +97,7 @@ public:
 
         _uniforms.emplace_back(metallic);
         _uniforms.emplace_back(roughness);
+        _uniforms.emplace_back(aoStrength);
 
         _defines.emplace_back(normal);
         _defines.emplace_back(mr);
@@ -115,20 +122,16 @@ public:
         {
             if (ImGui::SliderFloat(def._name.c_str(), &def._value, def._minval, def._maxval))
             {
-                //std::cout << "def._value" << def._value << std::endl;
                
                 _node->getOrCreateStateSet()->getOrCreateUniform(def._name, osg::Uniform::FLOAT)->set(def._value);
                 _node->getOrCreateStateSet()->addUniform(new osg::Uniform(def._name.c_str(), def._value), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
                
-
-               // _node->getOrCreateStateSet()->getAttribute(osgEarth::StandardPBRMaterial::SA_TYPE)
             }
         }
         for (auto& def : _defines)
         {
             if (ImGui::Checkbox(def._name.c_str(), &def._checked))
             {
-                //std::cout << "def._value" << def._val << std::endl;
 
                 if (def._checked)
                 {
@@ -138,6 +141,72 @@ public:
                     _node->getOrCreateStateSet()->setDefine(def._name, osg::StateAttribute::OFF|osg::StateAttribute::OVERRIDE);
                 }
             }
+        }
+
+
+        ImGui::End();
+    }
+};
+
+
+class LightGUI :public osgEarth::GUI::BaseGUI
+{
+public:
+
+    osg::Light* _light;
+public:
+    LightGUI(osg::Light* light) :GUI::BaseGUI("Light"), _light(light)
+    {
+       
+
+    }
+
+    void draw(osg::RenderInfo& ri)override {
+        if (!isVisible()) {
+            return;
+        }
+        ImGui::Begin(name(), visible());
+
+
+        ImGui::Separator();
+        {
+            //IMGUI_DEMO_MARKER("Widgets/Basic/ColorEdit3, ColorEdit4");
+            auto ambient = _light->getAmbient();
+            auto diffuse = _light->getDiffuse();
+            auto direction = _light->getDirection();
+            static float col1[4] = { ambient[0],ambient[1], ambient[2], ambient[3] };
+            static float col2[4] = { diffuse[0],diffuse[1], diffuse[2], diffuse[3] };
+            static float col3[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
+            static float col4[3] = { direction[0],direction[1], direction[2] };
+            static bool lightenable = true;
+            if (ImGui::Checkbox("on/off", &lightenable))
+            {
+                if (lightenable)
+                {
+                    _light->setAmbient(osg::Vec4(col1[0], col1[1], col1[2], col1[3]));
+                    _light->setDiffuse(osg::Vec4(col2[0], col2[1], col2[2], col2[3]));
+                    _light->setDirection(osg::Vec3(col4[0], col4[1], col4[2]));
+                }
+                else {
+                    _light->setAmbient(osg::Vec4(0.0, 0.0, 0.0, 0.0));
+                    _light->setDiffuse(osg::Vec4(0.0, 0.0, 0.0, 0.0));
+                    _light->setDirection(osg::Vec3(0.0, 0.0, 0.0));
+                }
+            }
+            if (ImGui::ColorEdit4("ambient", col1))
+            {
+                _light->setAmbient(osg::Vec4(col1[0], col1[1], col1[2], col1[3]));
+            }
+            if (ImGui::ColorEdit4("diffuse", col2))
+            {
+                _light->setDiffuse(osg::Vec4(col2[0], col2[1], col2[2], col2[3]));
+            }
+            if (ImGui::ColorEdit4("direction", col4))
+            {
+                _light->setDirection(osg::Vec3(col4[0], col4[1], col4[2]));
+                std::cout << "setDirection" << col4[0] << " " << col4[1] << " " << col4[2] << std::endl;
+            }
+            
         }
         ImGui::End();
     }
@@ -151,7 +220,7 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
 
     geode->addDrawable(sd);
    
-    bool usePhong = false;
+    bool usePhong = true;
     bool usePBR = true;
     if (usePhong)
     {
@@ -172,8 +241,6 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
     }
     else if (usePBR) {
        
-
-
         osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
         m->setName("PBR_MATERIAL");
 
@@ -190,38 +257,31 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
         m->setTextureAttribute(osgEarth::StandardPBRMaterial::EmissiveMap, dir + "BoomBox_emissive" + format);
         m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
 
-        
-
         geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
         PBRMaterialCallback().operator()(m, 0L);
 
         auto* pbr = new PbrLightEffect();
         pbr->attach(geode->getOrCreateStateSet());
-        auto* vp = osgEarth::VirtualProgram::get(geode->getOrCreateStateSet());
-        vp->setShaderLogging(true);
 
     }
-    
-
+   
     return geode;
 
 }
 
-osg::Node* CreateLight(osg::StateSet* rootStateSet)
+osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
 {
     osg::Group* lightGroup = new osg::Group;
 
     float modelSize = 5.0f;
 
-    // create a spot light.
-    osg::Light* myLight1 = new osg::Light;
     myLight1->setLightNum(0);
     myLight1->setPosition(osg::Vec4(1.0f, 1.0f, 0.0f, 0.0f));
     myLight1->setAmbient(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
     myLight1->setDiffuse(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
     myLight1->setSpotCutoff(20.0f);
     myLight1->setSpotExponent(50.0f);
-    myLight1->setDirection(osg::Vec3(1.0f, 1.0f, -1.0f));
+    myLight1->setDirection(osg::Vec3(0.382353f, 0.254902f, 0.382353f));
 
     osg::LightSource* lightS1 = new osg::LightSource;
     lightS1->setLight(myLight1);
@@ -229,34 +289,9 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet)
 
     lightS1->setStateSetModes(*rootStateSet, osg::StateAttribute::ON);
     lightGroup->addChild(lightS1);
-
-
-    // create a local light.
-    //osg::Light* myLight2 = new osg::Light;
-    //myLight2->setLightNum(1);
-    //myLight2->setPosition(osg::Vec4(0.0, 0.0, 0.0, 1.0f));
-    //myLight2->setAmbient(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f));
-    //myLight2->setDiffuse(osg::Vec4(0.0f, 1.0f, 1.0f, 1.0f));
-    //myLight2->setConstantAttenuation(1.0f);
-    //myLight2->setLinearAttenuation(2.0f / modelSize);
-    //myLight2->setQuadraticAttenuation(2.0f / osg::square(modelSize));
-
-    //osg::LightSource* lightS2 = new osg::LightSource;
-    //lightS2->setLight(myLight2);
-    //lightS2->setLocalStateSetModes(osg::StateAttribute::ON);
-
-    //lightS2->setStateSetModes(*rootStateSet, osg::StateAttribute::ON);
-    //lightGroup->addChild(lightS2);
-
 #ifdef NDEBUG
-    GenerateGL3LightingUniforms gen;
-    std::cout << "========================================";
-    lightGroup->accept(gen);
-
-#endif // DEBUG
-
-
- /*   _lightSource->setCullingActive(false);*/
+    lightS1->addCullCallback(new LightSourceGL3UniformGenerator());
+#endif 
     return lightGroup;
 }
 
@@ -265,28 +300,13 @@ int main(int argc, char** argv)
     osg::ArgumentParser arguments(&argc, argv);
 
     int versio = osg::getGLVersionNumber();
-  /*  char* versionstring = (char*)glGetString(GL_VERSION);
-    std::string ver(versionstring);
-    if (osg::getGLVersionNumber() >= 3.0)
-    {
-        std::cout << "OpenGL version: " << ver << std::endl;
-    }
-    else {
-        std::cout << "OpenGL version2: " << ver << std::endl;
-    }*/
-    
-    
-
-    //osgEarth::initialize();
-    //GLUtils::enableGLDebugging();
-    //VirtualProgram::enableGLDebugging();
-    //osg::DisplaySettings::instance()->setGLContextVersion("3.0");
-    //osg::DisplaySettings::instance()->setGLContextProfileMask(0x1);
+    arguments.getApplicationUsage()->setApplicationName("osgEarth PBR Material");
     osgViewer::Viewer viewer(arguments);
     viewer.setReleaseContextAtEndOfFrameHint(false);
     viewer.getDatabasePager()->setUnrefImageDataAfterApplyPolicy(true, false);
+    auto name = arguments.getApplicationUsage()->getApplicationName();
+    std::cout << " name " << name;
 
-    
 
     const int width(800), height(450);
     const std::string version("3.0");
@@ -308,12 +328,6 @@ int main(int argc, char** argv)
         return(1);
     }
 
-    ////osgViewer::Viewer viewer;
-
-    //// Create a Camera that uses the above OpenGL context.
-    //osg::Camera* cam = viewer.getCamera();
-    //cam->setGraphicsContext(gc.get());
-
 
     osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
 
@@ -324,7 +338,7 @@ int main(int argc, char** argv)
 
     GLTFReaderV2 reader;
     //Sponza BoomBox
-    auto gltfModel = reader.read("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\BoomBox\\BoomBox.gltf", false,new osgDB::Options("..//..//OE_PBR//Asset//BoomBox"));
+    auto gltfModel = reader.read("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\BoomBox\\BoomBox.gltf", false, new osgDB::Options("..//..//OE_PBR//Asset//BoomBox"));
     auto node = gltfModel.getNode();
     auto* phong = new PbrLightEffect();
     phong->attach(gltfModel.getNode()->getOrCreateStateSet());
@@ -332,13 +346,25 @@ int main(int argc, char** argv)
     vp->setShaderLogging(true);
 
     group->addChild(gltfModel.getNode());
-    auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet());
+    osg::Light* lightState = new osg::Light;
+    auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet(), lightState);
 
+
+    auto func = [&](osg::MatrixTransform* node, osg::NodeVisitor* nv)
+    {
+        auto matrix = node->getMatrix();
+
+        node->setMatrix(matrix * osg::Matrix(osg::Quat(0.01, osg::Vec3(0.0, 0.0, 1.0))));
+    };
+
+   // gltfModel.getNode()->addUpdateCallback(new CB<osg::MatrixTransform>(func));
     
     group->addChild(light);
 
     //group->addChild(node);
     viewer.setReleaseContextAtEndOfFrameHint(false);
+
+    viewer.addEventHandler(new osgViewer::HelpHandler(arguments.getApplicationUsage()));
 
     // Call this to enable ImGui rendering.
     // If you use the MapNodeHelper, call this first.
@@ -346,15 +372,11 @@ int main(int argc, char** argv)
 
     GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
     gui->add("Demo", new TestGUI(gltfModel.getNode()));
-   
+    gui->add("Demo2", new LightGUI(lightState));
 
     viewer.setSceneData(group);
 
     viewer.setCameraManipulator(new osgGA::TrackballManipulator);
-    osgUtil::Optimizer opt;
-    //opt.optimize(node, osgUtil::Optimizer::INDEX_MESH);
-    //ShaderGenerator gen;
-    //node->accept(gen);
     viewer.setUpViewInWindow(100, 100, 800, 600);
     viewer.realize();
 

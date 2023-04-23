@@ -134,7 +134,7 @@ void fragment_main_pbr(inout vec4 color)
     {
         
         // per-light radiance: view space?
-        vec3 l = normalize(osg_LightSource[i].position.xyz - oe_posView);
+        vec3 l = normalize(osg_LightSource[i].spotDirection.xyz - oe_posView);
         vec3 h = normalize(l + v);
 
 
@@ -149,9 +149,9 @@ void fragment_main_pbr(inout vec4 color)
         Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao,emissive);
     }
 
-    vec3 ambient = osg_LightSource[0].ambient.rgb * diffuseColor * oe_pbr.aoStrength;
+    vec3 ambient = osg_LightSource[0].ambient.rgb * diffuseColor * ao;
 
-    color.rgb = ambient + Lo;
+    color.rgb = ambient+ Lo;
 
     // tone map:
     color.rgb = color.rgb / (color.rgb + vec3(1.0));
