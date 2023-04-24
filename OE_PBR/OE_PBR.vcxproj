@@ -40,13 +40,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -82,12 +82,14 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>D:\LocalSDK\osgEarthSDK\include\third_party\tinygltf;D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\include;D:\LocalSDK\osgEarthSDK\include\third_party\imgui;$(IncludePath)</IncludePath>
     <LibraryPath>D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>osgEarthPBRd</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>D:\LocalSDK\osgEarthSDK\include\third_party\tinygltf;D:\LocalSDK\vcpkg\packages\glew_x64-windows\include;D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\include;D:\LocalSDK\osgearth\src\third_party\imgui;D:\LocalSDK\osgearth\src\third_party\imgui\examples;$(IncludePath)</IncludePath>
     <SourcePath>D:\LocalSDK\osgearth\src\osgEarth\ImGui;$(SourcePath)</SourcePath>
     <LibraryPath>D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>osgEarthPBR</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

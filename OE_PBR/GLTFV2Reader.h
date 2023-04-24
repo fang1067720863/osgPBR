@@ -1,5 +1,8 @@
 #pragma once
 
+//author:1067720863@qq.com
+//create date:2023/04
+//decription: gltf2.0 reader
 #ifndef OSGEARTH_GLTF_READER_V2_H
 #define OSGEARTH_GLTF_READER_V2_H
 

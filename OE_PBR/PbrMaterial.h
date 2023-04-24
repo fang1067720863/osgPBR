@@ -71,13 +71,7 @@ namespace osgEarth {
 
         virtual int compare(const StateAttribute& sa) const
         {
-           
-            // check the types are equal and then create the rhs variable
-            // used by the COMPARE_StateAttribute_Parameter macros below.
-           // COMPARE_StateAttribute_Types(Material, sa)
-            return 0;
-                // compare each parameter in turn against the rhs.
-            
+            return 0;  
         }
 
         StandardPBRMaterial& operator = (const StandardPBRMaterial& rhs) {

@@ -39,54 +39,8 @@ namespace osgEarth {
 
     namespace Util
     {
-        //struct BasicPbrShaders : public osgEarth::Util::ShaderPackage
-        //{
-        //    virtual std::string materialInput() = 0;
-        //    virtual std::string elevation() = 0;
-        //    virtual std::string vert() = 0;
-        //    virtual std::string frag() = 0;
-        //    virtual std::string brdf() = 0;
-
-        //    using SourceMap = std::map<std::string, std::string>;
-        //    SourceMap _sourceMap;
-
-        //};
-
-        //struct ShadersGL3 : public BasicPbrShaders
-        //{
-        //    std::string materialInput() { return ""; }
-        //    std::string elevation() { return ""; }
-        //    std::string vert() {
-        //        return "";
-        //    }
-        //    std::string frag() { return "";} 
-        //    std::string brdf() { return ""; }
-        //};
-        //struct ShadersGL4 : public BasicPbrShaders
-        //{
-        //    std::string materialInput() { return ""; }
-        //    std::string elevation() { return ""; }
-        //    std::string vert() { return ""; }
-        //    std::string frag() { return ""; }
-        //    std::string brdf() { return ""; }
-        //};
-
-        //struct PbrShadersFactory
-        //{
-        //    PbrShadersFactory()
-        //    {
-
-        //    }
-        //    static ShadersGL3 s_gl3;
-        //    static ShadersGL4 s_gl4;
-        //    static BasicPbrShaders& get(bool use_gl4) { return use_gl4 ? (BasicPbrShaders&)s_gl4 : (BasicPbrShaders&)s_gl3; }
-        //};
-
-
-
-
         /**
-         * Shader effect that performs simple Phong lighting.
+         * Shader effect that performs simple Cook_Torrence BRDF lighting.
          */
         class OE_MATERIAL_PULGIN PbrLightEffect : public osg::Referenced
         {
@@ -119,7 +73,6 @@ namespace osgEarth {
 
             bool _supported;
             StateSetList _statesets;
-            //osg::ref_ptr<osg::Uniform> _lightingUniform;
 
             void init();
 
