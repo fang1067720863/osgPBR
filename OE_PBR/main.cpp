@@ -305,7 +305,6 @@ int main(int argc, char** argv)
     viewer.setReleaseContextAtEndOfFrameHint(false);
     viewer.getDatabasePager()->setUnrefImageDataAfterApplyPolicy(true, false);
     auto name = arguments.getApplicationUsage()->getApplicationName();
-    std::cout << " name " << name;
 
 
     const int width(800), height(450);

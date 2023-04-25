@@ -425,7 +425,7 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
 
         // set light
         stateset->setDefine(OE_LIGHTING_DEFINE, "1", osg::StateAttribute::ON);
-        //stateset->setDefine("OE_NUM_LIGHTS", "1");
+        stateset->setDefine("OE_NUM_LIGHTS", "1");
         stateset->setDefine("OE_USE_PBR", "1");
         stateset->setDefine("cascade", "1");
 
