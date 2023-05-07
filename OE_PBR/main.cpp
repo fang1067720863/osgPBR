@@ -29,6 +29,7 @@
 #include<osgEarth/Sky>
 #include<osgEarth/PhongLightingEffect>
 #include<osgEarth/VirtualProgram>
+#include<osg/TextureCubeMap>
 
 #include"PbrLightEffect.h"
 #include"PbrMaterial.h"
@@ -212,6 +213,226 @@ public:
     }
 };
 
+osg::ref_ptr<osg::Node> createHDRBox()
+{
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+    osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Box(osg::Vec3(0.0, 0.0, 0.0), 16.0));
+
+    geode->addDrawable(sd);
+    osg::ref_ptr<osg::MatrixTransform> trans = new MatrixTransform();
+    trans->setMatrix(osg::Matrix::scale(16, 16, 16));
+    trans->addChild(geode);
+
+
+    sd->setColor(osg::Vec4(1.0, 0.0, 0.0, 1.0));
+
+    osg::ref_ptr <osg::Image> image = osgDB::readRefImageFile("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\abandoned_bakery_4k.hdr");
+
+    osg::ref_ptr<osg::Texture2D> hdr = new osg::Texture2D(image.get());
+    geode->getOrCreateStateSet()->setTextureAttributeAndModes(0, hdr.get(), osg::StateAttribute::ON);
+
+    VirtualProgram* vp = VirtualProgram::getOrCreate(geode->getOrCreateStateSet());
+
+    const char* pick_preview = R"(
+
+
+        #pragma vp_function SampleSphericalMap, vertex_model
+        const vec2 invAtan = vec2(0.1591, 0.3183);
+        out vec2 spherical_uv;
+        void SampleSphericalMap(inout vec4 vertex) {
+            vec3 tmp = normalize(vertex.xyz);
+
+            vec2 uv = vec2(atan(tmp.z, tmp.x), asin(tmp.y));
+            uv *= invAtan;
+            uv += 0.5;
+            spherical_uv = uv;
+        }
+
+        [break]
+
+         #pragma vp_function fs, fragment_output
+        in vec2 spherical_uv;
+        out vec4 frag;
+        uniform sampler2D tex;
+        void fs(inout vec4 c) {
+            c = texture(tex, spherical_uv);
+            frag = c;
+        }
+    )";
+
+    ShaderLoader::load(vp, pick_preview);
+
+
+    return trans;
+}
+std::vector<osg::ref_ptr<osg::Camera>> setupPreviewCamera(osg::Group* gp)
+{
+
+    std::vector<osg::ref_ptr<osg::Camera>> cameras;
+    osg::ref_ptr<osg::Node> trans = createHDRBox();
+
+    osg::ref_ptr<osg::Texture2D>previewTexture = new osg::Texture2D();
+    double w, h;
+    w = h = 256.0;
+    previewTexture->setTextureSize(w,h);
+    previewTexture->setSourceFormat(GL_RGBA);
+    previewTexture->setSourceType(GL_UNSIGNED_BYTE);
+    previewTexture->setInternalFormat(GL_RGBA8);
+
+    osg::ref_ptr<osg::TextureCubeMap> cubeMap = new osg::TextureCubeMap();
+    cubeMap->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP);
+    cubeMap->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP);
+    cubeMap->setWrap(osg::Texture::WRAP_R, osg::Texture::CLAMP);
+    cubeMap->setTextureSize(w,h);
+    cubeMap->setInternalFormat(GL_RGB);
+    bool noMipMap, hardwareMipmap;
+    noMipMap = hardwareMipmap = false;
+    if (noMipMap)
+    {
+        cubeMap->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+        cubeMap->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+    }
+    else {
+        cubeMap->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR_MIPMAP_LINEAR);
+        cubeMap->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+    }
+
+
+    if (hardwareMipmap)
+    {
+        OSG_NOTICE << "tcm->setUseHardwareMipMapGeneration(true)" << std::endl;
+        cubeMap->setUseHardwareMipMapGeneration(true);
+    }
+
+    //top 
+    {
+        osg::ref_ptr<osg::Camera> cam = new osg::Camera();
+        cam->addChild(trans);
+        cam->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+        cam->setClearColor(osg::Vec4(0, 0, 1, 1));
+        cam->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        cam->setViewport(0, 0, 256, 256);
+        cam->setRenderOrder(osg::Camera::PRE_RENDER);
+        cam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+        cam->setImplicitBufferAttachmentMask(0, 0);
+        cam->attach(osg::Camera::COLOR_BUFFER, cubeMap, 0, osg::TextureCubeMap::POSITIVE_X);
+        cam->setProjectionMatrixAsOrtho2D(-w / 2, (-w / 2) + w, -h / 2, (-h / 2) + h);
+        cam->setViewMatrixAsLookAt(osg::Vec3(0.0, 0.0, 0.0), osg::Vec3(1.0, 0.0, 0.0), osg::Vec3(0.0, -1.0, 0.0));
+        
+        
+        cameras.push_back(cam);
+    }
+    
+
+    {
+        osg::ref_ptr<osg::Camera> cam = new osg::Camera();
+        cam->addChild(trans);
+        cam->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+        cam->setClearColor(osg::Vec4(0, 0, 1, 1));
+        cam->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        cam->setViewport(0, 0, 256, 256);
+        cam->setRenderOrder(osg::Camera::PRE_RENDER);
+        cam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+        cam->setImplicitBufferAttachmentMask(0, 0);
+        cam->attach(osg::Camera::COLOR_BUFFER, cubeMap, 0, osg::TextureCubeMap::NEGATIVE_X);
+        cam->setProjectionMatrixAsOrtho2D(-w / 2, (-w / 2) + w, -h / 2, (-h / 2) + h);
+        cam->setViewMatrixAsLookAt(osg::Vec3(0.0, 0.0, 0.0), osg::Vec3(-1.0, 0.0, 0.0), osg::Vec3(0.0, -1.0, 0.0));
+        cameras.push_back(cam);
+    }
+    {
+        osg::ref_ptr<osg::Camera> cam = new osg::Camera();
+        cam->addChild(trans);
+        cam->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+        cam->setClearColor(osg::Vec4(0, 0, 1, 1));
+        cam->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        cam->setViewport(0, 0, 256, 256);
+        cam->setRenderOrder(osg::Camera::PRE_RENDER);
+        cam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+        cam->setImplicitBufferAttachmentMask(0, 0);
+        cam->attach(osg::Camera::COLOR_BUFFER, cubeMap, 0, osg::TextureCubeMap::POSITIVE_Y);
+        cam->setProjectionMatrixAsOrtho2D(-w / 2, (-w / 2) + w, -h / 2, (-h / 2) + h);
+        //cam->setViewMatrixAsLookAt(osg::Vec3(0.0, 0.0, 0.0), osg::Vec3(0.0, 1.0, 0.0), osg::Vec3(0.0, 0.0, 1.0));
+        cam->setViewMatrix(osg::Matrixd());
+        cameras.push_back(cam);
+    }
+    {
+        osg::ref_ptr<osg::Camera> cam = new osg::Camera();
+        cam->addChild(trans);
+        cam->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+        cam->setClearColor(osg::Vec4(0, 0, 1, 1));
+        cam->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        cam->setViewport(0, 0, 256, 256);
+        cam->setRenderOrder(osg::Camera::PRE_RENDER);
+        cam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+        cam->setImplicitBufferAttachmentMask(0, 0);
+        cam->attach(osg::Camera::COLOR_BUFFER, cubeMap, 0, osg::TextureCubeMap::NEGATIVE_Y);
+        cam->setProjectionMatrixAsOrtho2D(-w / 2, (-w / 2) + w, -h / 2, (-h / 2) + h);
+        cam->setViewMatrixAsLookAt(osg::Vec3(0.0, 0.0, 0.0), osg::Vec3(0.0, -1.0, 0.0), osg::Vec3(0.0, -1.0, 0.0));
+        cam->setViewMatrix(osg::Matrixd::rotate(osg::inDegrees(180.0f), 1.0, 0.0, 0.0));
+        cameras.push_back(cam);
+    }
+    {
+        osg::ref_ptr<osg::Camera> cam = new osg::Camera();
+        cam->addChild(trans);
+        cam->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+        cam->setClearColor(osg::Vec4(0, 0, 1, 1));
+        cam->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        cam->setViewport(0, 0, 256, 256);
+        cam->setRenderOrder(osg::Camera::PRE_RENDER);
+        cam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+        cam->setImplicitBufferAttachmentMask(0, 0);
+        cam->attach(osg::Camera::COLOR_BUFFER, cubeMap, 0, osg::TextureCubeMap::POSITIVE_Z);
+        cam->setProjectionMatrixAsOrtho2D(-w / 2, (-w / 2) + w, -h / 2, (-h / 2) + h);
+        cam->setViewMatrix(osg::Matrixd::rotate(osg::inDegrees(-90.0f), 1.0, 0.0, 0.0));
+        //cam->setViewMatrixAsLookAt(osg::Vec3(0.0, 0.0, 0.0), osg::Vec3(0.0, 0.0, 1.0), osg::Vec3(0.0, -1.0, 0.0));
+        cameras.push_back(cam);
+    }
+    {
+        osg::ref_ptr<osg::Camera> cam = new osg::Camera();
+        cam->addChild(trans);
+        cam->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+        cam->setClearColor(osg::Vec4(0, 0, 1, 1));
+        cam->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        cam->setViewport(0, 0, 256, 256);
+        cam->setRenderOrder(osg::Camera::PRE_RENDER);
+        cam->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+        cam->setImplicitBufferAttachmentMask(0, 0);
+        cam->attach(osg::Camera::COLOR_BUFFER, cubeMap, 0, osg::TextureCubeMap::NEGATIVE_Z);
+        cam->setProjectionMatrixAsOrtho2D(-w / 2, (-w / 2) + w, -h / 2, (-h / 2) + h);
+        //cam->setViewMatrixAsLookAt(osg::Vec3(0.0, 0.0, 0.0), osg::Vec3(0.0, 0.0, -1.0), osg::Vec3(0.0, -1.0, 0.0));
+        cam->setViewMatrix(osg::Matrixd::rotate(osg::inDegrees(90.0f), 1.0, 0.0, 0.0) * osg::Matrixd::rotate(osg::inDegrees(180.0f), 0.0, 0.0, 1.0));
+        cameras.push_back(cam);
+    }
+
+    //{
+    //    osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+
+    //   
+    //    osg::StateSet* stateset = geode->getOrCreateStateSet();
+    //    stateset->setTextureAttributeAndModes(0, cubeMap, osg::StateAttribute::ON);
+    //    stateset->setMode(GL_BLEND, osg::StateAttribute::ON);
+    //    stateset->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+
+    //    float characterSize = 20.0f;
+    //    osg::Vec3 pos = osg::Vec3(0.0f, 0.0f, 0.0f);
+    //    osg::Vec3 width(characterSize, 0.0f, 0.0);
+    //    osg::Vec3 height(0.0f, 0.0f, characterSize * (256.0f) / (256.0f));
+
+    //    osg::Geometry* geometry = osg::createTexturedQuadGeometry(pos, width, height);
+
+    //    osg::Geode* geode2 = new osg::Geode;
+    //    geode2->addDrawable(geometry);
+
+    //    gp->addChild(geode2);
+
+    //   
+   // }
+
+    return cameras;
+}
+
+
+
 osg::ref_ptr<osg::Node> CreatePbrSphere()
 {
     osg::ref_ptr<osg::Geode> geode = new osg::Geode();
@@ -337,6 +558,7 @@ int main(int argc, char** argv)
 
     GLTFReaderV2 reader;
     //Sponza BoomBox
+    
     auto gltfModel = reader.read("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\BoomBox\\BoomBox.gltf", false, new osgDB::Options("..//..//OE_PBR//Asset//BoomBox"));
     auto node = gltfModel.getNode();
     auto* phong = new PbrLightEffect();
@@ -344,9 +566,17 @@ int main(int argc, char** argv)
     auto* vp = osgEarth::VirtualProgram::get(gltfModel.getNode()->getOrCreateStateSet());
     vp->setShaderLogging(true);
 
-    group->addChild(gltfModel.getNode());
+   // group->addChild(gltfModel.getNode());
     osg::Light* lightState = new osg::Light;
     auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet(), lightState);
+
+    auto cameras = std::move(setupPreviewCamera(group));
+    for (auto cam : cameras)
+    {
+        group->addChild(cam);
+    }
+    /*group->addChild(cam);*/
+    group->addChild(createHDRBox());
 
 
     auto func = [&](osg::MatrixTransform* node, osg::NodeVisitor* nv)
