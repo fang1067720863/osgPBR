@@ -35,6 +35,7 @@
 #include"PbrMaterial.h"
 #include"GLTFV2Reader.h"
 #include"FlyCameraManipulator.h"
+#include"EnvLight.h"
 
 //#define LC "[viewer] "
 
@@ -570,12 +571,13 @@ int main(int argc, char** argv)
     osg::Light* lightState = new osg::Light;
     auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet(), lightState);
 
-    auto cameras = std::move(setupPreviewCamera(group));
+  /*  auto cameras = std::move(setupPreviewCamera(group));
     for (auto cam : cameras)
     {
         group->addChild(cam);
-    }
-    /*group->addChild(cam);*/
+    }*/
+    osg::ref_ptr<IBLTechnique> ibl = new IBLTechnique(group,&viewer);
+    ibl->startUp();
     group->addChild(createHDRBox());
 
 

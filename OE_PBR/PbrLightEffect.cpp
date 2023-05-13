@@ -10,12 +10,14 @@
 #include <osgEarth/Capabilities>
 #include <osgEarth/Shaders>
 #include <osgEarth/Lighting>
-#include<osgEarth/PhongLightingEffect>
-#include<osgDB/FileUtils>
+#include <osgEarth/PhongLightingEffect>
+#include <osgEarth/Math>
 #include <osgEarth/FileUtils>
-#include<osgEarth/Math>
+
+#include <osgDB/FileUtils>
 #include <osgDB/FileNameUtils>
 #include <osgDB/ReadFile>
+
 #include<osg/TexEnv>
 #include<osg/Texture2DArray>
 using namespace osgEarth;
