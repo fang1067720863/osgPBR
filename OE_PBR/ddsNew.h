@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <string.h>
 
+
+
 // Macro similar to what's in FLT/TRP plugins (except it uses wide char under Windows if OSG_USE_UTF8_FILENAME)
 #if defined(_WIN32)
 #include <windows.h>
@@ -395,8 +397,38 @@ static unsigned int ComputeImageSizeInBytes(int width, int height, int depth,
 
     return osg::Image::computeImageSizeInBytes(width, height, depth, pixelFormat, pixelType, packing, slice_packing, image_packing);
 }
+std::vector<unsigned char*> collectCubeMapData(std::istream& _istream, unsigned int sizeWithMipmaps)
+{
+    std::vector<unsigned char*> datas(6, nullptr);
+    datas.reserve(6);
 
-osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
+    unsigned int oneCubeMapSize;
+
+    oneCubeMapSize = sizeWithMipmaps;
+
+
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        datas[i] = new unsigned char[oneCubeMapSize];
+        if (!_istream.read((char*)datas[i], oneCubeMapSize))
+        {
+            OSG_WARN << "" << std::endl;
+            delete[]datas[i];
+        }
+       
+
+    }
+
+    //unsigned char* test = new unsigned char[oneCubeMapSize];
+    //if (!_istream.read((char*)test, oneCubeMapSize))
+    //{
+    //    std::cout << "no next cubeeee" << std::endl;
+    //    delete[]test;
+    //}
+    return datas;
+
+}
+std::vector<osg::Image*> ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
 {
     DDSURFACEDESC2 ddsd;
 
@@ -404,17 +436,17 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
 
     _istream.read(filecode, 4);
     if (strncmp(filecode, "DDS ", 4) != 0) {
-        return NULL;
+        return { NULL };
     }
     // Get the surface desc.
     _istream.read((char*)(&ddsd), sizeof(ddsd));
 
-    osg::ref_ptr<osg::Image> osgImage = new osg::Image();
+    //osg::ref_ptr<osg::Image> osgImage = new osg::Image();
 
     //Check valid structure sizes
     if (ddsd.dwSize != 124 && ddsd.ddpfPixelFormat.dwSize != 32)
     {
-        return NULL;
+        return { NULL };
     }
 
     int depth = 1;
@@ -433,11 +465,25 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
     unsigned int pixelFormat = 0;
     unsigned int internalFormat = 0;
 
+    const UI32 caps2 = ddsd.ddsCaps.dwCaps2;
+    if (caps2 & DDSCAPS2_CUBEMAP)
+    {
+        std::cout << "ReadDDSFile info: this a cube map" << std::endl;
+        if (caps2 & DDSCAPS2_CUBEMAP_NEGATIVEX)
+        {
+            std::cout << "ReadDDSFile info: this DDSCAPS2_CUBEMAP_NEGATIVEX" << std::endl;
+        }
+    }
+    else {
+        std::cout << "ReadDDSFile info: this not a cube map" << std::endl;
+    }
+    
+
     // Handle some esoteric formats
     if (ddsd.ddpfPixelFormat.dwFlags & DDPF_BUMPDUDV)
     {
         OSG_WARN << "ReadDDSFile warning: DDPF_BUMPDUDV format is not supported" << std::endl;
-        return NULL;
+        return { NULL };
         //         ddsd.ddpfPixelFormat.dwFlags =
         //             DDPF_LUMINANCE + DDPF_ALPHAPIXELS;
         //         // handle V8U8 as A8L8
@@ -448,7 +494,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
     if (ddsd.ddpfPixelFormat.dwFlags & DDPF_BUMPLUMINANCE)
     {
         OSG_WARN << "ReadDDSFile warning: DDPF_BUMPLUMINANCE format is not supported" << std::endl;
-        return NULL;
+        return { NULL };
         //         ddsd.ddpfPixelFormat.dwFlags = DDPF_RGB;
         //         // handle as RGB
         //         // L6V5U5 -- 655 is not supported data type in GL
@@ -527,7 +573,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
         case 0x00000070: // G16R16F
             OSG_INFO << "ReadDDSFile info : G16R16F format is not supported"
                 << std::endl;
-            return NULL;
+            return{ NULL };
             //             internalFormat = GL_RGB;
             //             pixelFormat    = must be GL_RED and GL_GREEN
             //             dataType       = GL_HALF_FLOAT;
@@ -535,7 +581,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
         case 0x00000073: // G32R32F
             OSG_INFO << "ReadDDSFile info : G32R32F format is not supported"
                 << std::endl;
-            return NULL;
+            return { NULL };
             //             internalFormat = GL_RGB;
             //             pixelFormat    = must be GL_RED and GL_GREEN
             //             dataType       = GL_FLOAT;
@@ -560,7 +606,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
             break;
         case 0x00000075: // CxV8U8
             OSG_INFO << "ReadDDSFile info : CxV8U8 format is not supported" << std::endl;
-            return NULL;
+            return { NULL };
 
         case FOURCC_DX10:
             OSG_INFO << "ReadDDSFile info : format = DX10 file" << std::endl;
@@ -759,7 +805,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
                         << std::hex << std::setw(8) << std::setfill('0')
                         << header10.dxgiFormat << std::dec
                         << " in dds file, image not loaded." << std::endl;
-                    return NULL;
+                    return { NULL };
                 }
             }
             break;
@@ -779,7 +825,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
                 << " = 0x" << std::hex << std::setw(8) << std::setfill('0')
                 << ddsd.ddpfPixelFormat.dwFourCC << std::dec
                 << ") in dds file, image not loaded." << std::endl;
-            return NULL;
+            return { NULL };
         }
     }
     // Uncompressed formats.
@@ -870,7 +916,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
                 {
                     OSG_INFO << "ReadDDSFile info : " << f.name
                         << " format is not supported" << std::endl;
-                    return NULL;
+                    return { NULL };
                 }
             }
         }
@@ -892,7 +938,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
             OSG_INFO << "ReadDDSFile info : ddsd.ddpfPixelFormat.dwRGBAlphaBitMask = 0x"
                 << std::hex << std::setw(8) << std::setfill('0')
                 << ddsd.ddpfPixelFormat.dwRGBAlphaBitMask << std::dec << std::endl;
-            return NULL;
+            return { NULL };
         }
     }
     else if (ddsd.ddpfPixelFormat.dwFlags & DDPF_LUMINANCE)
@@ -945,7 +991,7 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
             << " = 0x" << std::hex << std::setw(8) << std::setfill('0')
             << ddsd.ddpfPixelFormat.dwFlags << std::dec
             << ") in dds file, image not loaded." << std::endl;
-        return NULL;
+        return { NULL };
     }
 
     unsigned int size = ComputeImageSizeInBytes(s, t, r, pixelFormat, dataType, packing);
@@ -986,40 +1032,51 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
         if (!_istream.read((char*)palette, 1024))
         {
             OSG_WARN << "ReadDDSFile warning: couldn't read palette" << std::endl;
-            return NULL;
+            return { NULL };
         }
     }
 
-    unsigned char* imageData = new unsigned char[sizeWithMipmaps];
-    if (!imageData)
-    {
-        OSG_WARN << "ReadDDSFile warning: imageData == NULL" << std::endl;
-        return NULL;
-    }
 
-    // Read pixels in two chunks. First main image, next mipmaps.
-    if (!_istream.read((char*)imageData, size))
-    {
-        delete[] imageData;
-        OSG_WARN << "ReadDDSFile warning: couldn't read imageData" << std::endl;
-        return NULL;
-    }
+    //unsigned char* imageData = new unsigned char[sizeWithMipmaps];
+    //if (!imageData)
+    //{
+    //    OSG_WARN << "ReadDDSFile warning: imageData == NULL" << std::endl;
+    //    return { NULL };
+    //}
 
-    // If loading mipmaps in second chunk fails we may still use main image
-    if (size < sizeWithMipmaps && !_istream.read((char*)imageData + size, sizeWithMipmaps - size))
+    //// Read pixels in two chunks. First main image, next mipmaps.
+    //if (!_istream.read((char*)imageData, size))
+    //{
+    //    delete[] imageData;
+    //    OSG_WARN << "ReadDDSFile warning: couldn't read imageData" << std::endl;
+    //    return { NULL };
+    //}
+    std::vector<osg::Image*> images(6);
+    for (int i = 0; i < 6; i++)
     {
-        sizeWithMipmaps = size;
-        mipmap_offsets.resize(0);
-        OSG_WARN << "ReadDDSFile warning: couldn't read mipmapData" << std::endl;
-
-        // if mipmaps read failed we leave some not used overhead memory allocated past main image
-        // this memory will not be used but it will not cause leak in worst meaning of this word.
+        images[i] = new osg::Image();
     }
+    std::vector<unsigned char*> datas = collectCubeMapData(_istream, sizeWithMipmaps);
+  
+
+
+    //// If loading mipmaps in second chunk fails we may still use main image
+    //if (size < sizeWithMipmaps && !_istream.read((char*)imageData + size, sizeWithMipmaps - size))
+    //{
+    //    sizeWithMipmaps = size;
+    //    mipmap_offsets.resize(0);
+    //    OSG_WARN << "ReadDDSFile warning: couldn't read mipmapData" << std::endl;
+
+    //    // if mipmaps read failed we leave some not used overhead memory allocated past main image
+    //    // this memory will not be used but it will not cause leak in worst meaning of this word.
+    //}
+
+
 
     if (ddsd.ddpfPixelFormat.dwFlags & DDPF_PALETTEINDEXED8)
     {
         // Now we need to substitute the indexed image data with full RGBA image data.
-        unsigned char* convertedData = new unsigned char[sizeWithMipmaps * 4];
+        /*unsigned char* convertedData = new unsigned char[sizeWithMipmaps * 4];
         unsigned char* pconvertedData = convertedData;
         for (unsigned int i = 0; i < sizeWithMipmaps; i++)
         {
@@ -1031,31 +1088,63 @@ osg::Image* ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
             mipmap_offsets[i] *= 4;
         internalFormat = GL_RGBA;
         pixelFormat = GL_RGBA;
-        osgImage->setImage(s, t, r, internalFormat, pixelFormat, dataType, convertedData, osg::Image::USE_NEW_DELETE, packing);
+        osgImage->setImage(s, t, r, internalFormat, pixelFormat, dataType, convertedData, osg::Image::USE_NEW_DELETE, packing);*/
     }
     else
     {
-        osgImage->setImage(s, t, r, internalFormat, pixelFormat, dataType, imageData, osg::Image::USE_NEW_DELETE, packing);
+        for (unsigned int i = 0; i < 6;i++) {
+           
+            images[i]->setImage(s, t, r, internalFormat, pixelFormat, dataType, datas[i], osg::Image::USE_NEW_DELETE, packing);
+
+            /*float* floatData = (float*)cubeDatas[i];
+            std::cout << std::endl;
+            std::cout << "fdsafdfsaf";
+            for (int j = 0; j < 30; j++)
+            {
+                std::cout << " " << floatData[j];
+            }
+            std::cout << std::endl;*/
+
+        }
+       
     }
 
-    if (mipmap_offsets.size() > 0) osgImage->setMipmapLevels(mipmap_offsets);
+    if (mipmap_offsets.size() > 0)
+    {
+        for (auto img : images) {
+            img->setMipmapLevels(mipmap_offsets);
+        }
+    }
+        //osgImage->setMipmapLevels(mipmap_offsets);
 
     if (flipDDSRead) {
-        osgImage->setOrigin(osg::Image::BOTTOM_LEFT);
+        /*osgImage->setOrigin(osg::Image::BOTTOM_LEFT);*/
+        for (auto img : images)    img->setOrigin(osg::Image::BOTTOM_LEFT);
+          
+        
         if (!isDXTC || ((s > 4 && s % 4 == 0 && t > 4 && t % 4 == 0) || s <= 4)) // Flip may crash (access violation) or fail for non %4 dimensions (except for s<4). Tested with revision trunk 2013-02-22.
         {
             OSG_INFO << "Flipping dds on load" << std::endl;
-            osgImage->flipVertical();
+            for (auto img : images)    img->flipVertical();
         }
         else
         {
             OSG_WARN << "ReadDDSFile warning: Vertical flip was skipped. Image dimensions have to be multiple of 4." << std::endl;
         }
     }
+    //for (int i = 0; i < 6; i++)
+    //{
+    //      osg::ref_ptr<osg::Image> image = images[i];
+    //      osgDB::writeImageFile(*image.get(), "cccubemap"+toString(i)+".dds");
+    //      /* osg::ref_ptr<osg::Texture2D> hdr = new osg::Texture2D(image.get());*/
+    //   
 
+    //}
+    return images;
     // Return Image.
-    return osgImage.release();
+    //return osgImage.release();
 }
+
 
 bool WriteDDSFile2(const osg::Image* img, std::ostream& fout, bool autoFlipDDSWrite)
 {
@@ -1341,8 +1430,16 @@ bool WriteDDSFile2(const osg::Image* img, std::ostream& fout, bool autoFlipDDSWr
 }
 
 
-osg::Image* readImage(std::istream& fin, const osgDB::Options* options)
+
+
+std::vector<osg::Image*> readCubeImages(const std::string& file, const osgDB::Options* options)
 {
+
+    std::string fileName = osgDB::findDataFile(file, options);
+
+    if (fileName.empty()) return {};
+
+    osgDB::ifstream fin(fileName.c_str(), std::ios::in | std::ios::binary);
     bool dds_flip(false);
     bool dds_dxt1_rgba(false);
     bool dds_dxt1_rgb(false);
@@ -1359,21 +1456,35 @@ osg::Image* readImage(std::istream& fin, const osgDB::Options* options)
             if (opt == "dds_dxt1_detect_rgba") dds_dxt1_detect_rgba = true;
         }
     }
-    osg::Image* osgImage = ReadDDSFile2(fin, dds_flip);
-    if (osgImage == NULL) return nullptr;
+    auto osgImages = ReadDDSFile2(fin, dds_flip);
+    for (int i = 0; i < 6; i++)
+    {
+        osgImages[i]->setName("iiimage" + std::to_string(i));
+    }
+    
+    if (osgImages[0] == NULL) return {nullptr};
 
-    if (osgImage->getPixelFormat() == GL_COMPRESSED_RGB_S3TC_DXT1_EXT ||
-        osgImage->getPixelFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
+    if (osgImages[0]->getPixelFormat() == GL_COMPRESSED_RGB_S3TC_DXT1_EXT ||
+        osgImages[0]->getPixelFormat() == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT)
     {
         if (dds_dxt1_rgba)
+            
         {
-            osgImage->setPixelFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
-            osgImage->setInternalTextureFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
+            for (auto osgImage : osgImages)
+            {
+                osgImage->setPixelFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
+                osgImage->setInternalTextureFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
+            }
+           
         }
         else if (dds_dxt1_rgb)
         {
-            osgImage->setPixelFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
-            osgImage->setInternalTextureFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+            for (auto osgImage : osgImages)
+            {
+                osgImage->setPixelFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+                osgImage->setInternalTextureFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+            }
+            
         }
         else if (dds_dxt1_detect_rgba)
         {
@@ -1383,14 +1494,21 @@ osg::Image* readImage(std::istream& fin, const osgDB::Options* options)
             // temporarily set pixel format to GL_COMPRESSED_RGBA_S3TC_DXT1_EXT so
             // that the isImageTranslucent() method assumes that RGBA is present and then
             // checks the alpha values to see if they are all 1.0.
-            osgImage->setPixelFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
-            osgImage->setInternalTextureFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
-            if (!osgImage->isImageTranslucent())
+            for (auto osgImage : osgImages)
+            {
+                osgImage->setPixelFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
+                osgImage->setInternalTextureFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
+            }
+          
+            if (!osgImages[0]->isImageTranslucent())
             {
                 // image contains alpha's that are 1.0, so treat is as RGB
-                OSG_INFO << "Image with PixelFormat==GL_COMPRESSED_RGB_S3TC_DXT1_EXT is opaque." << std::endl;
-                osgImage->setPixelFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
-                osgImage->setInternalTextureFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+                for (auto osgImage : osgImages) {
+                    OSG_INFO << "Image with PixelFormat==GL_COMPRESSED_RGB_S3TC_DXT1_EXT is opaque." << std::endl;
+                    osgImage->setPixelFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+                    osgImage->setInternalTextureFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT);
+                }
+               
             }
             else
             {
@@ -1400,6 +1518,8 @@ osg::Image* readImage(std::istream& fin, const osgDB::Options* options)
         }
     }
 
-    return osgImage;
+    return osgImages;
 }
+
+
 

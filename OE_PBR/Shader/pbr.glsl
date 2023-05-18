@@ -34,7 +34,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 
 #define PI 3.14159265359f
 
-#pragma import_defines(OE_LIGHTING, OE_USE_PBR)
+#pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
 #pragma include BRDF.glsl
@@ -61,16 +61,6 @@ struct pbr_Material
     float alphaMaskCutoff;
     float aoStrength;
 };
-// void pbr_material_input(inout vec4 ignore_me)
-// {
-//     oe_pbr.baseColorFactor = vec4(1.0,1.0,1.0,1.0);
-//     oe_pbr.emissiveFactor = vec3(0.0,0.0,1.0);
-//     oe_pbr.metallicFactor = 0.0;
-//     oe_pbr.roughnessFactor = 0.5;
-//     oe_pbr.alphaMask = 0.1;
-//     oe_pbr.alphaMaskCutoff = 0.1;
-//     oe_pbr.aoStrength = 0.1;
-// }
 struct osg_LightSourceParameters 
 {   
    vec4 ambient;
@@ -94,14 +84,19 @@ uniform pbr_Material oe_pbr;
     uniform sampler2DArray pbrMaps;
 #endif
 
+#ifdef USE_ENV_MAP
+    uniform samplerCube irradianceMap;
+    uniform samplerCube prefilterMap;
+    uniform sampler2D brdfLUT;
+#endif
+
 #ifdef OE_USE_PBR
 void fragment_main_pbr(inout vec4 color)
 {
 #ifndef OE_LIGHTING
     return;
 #endif
-    //pbr_material_input(color);
-    vec3  baseColor = vec3(1.0);
+    vec3  baseColor = oe_pbr.baseColorFactor.rgb;
     float lightIntensity = 5.0;
     vec3  f0 = vec3(0.04);
 
@@ -127,16 +122,15 @@ void fragment_main_pbr(inout vec4 color)
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
     float NdotV = max(dot(n, v), 0.0f);
+    vec3 r = reflect(-v, n); 
 
     vec3 Lo = vec3(0.0);
 
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
-        
         // per-light radiance: view space?
         vec3 l = normalize(osg_LightSource[i].spotDirection.xyz - oe_posView);
         vec3 h = normalize(l + v);
-
 
         float NdotL = max(dot(n, l), 0.0f);
         float VdotH = max(dot(h, v), 0.0f);
@@ -144,14 +138,40 @@ void fragment_main_pbr(inout vec4 color)
         float NdotV = max(dot(n, v), 0.0f);
         
         vec3 lightColor = vec3(osg_LightSource[i].diffuse);
-
-
         Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao,emissive);
     }
 
-    vec3 ambient = osg_LightSource[0].ambient.rgb * diffuseColor * ao;
 
-    color.rgb = ambient+ Lo;
+    vec3 ambient =vec3(0.0);
+// #ifdef USE_ENV_MAP
+
+    vec3 n2 = normalize(normal);
+    vec3 v2 = normalize(-oe_posView);
+    vec3 F = fresnelSchlickRoughness(max(dot(n2,v2), 0.0), vec3(0.04), roughnessFactor);
+
+    vec3 kS = F;
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+
+    vec3 irradiance = texture(irradianceMap, oe_normal).rgb;
+    vec3 diffuse      = irradiance * baseColor;
+    
+    // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
+    const float MAX_REFLECTION_LOD = 4.0;
+    vec3 prefilteredColor = textureLod(prefilterMap, oe_normal,  roughnessFactor * MAX_REFLECTION_LOD).rgb;
+    vec2 brdf  = texture(brdfLUT, vec2(max(dot(oe_normal,v), 0.0), roughnessFactor)).rg;
+    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+
+    //ambient = (kD * diffuse + prefilteredColor) * ao;
+    ao = oe_pbr.aoStrength;
+    ambient = vec3(specular)*ao;
+    // color.rgb = ambient;
+    // return;
+// #else
+//     ambient = osg_LightSource[0].ambient.rgb * diffuseColor * ao;
+// #endif
+    color.rgb = Lo + ambient;
+    return;
 
     // tone map:
     color.rgb = color.rgb / (color.rgb + vec3(1.0));

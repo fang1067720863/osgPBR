@@ -154,6 +154,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EnvLight.cpp" />
+    <ClCompile Include="IBLBaker.cpp" />
     <ClCompile Include="imgui.cpp" />
     <ClCompile Include="imgui_demo.cpp" />
     <ClCompile Include="imgui_draw.cpp" />
@@ -166,10 +167,12 @@
     <ClCompile Include="PbrMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="ddsNew.h" />
     <ClInclude Include="EnvLight.h" />
     <ClInclude Include="Export.h" />
     <ClInclude Include="FlyCameraManipulator.h" />
     <ClInclude Include="GLTFV2Reader.h" />
+    <ClInclude Include="IBLBaker.h" />
     <ClInclude Include="PbrLightEffect.h" />
     <ClInclude Include="PbrMaterial.h" />
     <ClInclude Include="SnapImage.h" />

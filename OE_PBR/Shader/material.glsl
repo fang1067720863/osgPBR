@@ -1,13 +1,4 @@
 
-// struct material_output
-// {
-//     vec3  diffuseColor;
-//     float  metallic;
-//     float roughness;
-//     float normal;
-//     float ao;
-//     float emissive;
-// }output;
 #ifdef cascade
     oe_texcoord = abs(oe_texcoord);
     #ifdef OE_ENABLE_BASECOLOR_MAP

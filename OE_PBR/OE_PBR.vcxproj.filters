@@ -48,6 +48,9 @@
     <ClCompile Include="EnvLight.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="IBLBaker.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PbrLightEffect.h">
@@ -69,6 +72,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="SnapImage.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ddsNew.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="IBLBaker.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

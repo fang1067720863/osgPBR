@@ -34,47 +34,42 @@
 #include <osgViewer/Viewer>
 using namespace osgEarth;
 
-class IBLTechnique : public osg::Object {
-
+class EnvLightEffect:public osg::Object
+{
 public:
-    IBLTechnique() {}
-    IBLTechnique(osg::Group* _root, osgViewer::Viewer* _viewer):root(_root),viewer(_viewer){}
-    virtual ~IBLTechnique(){}
+    META_Object(osgEarth, EnvLightEffect)
 
-    virtual osg::Object* cloneType() const override { return new IBLTechnique(); }
-    virtual osg::Object* clone(const osg::CopyOp& copyop) const override { return new IBLTechnique(*this, copyop); }
+    /** Maintain a DisplaySettings singleton for objects to query at runtime.*/
+    static osg::ref_ptr<EnvLightEffect>& instance();
+    osg::Texture* getEnvCubeMap() { return _enable ? envCubeMap.get() : nullptr; }
+    osg::Texture* getIrridianceMap() { return _enable ? irridianceMap.get() : nullptr; }
+    osg::Texture* getPrefilterMap() { return _enable ? prefilterMap.get() : nullptr; }
+    osg::Texture* getBrdfLUTMap() { return _enable ? brdfLUTMap.get() : nullptr; }
 
-    IBLTechnique(const IBLTechnique& es, const osg::CopyOp& copyop = osg::CopyOp::SHALLOW_COPY){}
-    virtual bool isSameKindAs(const osg::Object* obj) const { return dynamic_cast<const IBLTechnique*>(obj) != NULL; } 
-    virtual const char* libraryName() const { return "osgShadow"; }
-    virtual const char* className() const { return "ShadowTechnique"; }
-    struct Config
+    bool enabled() const { return _enable; }
+    void setEnable(bool enable) {
+        _enable = enable;
+        if (enable && !_texturesReady) InitEnvMapAtlas();
+    }
+
+protected:
+    EnvLightEffect() :_enable(false), _texturesReady(false){}
+    EnvLightEffect(const std::string& envCubeFile):_enable(false), _texturesReady(false)
     {
-        bool baked{ false };
-    };
-    void startUp();
 
-    void createIrridiancePass();
 
-    void createPrefilterPass();
+    }
+    
 
-    void createBrdfLUTPass();
-
-    void createHDRCubePass();
-
-    void createTextures();
-
-    osg::Node* createSlaveCameras(osg::Node* box, osg::Texture* tex, unsigned int level = 0,unsigned int w = 256, unsigned int h = 256, bool generateMipmap = false);
-
-    osg::ref_ptr<osg::Node> createHDRBox();
-
+    void changeEnvMap() {}
+    void InitEnvMapAtlas();
 private:
+    EnvLightEffect(const EnvLightEffect& rhs, const osg::CopyOp& copyop = osg::CopyOp::DEEP_COPY_ALL) {  }
+    bool _enable;
+    bool _texturesReady;
     osg::ref_ptr<osg::TextureCubeMap> envCubeMap;
     osg::ref_ptr<osg::TextureCubeMap> irridianceMap;
     osg::ref_ptr<osg::TextureCubeMap> prefilterMap;
     osg::ref_ptr<osg::Texture2D> brdfLUTMap;
-    osg::ref_ptr<osg::Texture2D> hdrMap;
-
-    osg::Group* root;
-    osgViewer::Viewer* viewer;
 };
+

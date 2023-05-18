@@ -12,6 +12,7 @@
 #include<osgEarth/Registry>
 #include<osgEarth/Math>
 #include<osgDB/ReadFile>
+#include"EnvLight.h"
 
 
 void osgEarth::StandardPBRMaterial::setTextureAttribute(TextureEnum mapEnum, const std::string& fileName, const std::string& defineName, StateAttribute::OverrideValue value)
@@ -167,7 +168,6 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
     static const std::string ALPHAMASKCUTOFF = UPREFIX "alphaMaskCutoff";
     static const std::string AMBIENTOCCLUSION = UPREFIX "aoStrength";
 
-
     osgEarth::StandardPBRMaterial* material = static_cast<osgEarth::StandardPBRMaterial*>(attr);
     for (unsigned int i = 0; i < attr->getNumParents(); i++)
     {
@@ -191,6 +191,31 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             auto textureInfo = iter->second;
             auto enable = textureInfo._imageValid ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
             stateSet->setDefine(textureInfo._defineKey, textureInfo._defineVal, enable);
+        }
+
+        if (material->getReceiveEnvLight()&& EnvLightEffect::instance()->enabled())
+        {
+            stateSet->setDefine("USE_ENV_MAP", "1");
+            
+            osg::Texture* diffuseEnvMap = EnvLightEffect::instance()->getIrridianceMap();
+            unit = 1;
+            stateSet->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
+            stateSet->getOrCreateUniform("irradianceMap", osg::Uniform::SAMPLER_CUBE)->set(unit);
+
+            osg::Texture* specularEnvMap = EnvLightEffect::instance()->getPrefilterMap();
+            unit = 2;
+            stateSet->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
+            stateSet->getOrCreateUniform("prefilterMap", osg::Uniform::SAMPLER_CUBE)->set(unit);
+
+            osg::Texture* brdfLUTMap = EnvLightEffect::instance()->getBrdfLUTMap();
+            unit = 3;
+            stateSet->setTextureAttributeAndModes(unit, brdfLUTMap, osg::StateAttribute::ON);
+            stateSet->getOrCreateUniform("brdfLUT", osg::Uniform::SAMPLER_2D)->set(unit);
+
+           /* osg::Texture* envCubeMap = EnvLightEffect::instance()->getEnvCubeMap();
+            unit = 4;
+            stateSet->setTextureAttributeAndModes(unit, tex, osg::StateAttribute::ON);
+            stateSet->getOrCreateUniform("envCubeMap", osg::Uniform::SAMPLER_CUBE)->set(unit);*/
         }
 
     }

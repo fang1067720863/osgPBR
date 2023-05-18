@@ -93,6 +93,8 @@ namespace osgEarth {
         PROPERTY_DEFAULT(float, AlphaMaskCutoff, 0.2)
         PROPERTY_DEFAULT(float, AoStrength, 0.1)
 
+        PROPERTY_DEFAULT(bool,ReceiveEnvLight, false)
+
     
     protected:
         virtual ~StandardPBRMaterial() {};
