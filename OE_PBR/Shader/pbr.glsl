@@ -34,7 +34,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 
 #define PI 3.14159265359f
 
-#pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP)
+#pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
 #pragma include BRDF.glsl
@@ -49,7 +49,6 @@ in vec3 vp_Normal;
 // in pbr_Material oe_pbr;
 
 
-// flat in oe_tex_lod_index
 // varying decorated with flat, the data will not change when pass from vs to ps, and not introplote ,every fragment share same data
 struct pbr_Material
 {
@@ -85,10 +84,22 @@ uniform pbr_Material oe_pbr;
 #endif
 
 #ifdef USE_ENV_MAP
+    #ifdef USE_ENV_CUBE_UV
     uniform samplerCube irradianceMap;
     uniform samplerCube prefilterMap;
+    #else
+    uniform sampler2D irradianceMap;
+    uniform sampler2D prefilterMap;
+    #endif
     uniform sampler2D brdfLUT;
 #endif
+
+const vec2 invAtan = vec2(0.1591, 0.3183);
+vec2 sphericalUV(vec3 v)
+{
+    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+    uv *= invAtan; uv += vec2(0.5); return uv;
+}
 
 #ifdef OE_USE_PBR
 void fragment_main_pbr(inout vec4 color)
@@ -143,7 +154,7 @@ void fragment_main_pbr(inout vec4 color)
 
 
     vec3 ambient =vec3(0.0);
-// #ifdef USE_ENV_MAP
+ #ifdef USE_ENV_MAP
 
     vec3 n2 = normalize(normal);
     vec3 v2 = normalize(-oe_posView);
@@ -152,26 +163,29 @@ void fragment_main_pbr(inout vec4 color)
     vec3 kS = F;
     vec3 kD = 1.0 - kS;
     kD *= 1.0 - metallic;
-
+#ifdef USE_ENV_CUBE_UV
     vec3 irradiance = texture(irradianceMap, oe_normal).rgb;
+#else
+    vec3 irradiance = texture(irradianceMap, sphericalUV(oe_normal)).rgb;
+#endif
     vec3 diffuse      = irradiance * baseColor;
     
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     const float MAX_REFLECTION_LOD = 4.0;
+#ifdef USE_ENV_CUBE_UV
     vec3 prefilteredColor = textureLod(prefilterMap, oe_normal,  roughnessFactor * MAX_REFLECTION_LOD).rgb;
+#else
+    vec3 prefilteredColor = textureLod(prefilterMap, sphericalUV(oe_normal),  roughnessFactor * MAX_REFLECTION_LOD).rgb;
+#endif
     vec2 brdf  = texture(brdfLUT, vec2(max(dot(oe_normal,v), 0.0), roughnessFactor)).rg;
     vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
 
-    //ambient = (kD * diffuse + prefilteredColor) * ao;
-    ao = oe_pbr.aoStrength;
-    ambient = vec3(specular)*ao;
-    // color.rgb = ambient;
-    // return;
-// #else
-//     ambient = osg_LightSource[0].ambient.rgb * diffuseColor * ao;
-// #endif
+    ambient = (kD * diffuse + specular) * ao;
+    
+#else
+   ambient = osg_LightSource[0].ambient.rgb * diffuseColor * ao;
+#endif
     color.rgb = Lo + ambient;
-    return;
 
     // tone map:
     color.rgb = color.rgb / (color.rgb + vec3(1.0));

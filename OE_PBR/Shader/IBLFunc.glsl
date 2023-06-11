@@ -12,6 +12,18 @@ float DistributionGGX(vec3 N, vec3 H, float roughness)
 
     return nom / denom;
 }
+
+float specularD(float roughness, float NoH)
+{
+    float r2 = roughness * roughness;
+    float NoH2 = NoH * NoH;
+    // float a = 1.0/(3.14159*r2*pow(NoH, 4));
+    // float b = exp((NoH2 - 1) / r2 * NoH2);
+    // return  a * b;
+
+    return r2 / pow(NoH2 * (r2 - 1.0) + 1.0, 2.0);
+}
+
 // ----------------------------------------------------------------------------
 // http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
 // efficient VanDerCorpus calculation.
@@ -52,6 +64,8 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
 	vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
 	return normalize(sampleVec);
 }
+
+
 
 float GeometrySchlickGGX(float NdotV, float roughness)
 {
