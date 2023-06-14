@@ -13,41 +13,106 @@
 #include <osg/RenderInfo>
 
 #include <osgDB/WriteFile>
-
-
-struct SnapImage : public osg::Camera::DrawCallback
+#include"ddsNew.h"
+class SwitchOption
 {
-    SnapImage(const std::string& filename, osg::Image* image, osg::ref_ptr<osg::Texture2D> texture) :
+public:
+    SwitchOption() :once(false) {}
+
+    mutable bool once;
+};
+
+struct SnapImage : public SwitchOption, public osg::Camera::DrawCallback
+{
+    SnapImage(const std::string& filename, osg::Image* image) :
         _filename(filename),
-        _snapImage(false),
         _image(image),
-        _tex(texture)
+        _tex(nullptr)
     {
        // _image = new osg::Image;
     }
-
+    SnapImage(const std::string& filename, osg::Image* image, osg::Texture2D * tex) :
+        _filename(filename),
+        _image(image),
+        _tex(tex)
+    {
+        // _image = new osg::Image;
+    }
     virtual void operator () (osg::RenderInfo& renderInfo) const
     {
 
-        if (!_snapImage) return;
-
+        if (!once) return;
+        osg::ref_ptr<osg::State> state = new osg::State;
+        state->initializeExtensionProcs();
         osg::notify(osg::NOTICE) << "Camera callback" << std::endl;
 
         osg::Camera* camera = renderInfo.getCurrentCamera();
         osg::Viewport* viewport = camera ? camera->getViewport() : 0;
 
-        osg::notify(osg::NOTICE) << "Camera callback " << camera << " " << viewport << std::endl;
+        GLboolean binding1D = GL_FALSE, binding2D = GL_FALSE, bindingRect = GL_FALSE, binding3D = GL_FALSE, binding2DArray = GL_FALSE, bindingCubeMap = GL_FALSE;
 
-        osgDB::writeImageFile(*_image, _filename);
-        float* data = (float*)_image->data(0, 0);
-        fprintf(stderr, "Float pixel data: r %e g %e b %e\n", data[0], data[1], data[2]);
+        glGetBooleanv(GL_TEXTURE_BINDING_1D, &binding1D);
+        glGetBooleanv(GL_TEXTURE_BINDING_2D, &binding2D);
+        glGetBooleanv(GL_TEXTURE_BINDING_RECTANGLE, &bindingRect);
+        glGetBooleanv(GL_TEXTURE_BINDING_3D, &binding3D);
+        glGetBooleanv(GL_TEXTURE_BINDING_CUBE_MAP, &bindingCubeMap);
 
-        osg::notify(osg::NOTICE) << "Taken screenshot, and written to '" << _filename << "'" << std::endl;
-     
+        if (binding1D)
+        {
+            std::cout << "1D" << std::endl;
+        }
+        if (binding2D)
+        {
+            unsigned contextID = renderInfo.getContextID();
+            std::cout<<"contextID"<<contextID<<std::endl;
+            _tex->getImage()->readImageFromCurrentTexture(contextID, true);
+            osgDB::writeImageFile(*_tex->getImage(), _filename);
+            once = false;
+        }
+        if (bindingRect)
+        {
+            std::cout << "RecD" << std::endl;
+        }
+        if (binding3D)
+        {
+            std::cout << "3D" << std::endl;
+        }
+        if (bindingCubeMap)
+        {
+            std::cout << "CubeD" << std::endl;
+        }
+
+        //if (true)
+        //{
+        //    _tex->setUnRefImageDataAfterApply(false);
+
+        // 
+        //    unsigned contextID = renderInfo.getContextID();
+        //    std::cout<<"contextID"<<contextID<<std::endl;
+        //   _tex->getImage()->readImageFromCurrentTexture(contextID, true);
+        //    osgDB::writeImageFile(*_tex->getImage(), _filename);
+        //}
+        //else {
+        //   // _image->readImageFromCurrentTexture(0, true);
+        //    osgDB::writeImageFile(*_image, _filename);
+        //}
+        
+
+        //
+       /* osg::Camera* cam = nullptr;*/
+
+      
+        //_image->readPixels(0, 0, _tex->getTextureWidth(), _tex->getTextureHeight(), _image->getPixelFormat(), _image->getDataType());
+        //osgDB::writeImageFile(*_image, _filename);
         //float* data = (float*)_image->data(0, 0);
         //fprintf(stderr, "Float pixel data: r %e g %e b %e\n", data[0], data[1], data[2]);
 
-        //osgDB::writeImageFile(*_image, _filename);
+        //osg::notify(osg::NOTICE) << "Taken screenshot, and written to '" << _filename << "'" << std::endl;
+     
+       /* float* data = (float*)_image->data(0, 0);
+        fprintf(stderr, "Float pixel data: r %e g %e b %e\n", data[0], data[1], data[2]);*/
+
+        
 
         //osg::notify(osg::NOTICE) << "Taken screenshot, and written to '" << _filename << "'" << std::endl;
 
@@ -59,23 +124,133 @@ struct SnapImage : public osg::Camera::DrawCallback
           
         }*/
 
-        _snapImage = false;
+       
     }
 
     std::string                         _filename;
-    mutable bool                        _snapImage;
     osg::Image*    _image;
-    osg::ref_ptr<osg::Texture2D>       _tex;
+    osg::Texture2D* _tex;
 };
 
+
+struct SnapMipmap: public SwitchOption, public osg::Camera::DrawCallback
+{
+
+    SnapMipmap(const std::string& filename, std::vector<osg::Image*> images):
+    _images(images),
+    _filename(filename)
+    {
+        // _image = new osg::Image;
+    }
+
+    virtual void operator () (osg::RenderInfo& renderInfo) const
+    {
+        if (!once) return;
+        once = false;
+        size_t miplevel = _images.size();
+
+        osg::ref_ptr<osg::Image> image = new osg::Image;
+        osg::Image::MipmapDataType mipmapData;
+        unsigned int width = _images[0]->s();
+        unsigned int height = _images[0]->t();
+        
+        unsigned int totalSize = 0;
+        unsigned i;
+        unsigned int pixelSize = 16; //rgba * GL_FLOAT
+        for (i = 0; width > 0 && i < miplevel; width >>= 1, height>>=1, ++i)
+        {
+            if (i > 0) mipmapData.push_back(totalSize);
+            totalSize += width * height * pixelSize;
+        }
+
+        unsigned char* ptr = new unsigned char[totalSize];
+        image->setImage(_images[0]->s(), _images[0]->t(), 1, GL_RGBA32F_ARB, GL_RGBA, GL_FLOAT, ptr, osg::Image::USE_NEW_DELETE, 1);
+        image->setMipmapLevels(mipmapData);
+
+        unsigned int size = width * height;
+        for (i = 0; size > 0,i < miplevel ; size >>= 2,  ++i)
+        {
+            for (osg::Image::DataIterator itr(_images[i]); itr.valid(); ++itr)
+            {
+                memcpy(ptr, itr.data(), itr.size());
+                ptr += itr.size();
+            }
+        }
+        //osgDB::writeImageFile(*image, _filename);
+        writeDDSNew(*image, _filename);
+
+    }
+
+    std::vector<osg::Image*> _images;
+    std::string _filename;
+};
+
+
+class SnapImageV2 : public SwitchOption,public osg::Drawable::DrawCallback
+{
+public:
+    SnapImageV2(){}
+
+    virtual void drawImplementation(osg::RenderInfo& renderInfo, const osg::Drawable* drawable) const
+    {
+        unsigned int contextId = renderInfo.getContextID();
+        drawable->drawImplementation(renderInfo);
+        if (!once)
+        {
+            return;
+        }
+        GLboolean binding1D = GL_FALSE, binding2D = GL_FALSE, bindingRect = GL_FALSE, binding3D = GL_FALSE, binding2DArray = GL_FALSE, bindingCubeMap = GL_FALSE;
+
+        glGetBooleanv(GL_TEXTURE_BINDING_1D, &binding1D);
+        glGetBooleanv(GL_TEXTURE_BINDING_2D, &binding2D);
+        glGetBooleanv(GL_TEXTURE_BINDING_RECTANGLE, &bindingRect);
+        glGetBooleanv(GL_TEXTURE_BINDING_3D, &binding3D);
+        glGetBooleanv(GL_TEXTURE_BINDING_CUBE_MAP, &bindingCubeMap);
+
+        if (binding1D)
+        {
+            std::cout << "1D" << std::endl;
+        }
+        if (binding2D)
+        {
+            std::cout << "2D" << std::endl;
+        }
+        if (bindingRect)
+        {
+            std::cout << "RecD" << std::endl;
+        }
+        if (binding3D)
+        {
+            std::cout << "3D" << std::endl;
+        }
+        if (bindingCubeMap)
+        {
+            std::cout << "CubeD" << std::endl;
+        }
+       /* osg::GLBufferObject* glbo = _dyn->getBufferObject()->getOrCreateGLBufferObject(contextId);
+        glbo->bindBuffer();
+        GLfloat* data = (GLfloat*)glbo->_persistentDMA + glbo->getOffset(_dyn->getBufferIndex());
+        if (data)
+        {
+            _rate += 0.01;
+            float value = sinf(_rate) * _scale + _offset;
+            for (int i = 0; i < 4; i++) {
+                data[i * 4 + 0] = float(i) * 0.25 * value;
+            }
+            glbo->commitDMA(_dyn->getBufferIndex());
+        }*/
+       
+    }
+
+};
 
 
 struct SnapeImageHandler : public osgGA::GUIEventHandler
 {
 
-    SnapeImageHandler(int key, SnapImage* si) :
+    SnapeImageHandler(int key, SwitchOption* si) :
         _key(key),
-        _snapImage(si) {}
+        _switch(si) {}
 
     bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa)
     {
@@ -85,22 +260,11 @@ struct SnapeImageHandler : public osgGA::GUIEventHandler
         {
         case(osgGA::GUIEventAdapter::KEYUP):
         {
-           /* if (ea.getKey() == 'o')
-            {
-                osgViewer::View* view = dynamic_cast<osgViewer::View*>(&aa);
-                osg::Node* node = view ? view->getSceneData() : 0;
-                if (node)
-                {
-                    osgDB::writeNodeFile(*node, "hud.osgt");
-                    osgDB::writeNodeFile(*node, "hud.osgb");
-                }
-                return true;
-            }*/
 
             if (ea.getKey() == _key)
             {
                 osg::notify(osg::NOTICE) << "event handler" << std::endl;
-                _snapImage->_snapImage = true;
+                _switch->once = true;
                 return true;
             }
 
@@ -114,5 +278,6 @@ struct SnapeImageHandler : public osgGA::GUIEventHandler
     }
 
     int                     _key;
-    osg::ref_ptr<SnapImage> _snapImage;
+    SwitchOption* _switch;
+  /*  osg::ref_ptr<SnapImage> _snapImage;*/
 };

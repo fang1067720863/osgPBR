@@ -195,22 +195,29 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
 
         if (material->getReceiveEnvLight()&& EnvLightEffect::instance()->enabled())
         {
-            stateSet->setDefine("USE_ENV_MAP", "1");
+           
+            auto useCubeUV = EnvLightEffect::instance()->useCubeUV() ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
+            stateSet->setDefine("USE_ENV_MAP");
+
+            auto uniformType = EnvLightEffect::instance()->useCubeUV() ? osg::Uniform::SAMPLER_CUBE : osg::Uniform::SAMPLER_2D;
+            stateSet->setDefine("USE_ENV_CUBE_UV", useCubeUV);
             
             osg::Texture* diffuseEnvMap = EnvLightEffect::instance()->getIrridianceMap();
             unit = 1;
             stateSet->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform("irradianceMap", osg::Uniform::SAMPLER_CUBE)->set(unit);
+            stateSet->getOrCreateUniform("irradianceMap", uniformType)->set("8");
 
             osg::Texture* specularEnvMap = EnvLightEffect::instance()->getPrefilterMap();
             unit = 2;
             stateSet->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform("prefilterMap", osg::Uniform::SAMPLER_CUBE)->set(unit);
+            stateSet->getOrCreateUniform("prefilterMap", uniformType)->set("7");
 
             osg::Texture* brdfLUTMap = EnvLightEffect::instance()->getBrdfLUTMap();
             unit = 3;
             stateSet->setTextureAttributeAndModes(unit, brdfLUTMap, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform("brdfLUT", osg::Uniform::SAMPLER_2D)->set(unit);
+            auto uniform = new osg::Uniform("brdfLUT", 3);
+            stateSet->addUniform(uniform);
+           // stateSet->getOrCreateUniform("brdfLUT", osg::Uniform::SAMPLER_2D)->set("6");
 
            /* osg::Texture* envCubeMap = EnvLightEffect::instance()->getEnvCubeMap();
             unit = 4;

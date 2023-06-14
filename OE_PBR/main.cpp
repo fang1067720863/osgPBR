@@ -36,7 +36,8 @@
 #include"GLTFV2Reader.h"
 #include"FlyCameraManipulator.h"
 #include"EnvLight.h"
-
+#include"IBLBaker.h"
+#include"CubeToQuad.h"
 //#define LC "[viewer] "
 
 template<typename T>
@@ -427,13 +428,15 @@ int main(int argc, char** argv)
     auto* vp = osgEarth::VirtualProgram::get(gltfModel.getNode()->getOrCreateStateSet());
     vp->setShaderLogging(true);
 
-    //group->addChild(gltfModel.getNode());
+    group->addChild(gltfModel.getNode());
     auto sphere = CreatePbrSphere();
 
     osg::Light* lightState = new osg::Light;
     auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet(), lightState);
 
-    group->addChild(sphere.get());
+    //group->addChild(sphere.get());
+
+   
 
 
     auto func = [&](osg::MatrixTransform* node, osg::NodeVisitor* nv)
@@ -447,9 +450,7 @@ int main(int argc, char** argv)
     
     group->addChild(light);
 
-    
 
-    //group->addChild(node);
     viewer.setReleaseContextAtEndOfFrameHint(false);
 
     viewer.addEventHandler(new osgViewer::HelpHandler(arguments.getApplicationUsage()));

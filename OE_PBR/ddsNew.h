@@ -1174,7 +1174,7 @@ bool WriteDDSFile2(const osg::Image* img, std::ostream& fout, bool autoFlipDDSWr
     // Get image properties
     unsigned int dataType = img->getDataType();
     unsigned int pixelFormat = img->getPixelFormat();
-    //unsigned int internalFormat = img->getInternalTextureFormat();
+    unsigned int internalFormat = img->getInternalTextureFormat();
     //unsigned int components     = osg::Image::computeNumComponents(pixelFormat);
     unsigned int pixelSize = osg::Image::computePixelSizeInBits(pixelFormat, dataType);
     unsigned int imageSize = img->getTotalSizeInBytes();
@@ -1220,6 +1220,11 @@ bool WriteDDSFile2(const osg::Image* img, std::ostream& fout, bool autoFlipDDSWr
         ddpf.dwRGBBitCount = pixelSize;
         ddsd.lPitch = img->getRowSizeInBytes();
         SD_flags |= DDSD_PITCH;
+        if (internalFormat == GL_RGBA32F_ARB)
+        {
+            PF_flags |= DDPF_FOURCC;
+            ddpf.dwFourCC = 0x00000074;
+        }
     }
     break;
     case GL_BGRA:
@@ -1430,7 +1435,17 @@ bool WriteDDSFile2(const osg::Image* img, std::ostream& fout, bool autoFlipDDSWr
 }
 
 
+bool writeDDSNew(const osg::Image& image, const std::string& file)
+{
+    std::string ext = osgDB::getFileExtension(file);
+    /*if (!acceptsExtension(ext)) return WriteResult::FILE_NOT_HANDLED;*/
 
+    osgDB::ofstream fout(file.c_str(), std::ios::out | std::ios::binary);
+    if (!fout) return false;
+    WriteDDSFile2(&image, fout,false);
+  
+    return true;
+}
 
 std::vector<osg::Image*> readCubeImages(const std::string& file, const osgDB::Options* options)
 {

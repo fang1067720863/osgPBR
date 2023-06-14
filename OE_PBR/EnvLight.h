@@ -31,6 +31,7 @@
 #include <osgEarth/Common>
 #include <osgEarth/Threading>
 #include"Export.h"
+
 #include <osgViewer/Viewer>
 using namespace osgEarth;
 
@@ -47,11 +48,12 @@ public:
     osg::Texture* getBrdfLUTMap() { return _enable ? brdfLUTMap.get() : nullptr; }
 
     bool enabled() const { return _enable; }
+    bool useCubeUV() const { return _useCubeUV; }
     void setEnable(bool enable) {
         _enable = enable;
         if (enable && !_texturesReady) InitEnvMapAtlas();
     }
-
+   
 protected:
     EnvLightEffect() :_enable(false), _texturesReady(false){}
     EnvLightEffect(const std::string& envCubeFile):_enable(false), _texturesReady(false)
@@ -67,9 +69,10 @@ private:
     EnvLightEffect(const EnvLightEffect& rhs, const osg::CopyOp& copyop = osg::CopyOp::DEEP_COPY_ALL) {  }
     bool _enable;
     bool _texturesReady;
-    osg::ref_ptr<osg::TextureCubeMap> envCubeMap;
-    osg::ref_ptr<osg::TextureCubeMap> irridianceMap;
-    osg::ref_ptr<osg::TextureCubeMap> prefilterMap;
+    bool _useCubeUV{ false };
+    osg::ref_ptr<osg::Texture> envCubeMap;
+    osg::ref_ptr<osg::Texture> irridianceMap;
+    osg::ref_ptr<osg::Texture> prefilterMap;
     osg::ref_ptr<osg::Texture2D> brdfLUTMap;
 };
 

@@ -167,6 +167,7 @@
     <ClCompile Include="PbrMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CubeToQuad.h" />
     <ClInclude Include="ddsNew.h" />
     <ClInclude Include="EnvLight.h" />
     <ClInclude Include="Export.h" />
