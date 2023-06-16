@@ -33,7 +33,8 @@ namespace osgEarth {
     #define OE_MATERIAL (osg::StateAttribute::Type)(osg::StateAttribute::MATERIAL)
     class OE_MATERIAL_PULGIN StandardPBRMaterial : public osg::StateAttribute
     {
-        friend class PBRMaterialCallback;
+        friend class PBRMaterialCallback; 
+        friend class ExtensionedMaterialCallback;
     public:
         enum TextureEnum
         {
@@ -86,8 +87,8 @@ namespace osgEarth {
 
         PROPERTY_DEFAULT(Vec4, BaseColorFactor, Vec4(1.0, 1.0, 1.0, 1.0))
         PROPERTY_DEFAULT(Vec3, EmissiveFactor, Vec3(0.1, 0.1, 0.1))
-        PROPERTY_DEFAULT(float, RoughnessFactor, 0.1)
-        PROPERTY_DEFAULT(float, MetallicFactor, 0.1)
+        PROPERTY_DEFAULT(float, RoughnessFactor, 1.0f)
+        PROPERTY_DEFAULT(float, MetallicFactor, 1.0f)
         PROPERTY_DEFAULT(float, AlphaMask, 0.1)
         PROPERTY_DEFAULT(AlphaMode, AlphaMode, AlphaMode::Blend)
         PROPERTY_DEFAULT(float, AlphaMaskCutoff, 0.2)
@@ -99,18 +100,51 @@ namespace osgEarth {
     protected:
         virtual ~StandardPBRMaterial() {};
         osg::Texture* createTextureAtlas();
+        osg::Texture* createTexture(const std::string& imagePath);
 
     private:
         std::string getDefaultDefineName(TextureEnum mapEnum);
 
         TextureMaps _maps;
+
+        unsigned int _texUnitCnt;
        
     };
 
     class OE_MATERIAL_PULGIN PBRMaterialCallback : public osg::StateAttributeCallback {
     public:
         virtual void operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv);
+    };
 
+    class OE_MATERIAL_PULGIN ExtensionedMaterial : public StandardPBRMaterial
+    {
+        using CustomTextureMaps = std::map<std::string, TextureInfo>;
+    public:
+        const std::string& materialFile() const { return _materialPath; }
+        const CustomTextureMaps customMaps() const { return _customMaps; }
+        void setMaterialFile(const std::string& file) { _materialPath = file; }
+
+        void addTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName, unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON){
+            if (_customMaps.find(name) == _customMaps.end())
+            {
+                _customMaps[name] = TextureInfo();
+
+            }
+            auto& info = _customMaps[name];
+            info._path = fileName;
+            info._defineKey = defineName;
+        }
+
+    private:
+        std::string _materialPath;
+
+      
+        CustomTextureMaps _customMaps;
+    };
+
+    class OE_MATERIAL_PULGIN ExtensionedMaterialCallback : public PBRMaterialCallback {
+    public:
+        virtual void operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv);
     };
 }
 

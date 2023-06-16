@@ -128,7 +128,7 @@ void fragment_main_pbr(inout vec4 color)
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
     diffuseColor *= 1.0 - metallic;
 
-    #pragma include material.glsl
+    #Material
 
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);

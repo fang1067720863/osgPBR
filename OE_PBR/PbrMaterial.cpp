@@ -90,6 +90,31 @@ void osgEarth::StandardPBRMaterial::setTextureEnable(TextureEnum mapEnum, StateA
 
 }
 
+osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& imagePath)
+{
+    float s = -1.0f, t = -1.0f;
+
+    osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(imagePath);
+
+    if (image.valid() == false)
+    {
+        return nullptr;
+    }
+    osg::Texture* tex = new osg::Texture2D();
+
+    tex->setFilter(tex->MIN_FILTER, tex->NEAREST_MIPMAP_LINEAR);
+    tex->setFilter(tex->MAG_FILTER, tex->NEAREST_MIPMAP_LINEAR);
+    tex->setWrap(tex->WRAP_S, tex->REPEAT);
+    tex->setWrap(tex->WRAP_T, tex->REPEAT);
+    tex->setUnRefImageDataAfterApply(osgEarth::Registry::instance()->unRefImageDataAfterApply().get());
+    tex->setMaxAnisotropy(4.0);
+
+    // Let the GPU do it since we only download this at startup
+    tex->setUseHardwareMipMapGeneration(true);
+
+    return tex;
+}
+
 osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
 {
     // Creates a texture array containing all the billboard images.
@@ -156,7 +181,6 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
 
     return tex;
 }
-
 void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
 {
 
@@ -225,5 +249,26 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             stateSet->getOrCreateUniform("envCubeMap", osg::Uniform::SAMPLER_CUBE)->set(unit);*/
         }
 
+    }
+}
+
+void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
+{
+    PBRMaterialCallback::operator()(attr, nv);
+    osgEarth::ExtensionedMaterial* material = static_cast<osgEarth::ExtensionedMaterial*>(attr);
+    for (unsigned int i = 0; i < attr->getNumParents(); i++)
+    {
+        const auto& maps = material->customMaps();
+        auto iter = maps.begin();
+        for (; iter != maps.end(); iter++)
+        {
+            osg::StateSet* stateSet = attr->getParent(i);
+            auto uniformKey = iter->first;
+            
+            unsigned int unit = 6;
+            osg::Texture* tex = material->createTexture(iter->second._path);
+            stateSet->setTextureAttributeAndModes(unit, tex, osg::StateAttribute::ON);
+            stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D, unit);
+        }
     }
 }

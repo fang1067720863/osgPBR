@@ -17,7 +17,8 @@
 #include <osgDB/FileUtils>
 #include <osgDB/FileNameUtils>
 #include <osgDB/ReadFile>
-
+#include <osgEarth/Registry>
+#include <osgEarth/ShaderFactory>
 #include<osg/TexEnv>
 #include<osg/Texture2DArray>
 using namespace osgEarth;
@@ -26,7 +27,7 @@ using namespace osgEarth::Util;
 
 //ShadersGL3 osgEarth::Util::PbrShadersFactory::s_gl3;
 //ShadersGL4 osgEarth::Util::PbrShadersFactory::s_gl4;
-
+class ExtensionedMaterial;
 
 const char* pbr_shader = R"(
     #pragma vp_name       Phong Lighting Vertex Stage
@@ -436,12 +437,13 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
         VirtualProgram* pbrVP = VirtualProgram::getOrCreate(stateset);
         
         bool localTest = true;
+        osg::ref_ptr<osgDB::Options> dbo = new osgDB::Options();
         if (localTest)
         {
             auto shaderPath = "..//..//OE_PBR//Shader";
             auto shaderPath2 = "..//OE_PBR//Shader";
 
-            osg::ref_ptr<osgDB::Options> dbo = new osgDB::Options();
+            
 
 
             if (osgDB::fileExists(osgEarth::getAbsolutePath(shaderPath)))
@@ -453,14 +455,61 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
             }
 
 
-            shaders.load(pbrVP, "pbr.glsl", dbo.get());
+          
         }
         else {
-            ShaderLoader::load(pbrVP, pbr_shader);
+           // ShaderLoader::load(pbrVP, pbr_shader);
         }
-       
-  
+     
+        auto material = stateset->getAttribute(osg::StateAttribute::MATERIAL);
+        std::string materialFile = "material.glsl";
+        std::string materialSnippet = "";
+        if (osgEarth::ExtensionedMaterial* mat = dynamic_cast<osgEarth::ExtensionedMaterial*>(material))
+        {
+            const std::string fileName = mat->materialFile();
+            if (!fileName.empty())
+            {
+                materialFile = fileName;
+            }
+        }
 
+        URIContext context(dbo.get());
+        URI uri(materialFile, context);
+
+        std::string path = osgDB::findDataFile(uri.full(), dbo);
+        if (!path.empty())
+        {
+            materialSnippet = URI(path, context).getString(dbo);
+            if (!materialSnippet.empty())
+            {
+                OE_DEBUG << "Loaded materail shader " << materialFile << " from " << path << "\n";
+            }
+        }
+        
+        osgEarth::Registry::instance()->getShaderFactory()->addPreProcessorCallback(
+            "MaterialReplace",
+            [this, materialSnippet](std::string& output)
+            {
+                const std::string token("#Material");
+                std::string::size_type statementPos = output.find(token);
+                if (statementPos == std::string::npos)
+                    return;
+
+                std::string::size_type startPos = output.find_first_not_of(" \t", statementPos + token.length());
+                if (startPos == std::string::npos)
+                    return;
+
+                std::string::size_type endPos = output.find('\n', startPos);
+                if (endPos == std::string::npos)
+                    return;
+
+                std::string statement(output.substr(statementPos, endPos - statementPos));
+
+                Strings::replaceIn(output, statement, materialSnippet);
+            }
+        );
+  
+        shaders.load(pbrVP, "pbr.glsl", dbo.get());
 
     }
 }

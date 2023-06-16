@@ -17,6 +17,7 @@
 #include<osgEarth/URI>
 #include <osgEarth/ShaderLoader>
 #include"Export.h"
+#include"PbrMaterial.h"
 
 
 

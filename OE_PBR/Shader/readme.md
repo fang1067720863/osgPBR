@@ -10,7 +10,10 @@
 - 新增IBL环境光照
 - 扩展了dds插件对CubeMap的读取 和 GL_RGBA_ARB扩展压缩格式的支持
 
-
+ ## V1.2
+- 提供osgEarth::ExtensionedMaterial 可自定义材质
+- waterial example from ue
+- 提供osg自己的材质资产格式 .omat
 
 
 

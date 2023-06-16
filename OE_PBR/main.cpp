@@ -329,6 +329,39 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
 
 }
 
+osg::ref_ptr<osg::Node> CreateExtensionedMaterialSphere()
+{
+    osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+
+    osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
+
+    geode->addDrawable(sd);
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> m = new osgEarth::ExtensionedMaterial();
+    m->setName("PBR_MATERIAL");
+
+    m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    m->setEmissiveFactor(osg::Vec3f(1.0f, 1.0f, 1.0f));
+    m->setMetallicFactor(0.56f);
+    m->setRoughnessFactor(0.22f);
+    m->setAoStrength(0.15f);
+
+    std::string dir = "D:/GitProject/FEngine/Assets/PbrBox/", format = ".png";
+    m->setTextureAttribute(osgEarth::ExtensionedMaterial::NormalMap, dir + "BoomBox_normal" + format);
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
+
+    m->setMaterialFile("metalroughness.glsl");
+
+
+    geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+
+
+    m->setReceiveEnvLight(true);
+
+    PBRMaterialCallback().operator()(m, 0L);
+
+    auto* pbr = new PbrLightEffect();
+    pbr->attach(geode->getOrCreateStateSet());
+}
 osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
 {
     osg::Group* lightGroup = new osg::Group;
@@ -355,29 +388,30 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
     return lightGroup;
 }
 
-//void readImage()
-//{
-//    std::string fileName = "C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL\\Cerberus_NSpecularHDR.dds";
-//    osgDB::ifstream stream(fileName.c_str(), std::ios::in | std::ios::binary);
-//    if (!stream) return;
-//
-//    auto images = readImage(stream, nullptr);
-//    for (auto img : images)
-//    {
-//        osg::ref_ptr<osg::Image> image = img;
-//        std::cout << img->s() << std::endl;
-//        std::cout << img->t() << std::endl;
-//        std::cout << img->r() << std::endl;
-//        std::cout << img->getNumMipmapLevels() << std::endl;
-//        std::cout << img->getPixelFormat() << std::endl;
-//        std::cout << img->getInternalTextureFormat() << std::endl;
-//    }
-//    
-//        //osgDB::readRefImageFile("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL\\Cerberus_NSpecularHDR.dds");
-//  
-//   
-//}
+void createMaterials()
+{
+    osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
+    m->setName("PBR_MATERIAL");
 
+    std::string dir = "D:/GitProject/FEngine/Assets/PbrBox/", format = ".png";
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "BoomBox_normal" + format);
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::MetalRoughenssMap, dir + "BoomBox_roughnessMetallic" + format);
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, dir + "BoomBox_occlusion" + format);
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::EmissiveMap, dir + "BoomBox_emissive" + format);
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
+
+    //osg::ref_ptr<osgEarth::StandardPBRMaterial> m1 = new osgEarth::StandardPBRMaterial();
+    //m1->setName("PBR_MATERIAL");
+
+    //std::string dir = "D:/GitProject/FEngine/Assets/PbrBox/", format = ".png";
+    //m1->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "BoomBox_normal" + format);
+    //m1->setTextureAttribute(osgEarth::StandardPBRMaterial::MetalRoughenssMap, dir + "BoomBox_roughnessMetallic" + format);
+    ////m1->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, dir + "BoomBox_occlusion" + format);
+    ////m1->setTextureAttribute(osgEarth::StandardPBRMaterial::EmissiveMap, dir + "BoomBox_emissive" + format);
+    //m1->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
+
+   
+}
 int main(int argc, char** argv)
 {
     osg::ArgumentParser arguments(&argc, argv);
