@@ -84,6 +84,8 @@ namespace osgEarth {
         void setTextureAttribute(TextureEnum mapEnum, const std::string& fileName, const std::string& defineName = "", StateAttribute::OverrideValue value = StateAttribute::ON);
         void setTextureEnable(TextureEnum mapEnum, StateAttribute::OverrideValue enable);
         bool setTextures(const TextureMaps& maps);
+        int texUnitCnt() const { return _texUnitCnt; }
+        void incementTexUnit() { _texUnitCnt++; }
 
         PROPERTY_DEFAULT(Vec4, BaseColorFactor, Vec4(1.0, 1.0, 1.0, 1.0))
         PROPERTY_DEFAULT(Vec3, EmissiveFactor, Vec3(0.1, 0.1, 0.1))
@@ -107,7 +109,7 @@ namespace osgEarth {
 
         TextureMaps _maps;
 
-        unsigned int _texUnitCnt;
+        int _texUnitCnt{ 0 };
        
     };
 

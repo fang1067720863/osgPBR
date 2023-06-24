@@ -34,6 +34,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 
 #define PI 3.14159265359f
 
+#pragma import_defines(MATERIAL_DEFINES)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
@@ -83,6 +84,10 @@ uniform pbr_Material oe_pbr;
     uniform sampler2DArray pbrMaps;
 #endif
 
+
+# MATERIAL_UNIFORMS
+
+
 #ifdef USE_ENV_MAP
     #ifdef USE_ENV_CUBE_UV
     uniform samplerCube irradianceMap;
@@ -128,7 +133,7 @@ void fragment_main_pbr(inout vec4 color)
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
     diffuseColor *= 1.0 - metallic;
 
-    #Material
+    # MATERIAL_BODY
 
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
@@ -185,7 +190,8 @@ void fragment_main_pbr(inout vec4 color)
 #else
    ambient = osg_LightSource[0].ambient.rgb * diffuseColor * ao;
 #endif
-    color.rgb = Lo + ambient;
+    color.rgb = Lo;
+    // + ambient;
 
     // tone map:
     color.rgb = color.rgb / (color.rgb + vec3(1.0));

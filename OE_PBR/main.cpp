@@ -340,27 +340,35 @@ osg::ref_ptr<osg::Node> CreateExtensionedMaterialSphere()
     m->setName("PBR_MATERIAL");
 
     m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-    m->setEmissiveFactor(osg::Vec3f(1.0f, 1.0f, 1.0f));
-    m->setMetallicFactor(0.56f);
-    m->setRoughnessFactor(0.22f);
+    m->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    m->setMetallicFactor(1.00f);
+    m->setRoughnessFactor(0.88f);
     m->setAoStrength(0.15f);
 
-    std::string dir = "D:/GitProject/FEngine/Assets/PbrBox/", format = ".png";
-    m->setTextureAttribute(osgEarth::ExtensionedMaterial::NormalMap, dir + "BoomBox_normal" + format);
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
+    std::string dir = "C:/Users/10677/source/repos/OE_PBR/OE_PBR/Asset/Material/metal/", format = ".png";
+    m->addTextureAttribute("metalMap", dir + "metal" + format, "OE_ENABLE_Metal_MAP");
+    m->addTextureAttribute("roughnessMap", dir + "rough" + format, "OE_ENABLE_Roughness_MAP");
 
-    m->setMaterialFile("metalroughness.glsl");
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "normal" + format);
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "albedo" + format);
+
+    m->setMaterialFile("materials/metalroughness.glsl");
 
 
     geode->getOrCreateStateSet()->setAttributeAndModes(m, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
 
 
-    m->setReceiveEnvLight(true);
+    m->setReceiveEnvLight(false);
 
-    PBRMaterialCallback().operator()(m, 0L);
+    ExtensionedMaterialCallback().operator()(m, 0L);
 
     auto* pbr = new PbrLightEffect();
     pbr->attach(geode->getOrCreateStateSet());
+
+    auto* vp = osgEarth::VirtualProgram::get(geode->getOrCreateStateSet());
+    vp->setShaderLogging(true);
+   
+    return geode;
 }
 osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
 {
@@ -462,13 +470,14 @@ int main(int argc, char** argv)
     auto* vp = osgEarth::VirtualProgram::get(gltfModel.getNode()->getOrCreateStateSet());
     vp->setShaderLogging(true);
 
-    group->addChild(gltfModel.getNode());
-    auto sphere = CreatePbrSphere();
+    //group->addChild(gltfModel.getNode());
+    auto sphere = //CreatePbrSphere();
+       CreateExtensionedMaterialSphere();
 
     osg::Light* lightState = new osg::Light;
     auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet(), lightState);
 
-    //group->addChild(sphere.get());
+    group->addChild(sphere.get());
 
    
 
@@ -494,7 +503,7 @@ int main(int argc, char** argv)
     viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
 
     GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
-    gui->add("Demo", new TestGUI(gltfModel.getNode()));
+    gui->add("Demo", new TestGUI(sphere.get()));
     gui->add("Demo2", new LightGUI(lightState));
 
     viewer.setSceneData(group);

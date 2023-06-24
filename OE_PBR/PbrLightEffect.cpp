@@ -475,7 +475,6 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
 
         URIContext context(dbo.get());
         URI uri(materialFile, context);
-
         std::string path = osgDB::findDataFile(uri.full(), dbo);
         if (!path.empty())
         {
@@ -485,27 +484,76 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
                 OE_DEBUG << "Loaded materail shader " << materialFile << " from " << path << "\n";
             }
         }
+
+        std::string material_defines, material_body, material_uniforms;
+
         
+        std::string::size_type pragmaPos = 0;
+        while (pragmaPos != std::string::npos)
+        {
+            const std::string token("#pragma import_defines");
+            std::string::size_type statementPos = materialSnippet.find(token, pragmaPos);
+            if (statementPos == std::string::npos)
+            {
+                break;
+            }
+            std::string::size_type bracketLeft = materialSnippet.find_first_not_of("(", statementPos + token.length());
+            std::string::size_type bracketRight = materialSnippet.find_first_of(")", bracketLeft);
+            if (!material_defines.empty())
+            {
+               material_defines.push_back(',');
+            }
+            material_defines.append(materialSnippet.substr(bracketLeft, bracketRight- bracketLeft));
+            pragmaPos = bracketRight+1;
+        }
+        pragmaPos = 0;
+        while (pragmaPos != std::string::npos)
+        {
+            const std::string token("uniform");
+            std::string::size_type statementPos = materialSnippet.find(token, pragmaPos);
+            if (statementPos == std::string::npos)
+            {
+                break;
+            }
+            std::string::size_type uniformEnd = materialSnippet.find_first_of("\n", statementPos);
+            material_uniforms.append(materialSnippet.substr(statementPos, uniformEnd - statementPos));
+            pragmaPos = uniformEnd;
+        }
+
+        
+        material_body = materialSnippet.substr(pragmaPos);
+        std::cout << " material_defines " << material_defines << std::endl << "material_define_end" << std::endl;
+       
+        std::cout << " material_uniform" << material_uniforms << std::endl << "material_uniform_end" << std::endl;
+        std::cout << " material_body" << material_body << std::endl << "material_body_end" << std::endl;
+
         osgEarth::Registry::instance()->getShaderFactory()->addPreProcessorCallback(
             "MaterialReplace",
-            [this, materialSnippet](std::string& output)
+            [this, material_body, material_defines, material_uniforms](std::string& output)
             {
-                const std::string token("#Material");
-                std::string::size_type statementPos = output.find(token);
-                if (statementPos == std::string::npos)
-                    return;
+                auto replaceFunc = [](const std::string& token, const std::string& source, std::string& output)
+                {
+                    std::string::size_type statementPos = output.find(token);
+                    if (statementPos == std::string::npos)
+                        return;
 
-                std::string::size_type startPos = output.find_first_not_of(" \t", statementPos + token.length());
-                if (startPos == std::string::npos)
-                    return;
+                    std::string::size_type startPos = output.find_first_not_of(" \t", statementPos + token.length());
+                    if (startPos == std::string::npos)
+                        return;
 
-                std::string::size_type endPos = output.find('\n', startPos);
-                if (endPos == std::string::npos)
-                    return;
+                    std::string::size_type endPos = output.find('\n', startPos);
+                    if (endPos == std::string::npos)
+                        return;
 
-                std::string statement(output.substr(statementPos, endPos - statementPos));
+                    std::string statement(output.substr(statementPos, endPos - statementPos));
 
-                Strings::replaceIn(output, statement, materialSnippet);
+                    Strings::replaceIn(output, statement, source);
+                };
+                
+                replaceFunc("MATERIAL_DEFINES", material_defines, output);
+                replaceFunc("# MATERIAL_UNIFORMS", material_uniforms, output);
+                replaceFunc("# MATERIAL_BODY", material_body, output);
+
             }
         );
   

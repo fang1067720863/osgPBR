@@ -100,7 +100,7 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& im
     {
         return nullptr;
     }
-    osg::Texture* tex = new osg::Texture2D();
+    osg::Texture2D* tex = new osg::Texture2D();
 
     tex->setFilter(tex->MIN_FILTER, tex->NEAREST_MIPMAP_LINEAR);
     tex->setFilter(tex->MAG_FILTER, tex->NEAREST_MIPMAP_LINEAR);
@@ -108,7 +108,7 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& im
     tex->setWrap(tex->WRAP_T, tex->REPEAT);
     tex->setUnRefImageDataAfterApply(osgEarth::Registry::instance()->unRefImageDataAfterApply().get());
     tex->setMaxAnisotropy(4.0);
-
+    tex->setImage(image.get());
     // Let the GPU do it since we only download this at startup
     tex->setUseHardwareMipMapGeneration(true);
 
@@ -206,10 +206,9 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
         stateSet->getOrCreateUniform(AMBIENTOCCLUSION, osg::Uniform::FLOAT)->set(material->getAoStrength());
 
         osg::Texture* tex = material->createTextureAtlas();
-        unsigned int unit = 0;
-        stateSet->setTextureAttributeAndModes(unit, tex, osg::StateAttribute::ON);
-        stateSet->getOrCreateUniform("pbrMaps", osg::Uniform::SAMPLER_2D_ARRAY)->set(unit);
-
+        stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
+        stateSet->getOrCreateUniform("pbrMaps", osg::Uniform::SAMPLER_2D_ARRAY)->set(material->texUnitCnt());
+        material->incementTexUnit();
         for (auto iter = material->_maps.begin(); iter != material->_maps.end(); iter++)
         {
             auto textureInfo = iter->second;
@@ -226,27 +225,30 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             auto uniformType = EnvLightEffect::instance()->useCubeUV() ? osg::Uniform::SAMPLER_CUBE : osg::Uniform::SAMPLER_2D;
             stateSet->setDefine("USE_ENV_CUBE_UV", useCubeUV);
             
+            int unit;
+            //material->texUnitCnt()
             osg::Texture* diffuseEnvMap = EnvLightEffect::instance()->getIrridianceMap();
-            unit = 1;
+            unit = material->texUnitCnt();
             stateSet->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform("irradianceMap", uniformType)->set("8");
+          
+            stateSet->getOrCreateUniform("irradianceMap", uniformType)->set(unit);
+            std::cout << "irradianceMap " << unit << std::endl;
+            material->incementTexUnit();
 
             osg::Texture* specularEnvMap = EnvLightEffect::instance()->getPrefilterMap();
-            unit = 2;
+            unit = material->texUnitCnt();
             stateSet->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform("prefilterMap", uniformType)->set("7");
+           
+            stateSet->getOrCreateUniform("prefilterMap", uniformType)->set(unit);
+            std::cout << "prefilterMap " << unit << std::endl;
+            material->incementTexUnit();
 
             osg::Texture* brdfLUTMap = EnvLightEffect::instance()->getBrdfLUTMap();
-            unit = 3;
-            stateSet->setTextureAttributeAndModes(unit, brdfLUTMap, osg::StateAttribute::ON);
-            auto uniform = new osg::Uniform("brdfLUT", 3);
-            stateSet->addUniform(uniform);
-           // stateSet->getOrCreateUniform("brdfLUT", osg::Uniform::SAMPLER_2D)->set("6");
-
-           /* osg::Texture* envCubeMap = EnvLightEffect::instance()->getEnvCubeMap();
-            unit = 4;
-            stateSet->setTextureAttributeAndModes(unit, tex, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform("envCubeMap", osg::Uniform::SAMPLER_CUBE)->set(unit);*/
+            stateSet->setTextureAttributeAndModes(material->texUnitCnt(), brdfLUTMap, osg::StateAttribute::ON);
+            unit = material->texUnitCnt();
+            stateSet->getOrCreateUniform("brdfLUT", uniformType)->set(material->texUnitCnt());
+            material->incementTexUnit();
+          
         }
 
     }
@@ -260,15 +262,21 @@ void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr
     {
         const auto& maps = material->customMaps();
         auto iter = maps.begin();
+        material->incementTexUnit();
         for (; iter != maps.end(); iter++)
         {
             osg::StateSet* stateSet = attr->getParent(i);
             auto uniformKey = iter->first;
             
-            unsigned int unit = 6;
+            
             osg::Texture* tex = material->createTexture(iter->second._path);
-            stateSet->setTextureAttributeAndModes(unit, tex, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D, unit);
+            stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
+            stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D)->set(material->texUnitCnt());
+            std::cout << uniformKey << material->texUnitCnt() << std::endl;
+            material->incementTexUnit();
+            
+            auto textureInfo = iter->second;
+            stateSet->setDefine(textureInfo._defineKey, textureInfo._defineVal, osg::StateAttribute::ON);
         }
     }
 }
