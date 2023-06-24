@@ -107,7 +107,7 @@ vec3 BRDF(
     vec3 specContrib = numerator / max(denominator, 0.001);
 
     vec3 diffuse = BRDF_Diffuse_Burley(VdotH, NdotL, NdotV, roughness, diffuseColor);
-    vec3 diffuseContrib = (vec3(1.0f, 1.0f, 1.0f) - F)  * diffuse;
+    vec3 diffuseContrib = (vec3(1.0f, 1.0f, 1.0f) - F)  * diffuse * kD;
     
     vec3 Lo = NdotL * lightColor * (diffuseContrib + specContrib);
 
