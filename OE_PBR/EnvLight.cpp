@@ -94,7 +94,7 @@ void EnvLightEffect::InitEnvMapAtlas()
         auto irridianceMapImage = osgDB::readRefImageFile(irridianceMapPath, readOption.get());
 
         osg::Texture2D* irridianceMap2D = dynamic_cast<osg::Texture2D*>(irridianceMap.get());
-        irridianceMap2D->setImage(prefilterMapImage.get());
+        irridianceMap2D->setImage(irridianceMapImage.get());
         irridianceMap2D->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
         irridianceMap2D->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 

@@ -33,12 +33,14 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma vp_location   fragment_lighting
 
 #define PI 3.14159265359f
+#define RECIPROCAL_PI 0.318309886142228
 
 #pragma import_defines(MATERIAL_DEFINES)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
 #pragma include BRDF.glsl
+#pragma include light_functions.glsl
 
 
 in vec3 oe_posView;  // view space
@@ -78,34 +80,44 @@ struct osg_LightSourceParameters
    bool enabled;
 };
 
+struct ReflectedLight
+{
+	vec3 indirectDiffuse;
+	vec3 indirectSpecular;
+	vec3 directDiffuse;
+	vec3 directSpecular;
+};
+struct GeometricContext
+{
+	vec3 normal;
+	vec3 viewDir;
+};
+
 uniform osg_LightSourceParameters osg_LightSource[OE_NUM_LIGHTS];
+
 uniform pbr_Material oe_pbr;
 #ifdef cascade
     uniform sampler2DArray pbrMaps;
 #endif
-
+// uniform mat4 osg_ViewMatrixInverse;
 
 # MATERIAL_UNIFORMS
 
 
-#ifdef USE_ENV_MAP
-    #ifdef USE_ENV_CUBE_UV
-    uniform samplerCube irradianceMap;
-    uniform samplerCube prefilterMap;
-    #else
-    uniform sampler2D irradianceMap;
-    uniform sampler2D prefilterMap;
-    #endif
-    uniform sampler2D brdfLUT;
-#endif
 
-const vec2 invAtan = vec2(0.1591, 0.3183);
-vec2 sphericalUV(vec3 v)
+
+// const vec2 invAtan = vec2(0.1591, 0.3183);
+// vec2 sphericalUV(vec3 v)
+// {
+//     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
+//     uv *= invAtan; uv += vec2(0.5); return uv;
+// }
+
+vec4 linearTosRGB(in vec4 value)
 {
-    vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-    uv *= invAtan; uv += vec2(0.5); return uv;
+    return vec4(mix(((pow(value.xyz, vec3(0.41666001, 0.41666001, 0.41666001)) * 1.0549999) - vec3(0.055, 0.055, 0.055)), \
+    (value.xyz * 12.92), vec3(lessThanEqual(value.xyz, vec3(0.0031308001, 0.0031308001, 0.0031308001)))), value.w);
 }
-
 #ifdef OE_USE_PBR
 void fragment_main_pbr(inout vec4 color)
 {
@@ -117,6 +129,7 @@ void fragment_main_pbr(inout vec4 color)
     vec3  f0 = vec3(0.04);
 
     vec3 normal = oe_normal;
+    vec3 normalEC = normal;
 
     float roughnessFactor = oe_pbr.roughnessFactor;
     float metallicFactor = oe_pbr.metallicFactor;
@@ -133,8 +146,18 @@ void fragment_main_pbr(inout vec4 color)
     diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
     diffuseColor *= 1.0 - metallic;
 
-    # MATERIAL_BODY
+    // vec3 normalWC = (osg_ViewMatrixInverse * vec4(normalEC, 0.0)).rgb;
+    // normalWC = normalize(normalWC);
+    // vec3 res = normalWC + vec3(1.0);
+    // color.rgb = 0.5 * res;
+    // return;
 
+    # MATERIAL_BODY
+    // vec3 res = normal + vec3(1.0);
+    // color.rgb = 0.5 * res;
+    // return;
+    
+    
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
     float NdotV = max(dot(n, v), 0.0f);
@@ -145,7 +168,8 @@ void fragment_main_pbr(inout vec4 color)
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
         // per-light radiance: view space?
-        vec3 l = normalize(osg_LightSource[i].spotDirection.xyz - oe_posView);
+        //vec3 l = normalize(osg_LightSource[i].position.xyz - oe_posView);
+        vec3 l = normalize(-osg_LightSource[i].spotDirection.xyz);
         vec3 h = normalize(l + v);
 
         float NdotL = max(dot(n, l), 0.0f);
@@ -157,49 +181,48 @@ void fragment_main_pbr(inout vec4 color)
         Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao,emissive);
     }
 
-
+    // indirect light accumulate
     vec3 ambient =vec3(0.0);
- #ifdef USE_ENV_MAP
-
-    vec3 n2 = normalize(normal);
-    vec3 v2 = normalize(-oe_posView);
-    vec3 F = fresnelSchlickRoughness(max(dot(n2,v2), 0.0), vec3(0.04), roughnessFactor);
-
-    vec3 kS = F;
-    vec3 kD = 1.0 - kS;
-    kD *= 1.0 - metallic;
-#ifdef USE_ENV_CUBE_UV
-    vec3 irradiance = texture(irradianceMap, oe_normal).rgb;
-#else
-    vec3 irradiance = texture(irradianceMap, sphericalUV(oe_normal)).rgb;
-#endif
-    vec3 diffuse      = irradiance * baseColor;
     
-    // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
-    const float MAX_REFLECTION_LOD = 4.0;
-#ifdef USE_ENV_CUBE_UV
-    vec3 prefilteredColor = textureLod(prefilterMap, oe_normal,  roughnessFactor * MAX_REFLECTION_LOD).rgb;
-#else
-    vec3 prefilteredColor = textureLod(prefilterMap, sphericalUV(oe_normal),  roughnessFactor * MAX_REFLECTION_LOD).rgb;
-#endif
-    vec2 brdf  = texture(brdfLUT, vec2(max(dot(oe_normal,v), 0.0), roughnessFactor)).rg;
-    vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);
+    vec3 irradiance = vec3(0.0);
+    vec3 radiance = vec3(0.0);
 
-    ambient = (kD * diffuse + specular) * ao;
-    
-#else
-   ambient = osg_LightSource[0].ambient.rgb * diffuseColor * ao;
+    irradiance += osg_LightSource[0].ambient.rgb;
+    // irradiance += getLightProbeIrradiance(); 
+    // irradiance += getLightMapIrradiance();
+    vec3 irradianceIBL = vec3(0.0);
+    vec3 radianceIBL = vec3(0.0);
+#ifdef USE_ENV_MAP
+    irradianceIBL = getIBLIrradiance(n);
+    radianceIBL = getIBLRadiance(n, roughnessFactor,v);
 #endif
-    color.rgb = Lo;
-    // + ambient;
+    ReflectedLight reflectedLight;
+    reflectedLight.indirectDiffuse = vec3(0.0);
+    reflectedLight.indirectSpecular = vec3(0.0);
+    
+    GeometricContext geometry;
+    geometry.viewDir = v;
+    geometry.normal = n;
+
+    //RE_IndirectDiffuse_Physical(irradiance, baseColor, reflectedLight);
+    RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,geometry, oe_pbr, reflectedLight);
+    color.rgb = Lo + reflectedLight.indirectSpecular + reflectedLight.indirectDiffuse;
+    //reflectedLight.indirectDiffuse * oe_pbr.aoStrength + 
+    //+ reflectedLight.indirectDiffuse;
+    //+ reflectedLight.indirectDiffuse + reflectedLight.indirectSpecular;
+    //irradianceIBL * 1/PI * baseColor;
+    //reflectedLight.indirectDiffuse;
+    // reflectedLight.indirectDiffuse;
 
     // tone map:
-    color.rgb = color.rgb / (color.rgb + vec3(1.0));
-
+    //color.rgb = color.rgb / (color.rgb + vec3(1.0));
+    // linear tone map
+    color.rgb = clamp(color.rgb * 0.5,0.0,1.0);
+    
     // boost:
     //color.rgb *= 2.2;
-    color.rgb = pow(color.rgb, vec3(1.0/2.2));
-    
+    //color.rgb = pow(color.rgb, vec3(1.0/2.2));
+    color = linearTosRGB(color);
 
     // add in the haze
     //color.rgb += atmos_color;

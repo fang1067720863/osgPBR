@@ -94,7 +94,7 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& im
 {
     float s = -1.0f, t = -1.0f;
 
-    osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(imagePath);
+    osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(imagePath, _options.get());
 
     if (image.valid() == false)
     {
@@ -131,9 +131,9 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
     {
         auto& info = iter->second;
 
-        osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(info._path);
+        osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(info._path, _options.get());
         info._imageValid = image.valid();
-        osg::ref_ptr<osg::Image> temp;
+        //osg::ref_ptr<osg::Image> temp;
 
         if (image.valid() == false)
         {
@@ -141,26 +141,26 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
         }
 
 
-        if (s < 0)
-        {
-            s = osgEarth::nextPowerOf2(image->s());
-            t = osgEarth::nextPowerOf2(image->t());
-            tex->setTextureSize(s, t, imageSize);
-        }
+        //if (s < 0)
+        //{
+        //    s = osgEarth::nextPowerOf2(image->s());
+        //    t = osgEarth::nextPowerOf2(image->t());
+        //    tex->setTextureSize(s, t, imageSize);
+        //}
 
-        if (image->s() != s || image->t() != t)
-        {
-            ImageUtils::resizeImage(image, s, t, temp);
-            //std::cout << "image" << image->getFileName() << std::endl;
-        }
-        else
-        {
-            temp = image;
-            //std::cout << "temp" << temp->getFileName()<<std::endl;
-        }
+        //if (image->s() != s || image->t() != t)
+        //{
+        //    ImageUtils::resizeImage(image, s, t, temp);
+        //    //std::cout << "image" << image->getFileName() << std::endl;
+        //}
+        //else
+        //{
+        //    temp = image;
+        //    //std::cout << "temp" << temp->getFileName()<<std::endl;
+        //}
         info._defineVal = std::to_string(layer * 1.0f);
         //std::cout << "info._defineVal layer" << layer << std::endl;
-        tex->setImage(layer, temp.get());
+        tex->setImage(layer, image.get());
         layer++;
     }
     //std::cout << "layer count" << layer << std::endl;

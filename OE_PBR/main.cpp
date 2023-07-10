@@ -215,55 +215,6 @@ public:
     }
 };
 
-osg::ref_ptr<osg::Node> createHDRBox()
-{
-    osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-    osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Box(osg::Vec3(0.0, 0.0, 0.0), 16.0));
-
-    geode->addDrawable(sd);
-    osg::ref_ptr<osg::MatrixTransform> trans = new MatrixTransform();
-    trans->setMatrix(osg::Matrix::scale(16, 16, 16));
-    trans->addChild(geode);
-
-
-    sd->setColor(osg::Vec4(1.0, 0.0, 0.0, 1.0));
-
-
-    VirtualProgram* vp = VirtualProgram::getOrCreate(geode->getOrCreateStateSet());
-
-    const char* pick_preview = R"(
-
-
-        #pragma vp_function SampleSphericalMap, vertex_model
-        const vec2 invAtan = vec2(0.1591, 0.3183);
-        out vec2 spherical_uv;
-        void SampleSphericalMap(inout vec4 vertex) {
-            vec3 tmp = normalize(vertex.xyz);
-
-            vec2 uv = vec2(atan(tmp.z, tmp.x), asin(tmp.y));
-            uv *= invAtan;
-            uv += 0.5;
-            spherical_uv = uv;
-        }
-
-        [break]
-
-         #pragma vp_function fs, fragment_output
-        in vec2 spherical_uv;
-        out vec4 frag;
-        uniform sampler2D tex;
-        void fs(inout vec4 c) {
-            c = texture(tex, spherical_uv);
-            frag = c;
-        }
-    )";
-
-    ShaderLoader::load(vp, pick_preview);
-
-
-    return trans;
-}
-
 
 
 osg::ref_ptr<osg::Node> CreatePbrSphere()
@@ -350,7 +301,6 @@ osg::ref_ptr<osg::Node> CreateExtensionedMaterialSphere()
     m->addTextureAttribute("roughnessMap", dir + "rough" + format, "OE_ENABLE_Roughness_MAP");
 
     m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "normal" + format);
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "albedo" + format);
 
     m->setMaterialFile("materials/metalroughness.glsl");
 
@@ -382,7 +332,7 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
     myLight1->setDiffuse(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
     myLight1->setSpotCutoff(20.0f);
     myLight1->setSpotExponent(50.0f);
-    myLight1->setDirection(osg::Vec3(0.382353f, 0.254902f, 0.382353f));
+    myLight1->setDirection(osg::Vec3(-0.382353f, -0.254902f, -0.382353f));
 
     osg::LightSource* lightS1 = new osg::LightSource;
     lightS1->setLight(myLight1);
@@ -396,29 +346,131 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
     return lightGroup;
 }
 
-void createMaterials()
+std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
 {
-    osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
-    m->setName("PBR_MATERIAL");
+    std::vector<osg::ref_ptr<ExtensionedMaterial>> result;
 
-    std::string dir = "D:/GitProject/FEngine/Assets/PbrBox/", format = ".png";
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "BoomBox_normal" + format);
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::MetalRoughenssMap, dir + "BoomBox_roughnessMetallic" + format);
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, dir + "BoomBox_occlusion" + format);
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::EmissiveMap, dir + "BoomBox_emissive" + format);
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
+    auto absolutePath = osgEarth::getAbsolutePath("Asset/Material");
+    osg::ref_ptr<osgDB::Options> dbo = new osgDB::Options();
+    if (osgDB::fileExists(absolutePath))
+    {
+        dbo->setDatabasePath(absolutePath);
+    }
 
-    //osg::ref_ptr<osgEarth::StandardPBRMaterial> m1 = new osgEarth::StandardPBRMaterial();
-    //m1->setName("PBR_MATERIAL");
 
-    //std::string dir = "D:/GitProject/FEngine/Assets/PbrBox/", format = ".png";
-    //m1->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "BoomBox_normal" + format);
-    //m1->setTextureAttribute(osgEarth::StandardPBRMaterial::MetalRoughenssMap, dir + "BoomBox_roughnessMetallic" + format);
-    ////m1->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, dir + "BoomBox_occlusion" + format);
-    ////m1->setTextureAttribute(osgEarth::StandardPBRMaterial::EmissiveMap, dir + "BoomBox_emissive" + format);
-    //m1->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, dir + "BoomBox_baseColor" + format);
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> m = new osgEarth::ExtensionedMaterial();
+    m->setName("metal");
+    m->setDataBaseOption(dbo);
 
+    m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    m->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    m->setMetallicFactor(1.00f);
+    m->setRoughnessFactor(0.88f);
+    m->setAoStrength(0.15f);
+    m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "metal/normal.png");
+    m->setReceiveEnvLight(true);
+
+    m->addTextureAttribute("metalMap",  "metal/metal.png", "OE_ENABLE_Metal_MAP");
+    m->addTextureAttribute("roughnessMap",  "metal/rough.png", "OE_ENABLE_Roughness_MAP");
+    m->setMaterialFile("materials/metalroughness.glsl");
+    result.push_back(m);
+    
+
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> grass = new osgEarth::ExtensionedMaterial();
+    grass->setName("grass");
+    grass->setDataBaseOption(dbo);
    
+    grass->setBaseColorFactor(osg::Vec4f(0.5f, 0.5f, 0.5f, 0.5f));
+    grass->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    grass->setMetallicFactor(0.29f);
+    grass->setRoughnessFactor(0.31f);
+    grass->setAoStrength(0.15f);
+    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "grass/normal.png");
+    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "grass/ao.png");
+    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "grass/albedo.png");
+    grass->setReceiveEnvLight(true);
+    
+    grass->addTextureAttribute("metalMap", "grass/metallic.png", "OE_ENABLE_Metal_MAP");
+    grass->addTextureAttribute("roughnessMap", "grass/roughness.png", "OE_ENABLE_Roughness_MAP");
+    grass->setMaterialFile("materials/metalroughness.glsl");
+    result.push_back(grass);
+
+
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> gray = new osgEarth::ExtensionedMaterial();
+    gray->setName("dalishi");
+    gray->setDataBaseOption(dbo);
+
+    gray->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    gray->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    gray->setMetallicFactor(0.5f);
+    gray->setRoughnessFactor(0.668f);
+    //gray->setAoStrength(0.1f);
+    gray->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "gray/normal.png");
+    //gray->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "gray/ao.png");
+    gray->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "gray/albedo.png");
+    gray->setReceiveEnvLight(true);
+    
+    gray->addTextureAttribute("metalMap", "grass/metallic.png", "OE_ENABLE_Metal_MAP");
+    gray->addTextureAttribute("roughnessMap", "grass/roughness.png", "OE_ENABLE_Roughness_MAP");
+    gray->setMaterialFile("materials/metalroughness.glsl");
+    result.push_back(gray);
+
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> rock = new osgEarth::ExtensionedMaterial();
+    rock->setName("rock");
+    rock->setDataBaseOption(dbo);
+    
+    rock->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    rock->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    rock->setMetallicFactor(0.5f);
+    rock->setRoughnessFactor(0.668f);
+    rock->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "rock/normal.png");
+    //rock->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "rock/ao.png");
+    rock->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "rock/albedo.png");
+    rock->setReceiveEnvLight(false);
+    
+    rock->addTextureAttribute("metalMap", "rock/metallic.png", "OE_ENABLE_Metal_MAP");
+    rock->addTextureAttribute("roughnessMap", "rock/roughness.png", "OE_ENABLE_Roughness_MAP");
+    rock->setMaterialFile("materials/metalroughness.glsl");
+    result.push_back(rock);
+
+    return result;
+   
+}
+
+osg::ref_ptr<osg::Group> createMaterialSpheres()
+{
+    osg::ref_ptr<osg::Group> gp = new osg::Group();
+    std::vector<osg::ref_ptr<ExtensionedMaterial>> materials = std::move(createMaterials());
+
+    std::vector<osg::Matrix> scales = { osg::Matrix::scale(1.0, 1.0, 1.0),
+        osg::Matrix::scale(1.0, 3.0, 1.0),
+        osg::Matrix::scale(3.0, 1.0, 1.0),
+        osg::Matrix::scale(1.0, 1.0, 3.0) };
+
+    size_t cnt = materials.size();
+    for (size_t i = 0; i < cnt; i++)
+    {
+        osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+        osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
+        geode->addDrawable(sd);
+        geode->getOrCreateStateSet()->setAttributeAndModes(materials[i], osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+
+        osg::ref_ptr<osg::MatrixTransform> matrixT = new osg::MatrixTransform();
+       
+        
+        
+        //scales[i]*
+        matrixT->setMatrix(osg::Matrix::translate((double)i * 6.0, 0.0, 0.0));
+        matrixT->addChild(geode);
+        matrixT->setName(materials[i]->getName());
+        
+        ExtensionedMaterialCallback().operator()(materials[i], 0L);
+        auto* pbr = new PbrLightEffect();
+        pbr->attach(geode->getOrCreateStateSet());
+        gp->addChild(matrixT);
+    }
+    return gp;
+    
 }
 int main(int argc, char** argv)
 {
@@ -454,7 +506,6 @@ int main(int argc, char** argv)
 
 
     osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
-   // readImage();
 
     auto group = new osg::Group();
 
@@ -470,15 +521,19 @@ int main(int argc, char** argv)
     auto* vp = osgEarth::VirtualProgram::get(gltfModel.getNode()->getOrCreateStateSet());
     vp->setShaderLogging(true);
 
-    //group->addChild(gltfModel.getNode());
-    auto sphere = //CreatePbrSphere();
-       CreateExtensionedMaterialSphere();
+ //   group->addChild(gltfModel.getNode());
+    auto sphere = CreatePbrSphere();
+
+    auto materialSpheres = createMaterialSpheres();
+
+
+    group->addChild(materialSpheres.get());
+
 
     osg::Light* lightState = new osg::Light;
-    auto light = CreateLight(gltfModel.getNode()->getOrCreateStateSet(), lightState);
+   auto light = CreateLight(sphere->getOrCreateStateSet(), lightState);
 
-    group->addChild(sphere.get());
-
+    
    
 
 
@@ -503,7 +558,7 @@ int main(int argc, char** argv)
     viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
 
     GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
-    gui->add("Demo", new TestGUI(sphere.get()));
+    gui->add("Demo", new TestGUI(materialSpheres.get()));
     gui->add("Demo2", new LightGUI(lightState));
 
     viewer.setSceneData(group);

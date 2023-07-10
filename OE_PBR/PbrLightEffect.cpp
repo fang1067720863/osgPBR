@@ -443,9 +443,6 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
             auto shaderPath = "..//..//OE_PBR//Shader";
             auto shaderPath2 = "..//OE_PBR//Shader";
 
-            
-
-
             if (osgDB::fileExists(osgEarth::getAbsolutePath(shaderPath)))
             {
                 dbo->setDatabasePath(osgEarth::getAbsolutePath(shaderPath));
@@ -462,71 +459,75 @@ void osgEarth::Util::PbrLightEffect::attach(osg::StateSet* stateset)
         }
      
         auto material = stateset->getAttribute(osg::StateAttribute::MATERIAL);
-        std::string materialFile = "material.glsl";
+
         std::string materialSnippet = "";
+        std::string material_defines(""), material_body, material_uniforms("");
+
+        URIContext context(dbo.get());
+        URI standard("materials/standard.glsl", context);
+        std::string basic = osgDB::findDataFile(standard.full(), dbo);
+        material_body = URI(basic, context).getString(dbo);
+       
         if (osgEarth::ExtensionedMaterial* mat = dynamic_cast<osgEarth::ExtensionedMaterial*>(material))
         {
             const std::string fileName = mat->materialFile();
             if (!fileName.empty())
             {
-                materialFile = fileName;
+                URI uri(fileName, context);
+                std::string path = osgDB::findDataFile(uri.full(), dbo);
+                if (!path.empty())
+                {
+                    materialSnippet = URI(path, context).getString(dbo);
+                    if (!materialSnippet.empty())
+                    {
+                        OE_DEBUG << "Loaded materail shader " << fileName << " from " << path << "\n";
+                    }
+                }
             }
         }
-
-        URIContext context(dbo.get());
-        URI uri(materialFile, context);
-        std::string path = osgDB::findDataFile(uri.full(), dbo);
-        if (!path.empty())
+        if (!materialSnippet.empty())
         {
-            materialSnippet = URI(path, context).getString(dbo);
-            if (!materialSnippet.empty())
+            // parse custom material
+            std::string::size_type pragmaPos = 0;
+            while (pragmaPos != std::string::npos)
             {
-                OE_DEBUG << "Loaded materail shader " << materialFile << " from " << path << "\n";
+                const std::string token("#pragma import_defines");
+                std::string::size_type statementPos = materialSnippet.find(token, pragmaPos);
+                if (statementPos == std::string::npos)
+                {
+                    break;
+                }
+                std::string::size_type bracketLeft = materialSnippet.find_first_not_of("(", statementPos + token.length());
+                std::string::size_type bracketRight = materialSnippet.find_first_of(")", bracketLeft);
+                if (!material_defines.empty())
+                {
+                    material_defines.push_back(',');
+                }
+                material_defines.append(materialSnippet.substr(bracketLeft, bracketRight - bracketLeft));
+                pragmaPos = bracketRight + 1;
             }
-        }
+            pragmaPos = 0;
+            while (pragmaPos != std::string::npos)
+            {
+                const std::string token("uniform");
+                std::string::size_type statementPos = materialSnippet.find(token, pragmaPos);
+                if (statementPos == std::string::npos)
+                {
+                    break;
+                }
+                std::string::size_type uniformEnd = materialSnippet.find_first_of("\n", statementPos);
+                material_uniforms.append(materialSnippet.substr(statementPos, uniformEnd - statementPos));
+                pragmaPos = uniformEnd;
+            }
+            material_body.append(materialSnippet.substr(pragmaPos));
 
-        std::string material_defines, material_body, material_uniforms;
-
-        
-        std::string::size_type pragmaPos = 0;
-        while (pragmaPos != std::string::npos)
-        {
-            const std::string token("#pragma import_defines");
-            std::string::size_type statementPos = materialSnippet.find(token, pragmaPos);
-            if (statementPos == std::string::npos)
-            {
-                break;
-            }
-            std::string::size_type bracketLeft = materialSnippet.find_first_not_of("(", statementPos + token.length());
-            std::string::size_type bracketRight = materialSnippet.find_first_of(")", bracketLeft);
-            if (!material_defines.empty())
-            {
-               material_defines.push_back(',');
-            }
-            material_defines.append(materialSnippet.substr(bracketLeft, bracketRight- bracketLeft));
-            pragmaPos = bracketRight+1;
+            std::cout << " material_defines " << material_defines << std::endl << "material_define_end" << std::endl;
+            std::cout << " material_uniform" << material_uniforms << std::endl << "material_uniform_end" << std::endl;
+            std::cout << " material_body" << material_body << std::endl << "material_body_end" << std::endl;
         }
-        pragmaPos = 0;
-        while (pragmaPos != std::string::npos)
-        {
-            const std::string token("uniform");
-            std::string::size_type statementPos = materialSnippet.find(token, pragmaPos);
-            if (statementPos == std::string::npos)
-            {
-                break;
-            }
-            std::string::size_type uniformEnd = materialSnippet.find_first_of("\n", statementPos);
-            material_uniforms.append(materialSnippet.substr(statementPos, uniformEnd - statementPos));
-            pragmaPos = uniformEnd;
-        }
-
-        
-        material_body = materialSnippet.substr(pragmaPos);
-        std::cout << " material_defines " << material_defines << std::endl << "material_define_end" << std::endl;
        
-        std::cout << " material_uniform" << material_uniforms << std::endl << "material_uniform_end" << std::endl;
-        std::cout << " material_body" << material_body << std::endl << "material_body_end" << std::endl;
 
+        // insert into basic shader
         osgEarth::Registry::instance()->getShaderFactory()->addPreProcessorCallback(
             "MaterialReplace",
             [this, material_body, material_defines, material_uniforms](std::string& output)

@@ -16,6 +16,7 @@
 
 #include <osgEarth/Common>
 #include <osgEarth/Threading>
+#include<osgDB/Options>
 #include"Export.h"
 
 
@@ -84,12 +85,13 @@ namespace osgEarth {
         void setTextureAttribute(TextureEnum mapEnum, const std::string& fileName, const std::string& defineName = "", StateAttribute::OverrideValue value = StateAttribute::ON);
         void setTextureEnable(TextureEnum mapEnum, StateAttribute::OverrideValue enable);
         bool setTextures(const TextureMaps& maps);
+        void setDataBaseOption(osg::ref_ptr<osgDB::Options> options) { _options = options; }
         int texUnitCnt() const { return _texUnitCnt; }
         void incementTexUnit() { _texUnitCnt++; }
 
         PROPERTY_DEFAULT(Vec4, BaseColorFactor, Vec4(1.0, 1.0, 1.0, 1.0))
         PROPERTY_DEFAULT(Vec3, EmissiveFactor, Vec3(0.1, 0.1, 0.1))
-        PROPERTY_DEFAULT(float, RoughnessFactor, 1.0f)
+        PROPERTY_DEFAULT(float, RoughnessFactor, 0.2f)
         PROPERTY_DEFAULT(float, MetallicFactor, 1.0f)
         PROPERTY_DEFAULT(float, AlphaMask, 0.1)
         PROPERTY_DEFAULT(AlphaMode, AlphaMode, AlphaMode::Blend)
@@ -106,8 +108,9 @@ namespace osgEarth {
 
     private:
         std::string getDefaultDefineName(TextureEnum mapEnum);
-
         TextureMaps _maps;
+        osg::ref_ptr<osgDB::Options> _options;
+       
 
         int _texUnitCnt{ 0 };
        

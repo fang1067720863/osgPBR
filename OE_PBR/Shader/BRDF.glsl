@@ -106,8 +106,9 @@ vec3 BRDF(
     float denominator = 4.0 * NdotV * NdotL;
     vec3 specContrib = numerator / max(denominator, 0.001);
 
-    vec3 diffuse = BRDF_Diffuse_Burley(VdotH, NdotL, NdotV, roughness, diffuseColor);
-    vec3 diffuseContrib = (vec3(1.0f, 1.0f, 1.0f) - F)  * diffuse * kD;
+    vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor);
+   // vec3 diffuse = BRDF_Diffuse_Burley(VdotH, NdotL, NdotV, roughness, diffuseColor);
+    vec3 diffuseContrib = diffuse * kD;
     
     vec3 Lo = NdotL * lightColor * (diffuseContrib + specContrib);
 
@@ -139,18 +140,24 @@ vec3 normalInWorldWithoutTangent(vec3 normal, vec3 eyePos,vec2 uv, vec3 normalFr
 
 }
 
-vec3 getNormal(vec3 normal, vec3 normalFromTexture)
+vec3 getNormal(vec3 N, vec3 normalFromTexture)
 {
 
     vec3 unpackedNormal = normalFromTexture*2.0 -1.0;  // normal in tangent space
-    vec3 tangent = vec3(1.0,0.0,0.0);
+    // vec3 tangent = gl_NormalMatrix * vec3(1.0,0.0,0.0);
 
-    vec3 N = normalize(normal);
-    vec3 T =  normalize(tangent - N * dot(tangent, N));
-    vec3 B = cross(N, T);
-    mat3 TBN = mat3(T, B, N);
-    return normalize(TBN * unpackedNormal);
-	//return normalize(mul(unpackedNormal, ));       // normal in world space
+    // vec3 N = normalize(normal);
+    // vec3 T =  normalize(tangent - N * dot(tangent, N));
+    // vec3 B = cross(N, T);
+    // mat3 TBN = mat3(T, B, N);
+    // return normalize(TBN * unpackedNormal);
+
+    vec3 B = normalize(gl_NormalMatrix * vec3(0,1,0));
+
+    vec3 T = normalize(cross(B, N));
+
+    return normalize(mat3(T, B, N) * unpackedNormal);
+	
 
 }
 
