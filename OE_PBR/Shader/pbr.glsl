@@ -152,6 +152,7 @@ void fragment_main_pbr(inout vec4 color)
     // color.rgb = 0.5 * res;
     // return;
     //diffuseColor *= 1.0 - metallic;
+    diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
     
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
@@ -173,7 +174,7 @@ void fragment_main_pbr(inout vec4 color)
         float NdotV = max(dot(n, v), 0.0f);
         
         vec3 lightColor = vec3(osg_LightSource[i].diffuse);
-        lightColor *= 2.0;
+       // lightColor *= 2.0;
         Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao,emissive);
         Lo *= osg_LightSource[i].spotExponent;
     }
@@ -207,8 +208,25 @@ void fragment_main_pbr(inout vec4 color)
     material.roughnessFactor=metallic;
     material.aoStrength=ao;
 
-    //RE_IndirectDiffuse_Physical(irradiance, baseColor, reflectedLight);
+    RE_IndirectDiffuse_Physical(irradiance, diffuseColor, reflectedLight);
     RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,geometry, material, reflectedLight);
+    // float tmp = reflectedLight.indirectSpecular.x;
+    // if(reflectedLight.indirectSpecular.x<0.3)
+    // {
+    //     reflectedLight.indirectSpecular = vec3(0.0);
+    // }else if (reflectedLight.indirectSpecular.x<0.7)
+    // {
+    //     reflectedLight.indirectSpecular = vec3(0.5);
+    // }else{
+    //     reflectedLight.indirectSpecular = vec3(1.0);
+    // }
+    // if(tmp<0.95)
+    // {
+    //     color.rgb =reflectedLight.indirectSpecular;
+    // }else{
+    //     color.rgb = vec3(0.0);
+    // }
+    // return;
     color.rgb = Lo + reflectedLight.indirectSpecular * oe_pbr.aoStrength + reflectedLight.indirectDiffuse * oe_pbr.aoStrength;
     //reflectedLight.indirectDiffuse * oe_pbr.aoStrength + 
     //+ reflectedLight.indirectDiffuse;
@@ -220,12 +238,12 @@ void fragment_main_pbr(inout vec4 color)
     // tone map:
     //color.rgb = color.rgb / (color.rgb + vec3(1.0));
     // linear tone map
-    color.rgb = clamp(color.rgb * 0.5,0.0,1.0);
+    //color.rgb = clamp(color.rgb * 0.5,0.0,1.0);
     
     // boost:
     color.rgb *= 2.2;
     color.rgb = pow(color.rgb, vec3(1.0/2.2));
-    //color = linearTosRGB(color);
+   // color = linearTosRGB(color);
 
     // add in the haze
     //color.rgb += atmos_color;

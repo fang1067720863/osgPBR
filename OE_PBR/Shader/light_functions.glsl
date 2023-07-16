@@ -116,7 +116,7 @@ vec2 sphericalUV(vec3 v)
 
         vec3 r = reflect(-viewDir, normal); 
 
-        vec3 F = fresnelSchlickRoughness(max(dot(normal,viewDir), 0.0), vec3(0.04), roughnessFactor);
+       
 
          vec3 reflectWC = (osg_ViewMatrixInverse * vec4(r, 0.0)).rgb;
         reflectWC = normalize(reflectWC);
@@ -126,8 +126,10 @@ vec2 sphericalUV(vec3 v)
     #else
         vec3 prefilteredColor = textureLod(prefilterMap, sphericalUV(reflectWC),  mip).rgb;
     #endif
-        vec2 brdf  = texture(brdfLUT, vec2(max(dot(normal,viewDir), 0.0), roughnessFactor)).rg;
-        vec3 radiance = prefilteredColor * (F * brdf.x + brdf.y);
+         //vec3 F = fresnelSchlickRoughness(max(dot(normal,viewDir), 0.0), vec3(0.04), roughnessFactor);
+        // vec2 brdf  = texture(brdfLUT, vec2(max(dot(normal,viewDir), 0.0), roughnessFactor)).rg;
+        vec3 radiance = prefilteredColor;
+        // * (F * brdf.x + brdf.y);
         return radiance * envMapIntensity;
     }
 #endif
@@ -169,14 +171,23 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
 
     vec3 specularColor =vec3(1.0);
+
+   
 	//computeMultiscattering( geometry.normal, geometry.viewDir, material.specularColor, material.specularF90, material.roughness, singleScattering, multiScattering );
     computeMultiscattering( geometry.normal, geometry.viewDir, specularColor, material.metallicFactor, material.roughnessFactor, singleScattering, multiScattering);
+    //  float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
+    // vec3 F = fresnelSchlickRoughness(NdotV, vec3(0.04), material.roughnessFactor);
+    // vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
+    // singleScattering = (F * brdf.x + brdf.y);
 
 
 	vec3 scattering = singleScattering + multiScattering;
-	vec3 diffuse = material.baseColorFactor.rgb * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) );
+	vec3 diffuse = material.baseColorFactor.rgb;  //人工放大 如初原本色
+    // * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) );
 
-	reflectedLight.indirectSpecular += radiance * singleScattering;
+	reflectedLight.indirectSpecular += singleScattering * radiance * 0.5; //人工缩小 减少反光色
+   
+   
 	reflectedLight.indirectSpecular += multiScattering * cosineWeightedIrradiance;
 
 	reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;
