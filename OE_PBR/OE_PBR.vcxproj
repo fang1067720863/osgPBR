@@ -176,6 +176,7 @@
     <ClInclude Include="IBLBaker.h" />
     <ClInclude Include="PbrLightEffect.h" />
     <ClInclude Include="PbrMaterial.h" />
+    <ClInclude Include="RayPicker.h" />
     <ClInclude Include="SnapImage.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

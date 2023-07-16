@@ -63,7 +63,7 @@ vec2 sphericalUV(vec3 v)
         // world space 
         vec3 normalWC = (osg_ViewMatrixInverse * vec4(normal, 0.0)).rgb;
         normalWC = normalize(normalWC);
-        float envMapIntensity = 0.2;
+        float envMapIntensity = 1.0;
         #ifdef USE_ENV_CUBE_UV
             vec3 irradiance = texture(irradianceMap, normal).rgb;
         #else
@@ -72,11 +72,47 @@ vec2 sphericalUV(vec3 v)
         return PI * irradiance * envMapIntensity;
     }
 
+    float roughToMip(float _uroughness, float mipLevel)
+    {
+        float _umip = 0.0;
+        if ((_uroughness >= 0.80000001))
+        {
+            (_umip = ((((1.0 - _uroughness) * 1.0) / 0.19999999) + -2.0));
+        }
+        else
+        {
+            if ((_uroughness >= 0.40000001))
+            {
+            (_umip = ((((0.80000001 - _uroughness) * 3.0) / 0.40000001) + -1.0));
+            }
+            else
+            {
+            if ((_uroughness >= 0.30500001))
+            {
+                (_umip = ((((0.40000001 - _uroughness) * 1.0) / 0.094999999) + 2.0));
+            }
+            else
+            {
+                if ((_uroughness >= 0.20999999))
+                {
+                (_umip = ((((0.30500001 - _uroughness) * 1.0) / 0.095000014) + 3.0));
+                }
+                else
+                {
+                (_umip = (-2.0 * log2((1.16 * _uroughness))));
+                }
+            }
+            }
+        }
+        return (_umip+2) * mipLevel/11;
+
+    }
+
     // uniform mat4 osg_ViewMatrixInverse;
     vec3 getIBLRadiance(vec3 normal, float roughnessFactor, vec3 viewDir)
     {
         const float MAX_REFLECTION_LOD = 4.0;
-        float envMapIntensity =  0.2;
+        float envMapIntensity = 1.0;
 
         vec3 r = reflect(-viewDir, normal); 
 
@@ -84,10 +120,11 @@ vec2 sphericalUV(vec3 v)
 
          vec3 reflectWC = (osg_ViewMatrixInverse * vec4(r, 0.0)).rgb;
         reflectWC = normalize(reflectWC);
+        float mip = roughToMip(roughnessFactor, MAX_REFLECTION_LOD);
     #ifdef USE_ENV_CUBE_UV
-        vec3 prefilteredColor = textureLod(prefilterMap, reflectWC,  roughnessFactor * MAX_REFLECTION_LOD).rgb;
+        vec3 prefilteredColor = textureLod(prefilterMap, reflectWC,  mip).rgb;
     #else
-        vec3 prefilteredColor = textureLod(prefilterMap, sphericalUV(reflectWC),  roughnessFactor * MAX_REFLECTION_LOD).rgb;
+        vec3 prefilteredColor = textureLod(prefilterMap, sphericalUV(reflectWC),  mip).rgb;
     #endif
         vec2 brdf  = texture(brdfLUT, vec2(max(dot(normal,viewDir), 0.0), roughnessFactor)).rg;
         vec3 radiance = prefilteredColor * (F * brdf.x + brdf.y);

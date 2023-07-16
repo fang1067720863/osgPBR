@@ -134,6 +134,7 @@ void fragment_main_pbr(inout vec4 color)
     float roughnessFactor = oe_pbr.roughnessFactor;
     float metallicFactor = oe_pbr.metallicFactor;
     vec3 emissiveFactor = oe_pbr.emissiveFactor;
+    roughnessFactor = metallicFactor = 1.0;
 
     
     float roughness = roughnessFactor;
@@ -142,21 +143,15 @@ void fragment_main_pbr(inout vec4 color)
     vec3 emissive = emissiveFactor;
     vec3 diffuseColor =vec3(0.0);
 
-    f0 = mix(f0, pow(baseColor,vec3(2.2)), vec3(oe_pbr.metallicFactor));
-    diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
-    diffuseColor *= 1.0 - metallic;
-
-    // vec3 normalWC = (osg_ViewMatrixInverse * vec4(normalEC, 0.0)).rgb;
-    // normalWC = normalize(normalWC);
-    // vec3 res = normalWC + vec3(1.0);
-    // color.rgb = 0.5 * res;
-    // return;
+    //f0 = mix(f0, pow(baseColor,vec3(2.2)), vec3(oe_pbr.metallicFactor));
+    //diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
+   
 
     # MATERIAL_BODY
     // vec3 res = normal + vec3(1.0);
     // color.rgb = 0.5 * res;
     // return;
-    
+    //diffuseColor *= 1.0 - metallic;
     
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
@@ -178,7 +173,9 @@ void fragment_main_pbr(inout vec4 color)
         float NdotV = max(dot(n, v), 0.0f);
         
         vec3 lightColor = vec3(osg_LightSource[i].diffuse);
+        lightColor *= 2.0;
         Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao,emissive);
+        Lo *= osg_LightSource[i].spotExponent;
     }
 
     // indirect light accumulate
@@ -193,7 +190,7 @@ void fragment_main_pbr(inout vec4 color)
     vec3 irradianceIBL = vec3(0.0);
     vec3 radianceIBL = vec3(0.0);
 #ifdef USE_ENV_MAP
-    irradianceIBL = getIBLIrradiance(n);
+    //irradianceIBL = getIBLIrradiance(n);
     radianceIBL = getIBLRadiance(n, roughnessFactor,v);
 #endif
     ReflectedLight reflectedLight;
@@ -204,9 +201,15 @@ void fragment_main_pbr(inout vec4 color)
     geometry.viewDir = v;
     geometry.normal = n;
 
+    pbr_Material material;
+    material.baseColorFactor=vec4(diffuseColor,1.0);
+    material.metallicFactor=roughness;
+    material.roughnessFactor=metallic;
+    material.aoStrength=ao;
+
     //RE_IndirectDiffuse_Physical(irradiance, baseColor, reflectedLight);
-    RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,geometry, oe_pbr, reflectedLight);
-    color.rgb = Lo + reflectedLight.indirectSpecular + reflectedLight.indirectDiffuse;
+    RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,geometry, material, reflectedLight);
+    color.rgb = Lo + reflectedLight.indirectSpecular * oe_pbr.aoStrength + reflectedLight.indirectDiffuse * oe_pbr.aoStrength;
     //reflectedLight.indirectDiffuse * oe_pbr.aoStrength + 
     //+ reflectedLight.indirectDiffuse;
     //+ reflectedLight.indirectDiffuse + reflectedLight.indirectSpecular;
@@ -220,9 +223,9 @@ void fragment_main_pbr(inout vec4 color)
     color.rgb = clamp(color.rgb * 0.5,0.0,1.0);
     
     // boost:
-    //color.rgb *= 2.2;
-    //color.rgb = pow(color.rgb, vec3(1.0/2.2));
-    color = linearTosRGB(color);
+    color.rgb *= 2.2;
+    color.rgb = pow(color.rgb, vec3(1.0/2.2));
+    //color = linearTosRGB(color);
 
     // add in the haze
     //color.rgb += atmos_color;

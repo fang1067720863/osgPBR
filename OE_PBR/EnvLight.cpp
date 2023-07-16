@@ -6,6 +6,7 @@
 #include <osgDB/ReadFile>
 #include <osgDB/Options>
 #include <osgEarth/FileUtils>
+#include<osg/Texture2DArray>
 
 #include<osg/MatrixTransform>
 //#include"SnapImage.h"
@@ -80,12 +81,33 @@ void EnvLightEffect::InitEnvMapAtlas()
         auto prefilterMapImage = osgDB::readRefImageFile(prefilterMapPath, readOption.get());
 
         osg::Texture2D* prefilterMap2D = dynamic_cast<osg::Texture2D*>(prefilterMap.get());
-        prefilterMap2D->setImage(prefilterMapImage.get());
+        prefilterMap2D->setImage(0,prefilterMapImage.get());
         prefilterMap2D->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP_TO_EDGE);
         prefilterMap2D->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP_TO_EDGE);
 
-        prefilterMap2D->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
+     /*   prefilterMap2D->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR);
         prefilterMap2D->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
+        prefilterMap2D->setNumMipmapLevels(5);*/
+
+        prefilterMap2D->setFilter(osg::Texture::MIN_FILTER, osg::Texture::NEAREST_MIPMAP_LINEAR);
+        prefilterMap2D->setFilter(osg::Texture::MAG_FILTER, osg::Texture::NEAREST_MIPMAP_LINEAR);
+
+       // prefilterMap2D->setUnRefImageDataAfterApply(osgEarth::Registry::instance()->unRefImageDataAfterApply().get());
+        prefilterMap2D->setMaxAnisotropy(4.0);
+
+        // Let the GPU do it since we only download this at startup
+        
+
+
+        osg::ref_ptr<osg::State> state = new osg::State;
+        state->initializeExtensionProcs();
+        prefilterMap2D->allocateMipmapLevels();
+        prefilterMap2D->apply(*state);
+        prefilterMap2D->setUseHardwareMipMapGeneration(false);
+
+        std::cout<<" "<< prefilterMapImage->getNumMipmapLevels()<<" prfilter";
+        std::cout << " " << prefilterMap2D->getNumMipmapLevels() << " prfilter";
+       
 
         prefilterMap = prefilterMap2D;
 
@@ -103,7 +125,7 @@ void EnvLightEffect::InitEnvMapAtlas()
         irridianceMap = irridianceMap2D;
     }
    
-
+   
 
     auto brdfLUTPath = "Cerberus_NBrdf.dds";
     auto brdfImage = osgDB::readRefImageFile(brdfLUTPath, readOption.get());

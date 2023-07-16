@@ -7,7 +7,7 @@
     oe_texcoord = abs(oe_texcoord);
     #ifdef OE_ENABLE_BASECOLOR_MAP
         diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
-        diffuseColor = pow(diffuseColor.rgb, vec3(2.2));
+       // diffuseColor = pow(diffuseColor.rgb, vec3(2.2));
     #endif
 
     #ifdef OE_ENABLE_MR_MAP
@@ -18,7 +18,7 @@
 
     #ifdef OE_ENABLE_NORMAL_MAP
 
-        vec3 tangent = vec3(1.0,0.0,0.0) * gl_NormalMatrix
+        vec3 tangent = vec3(1.0,0.0,0.0) * gl_NormalMatrix;
         vec3 mapN = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_NORMAL_MAP)).rgb;  // normal in tangent space
         normal = getNormal(normal, mapN);
 

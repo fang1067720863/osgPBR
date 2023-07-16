@@ -38,6 +38,7 @@
 #include"EnvLight.h"
 #include"IBLBaker.h"
 #include"CubeToQuad.h"
+#include"RayPicker.h"
 //#define LC "[viewer] "
 
 template<typename T>
@@ -84,9 +85,10 @@ public:
     };
     std::vector<DefineSpec> _defines;
     std::vector<UniformSpec> _uniforms;
+    char material[256] = "Original text";
     osg::Node* _node;
 public:
-    TestGUI(osg::Node* node) :GUI::BaseGUI("PBR")
+    TestGUI(osg::Node* node) :GUI::BaseGUI("PBR Material")
     {
         _node = node;
         UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
@@ -109,6 +111,35 @@ public:
         _defines.emplace_back(baseColor);
 
     }
+    bool setNode(osg::MatrixTransform* node)
+    {
+        osg::Node* child = node->getChild(0);
+        strcpy(material, node->getName().c_str());
+        _node = child;
+        for (auto& def : _uniforms)
+        {
+            if (def._name == "oe_pbr.metallicFactor")
+            {
+                float metallicFactor;
+                child->getOrCreateStateSet()->getUniform("oe_pbr.metallicFactor")->get(metallicFactor);
+                def._value = metallicFactor;
+            }
+            if (def._name == "oe_pbr.roughnessFactor")
+            {
+                float roughnessFactor;
+                child->getOrCreateStateSet()->getUniform("oe_pbr.roughnessFactor")->get(roughnessFactor);
+                def._value = roughnessFactor;
+            }
+            if (def._name == "oe_pbr.aoStrength")
+            {
+                float aoStrength;
+                child->getOrCreateStateSet()->getUniform("oe_pbr.aoStrength")->get(aoStrength);
+                def._value = aoStrength;
+            }
+        }
+
+        return true;
+    }
 
     void draw(osg::RenderInfo& ri)override {
         if (!isVisible()) {
@@ -118,14 +149,13 @@ public:
         {
             if (!_uniforms.empty())
             {
-                ImGui::Text("Uniforms:");
+                ImGui::Text(material);
             }
         }
         for (auto& def : _uniforms)
         {
             if (ImGui::SliderFloat(def._name.c_str(), &def._value, def._minval, def._maxval))
             {
-               
                 _node->getOrCreateStateSet()->getOrCreateUniform(def._name, osg::Uniform::FLOAT)->set(def._value);
                 _node->getOrCreateStateSet()->addUniform(new osg::Uniform(def._name.c_str(), def._value), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
                
@@ -181,6 +211,7 @@ public:
             static float col2[4] = { diffuse[0],diffuse[1], diffuse[2], diffuse[3] };
             static float col3[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
             static float col4[3] = { direction[0],direction[1], direction[2] };
+            static float itensity = 0.5f;
             static bool lightenable = true;
             if (ImGui::Checkbox("on/off", &lightenable))
             {
@@ -209,6 +240,12 @@ public:
                 _light->setDirection(osg::Vec3(col4[0], col4[1], col4[2]));
                 std::cout << "setDirection" << col4[0] << " " << col4[1] << " " << col4[2] << std::endl;
             }
+            if (ImGui::SliderFloat("intensity", &itensity, 0.0f, 1.0f))
+            {
+                _light->setSpotExponent(itensity);
+              
+            }
+
             
         }
         ImGui::End();
@@ -216,6 +253,96 @@ public:
 };
 
 
+class IndirectLightGUI :public osgEarth::GUI::BaseGUI
+{
+public:
+
+    osg::Light* _light;
+public:
+    IndirectLightGUI(osg::Light* light) :GUI::BaseGUI("IndirectLightGUI"), _light(light)
+    {
+
+
+    }
+
+    void draw(osg::RenderInfo& ri)override {
+        if (!isVisible()) {
+            return;
+        }
+        ImGui::Begin(name(), visible());
+
+
+        ImGui::Separator();
+        {
+            //IMGUI_DEMO_MARKER("Widgets/Basic/ColorEdit3, ColorEdit4");
+            auto ambient = _light->getAmbient();
+            auto diffuse = _light->getDiffuse();
+            auto direction = _light->getDirection();
+            static float col1[4] = { ambient[0],ambient[1], ambient[2], ambient[3] };
+            static float col2[4] = { diffuse[0],diffuse[1], diffuse[2], diffuse[3] };
+            static float col3[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
+            static float col4[3] = { direction[0],direction[1], direction[2] };
+            static float itensity = 0.5f;
+            static bool lightenable = true;
+            if (ImGui::Checkbox("on/off", &lightenable))
+            {
+                if (lightenable)
+                {
+                    _light->setAmbient(osg::Vec4(col1[0], col1[1], col1[2], col1[3]));
+                    _light->setDiffuse(osg::Vec4(col2[0], col2[1], col2[2], col2[3]));
+                    _light->setDirection(osg::Vec3(col4[0], col4[1], col4[2]));
+                }
+                else {
+                    _light->setAmbient(osg::Vec4(0.0, 0.0, 0.0, 0.0));
+                    _light->setDiffuse(osg::Vec4(0.0, 0.0, 0.0, 0.0));
+                    _light->setDirection(osg::Vec3(0.0, 0.0, 0.0));
+                }
+            }
+            if (ImGui::SliderFloat("intensity", &itensity, 0.0f, 1.0f))
+            {
+                _light->setSpotExponent(itensity);
+
+            }
+
+
+        }
+        ImGui::End();
+    }
+};
+
+float _uroughnessToMip( float _uroughness) {
+    float _umip = 0.0;
+    if ((_uroughness >= 0.80000001))
+    {
+        (_umip = ((((1.0 - _uroughness) * 1.0) / 0.19999999) + -2.0));
+    }
+    else
+    {
+        if ((_uroughness >= 0.40000001))
+        {
+            (_umip = ((((0.80000001 - _uroughness) * 3.0) / 0.40000001) + -1.0));
+        }
+        else
+        {
+            if ((_uroughness >= 0.30500001))
+            {
+                (_umip = ((((0.40000001 - _uroughness) * 1.0) / 0.094999999) + 2.0));
+            }
+            else
+            {
+                if ((_uroughness >= 0.20999999))
+                {
+                    (_umip = ((((0.30500001 - _uroughness) * 1.0) / 0.095000014) + 3.0));
+                }
+                else
+                {
+                    (_umip = (-2.0 * log2((1.16 * _uroughness))));
+                }
+            }
+        }
+    }
+    return _umip;
+}
 
 osg::ref_ptr<osg::Node> CreatePbrSphere()
 {
@@ -331,7 +458,7 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
     myLight1->setAmbient(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
     myLight1->setDiffuse(osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f));
     myLight1->setSpotCutoff(20.0f);
-    myLight1->setSpotExponent(50.0f);
+    myLight1->setSpotExponent(0.5f);
     myLight1->setDirection(osg::Vec3(-0.382353f, -0.254902f, -0.382353f));
 
     osg::LightSource* lightS1 = new osg::LightSource;
@@ -346,6 +473,29 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
     return lightGroup;
 }
 
+std::vector<osg::ref_ptr<StandardPBRMaterial>> createNoTexMaterials()
+{
+    std::vector<osg::ref_ptr<StandardPBRMaterial>> result;
+
+    for (int i = 1; i <= 8; i++)
+    {
+        for (int j = 1; j <= 8; j++)
+        {
+            osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
+
+            m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+            m->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+            m->setMetallicFactor(0.11f * i);
+            m->setRoughnessFactor(0.11f * j);
+            m->setAoStrength(0.15f);
+            m->setReceiveEnvLight(true);
+            result.push_back(m);
+        }
+       
+    }
+    
+    return result;
+}
 std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
 {
     std::vector<osg::ref_ptr<ExtensionedMaterial>> result;
@@ -365,7 +515,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
     m->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
     m->setMetallicFactor(1.00f);
-    m->setRoughnessFactor(0.88f);
+    m->setRoughnessFactor(0.108f);
     m->setAoStrength(0.15f);
     m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "metal/normal.png");
     m->setReceiveEnvLight(true);
@@ -383,7 +533,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     grass->setBaseColorFactor(osg::Vec4f(0.5f, 0.5f, 0.5f, 0.5f));
     grass->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
     grass->setMetallicFactor(0.29f);
-    grass->setRoughnessFactor(0.31f);
+    grass->setRoughnessFactor(0.81f);
     grass->setAoStrength(0.15f);
     grass->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "grass/normal.png");
     grass->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "grass/ao.png");
@@ -440,15 +590,38 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
 osg::ref_ptr<osg::Group> createMaterialSpheres()
 {
     osg::ref_ptr<osg::Group> gp = new osg::Group();
+   
+  
+
+    //size_t cnt = materials.size();
+  /*  std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
+    int row, col;
+    row = col = 8;*/
+ /*   for (size_t i = 0; i < 8; i++)
+    {
+        for (size_t j = 0; j < 8; j++)
+        {
+            osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+            osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
+            geode->addDrawable(sd);
+            geode->getOrCreateStateSet()->setAttributeAndModes(materials[i * col + j], osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+
+            osg::ref_ptr<osg::MatrixTransform> matrixT = new osg::MatrixTransform();
+
+
+            matrixT->setMatrix(osg::Matrix::translate((double)i * 5.0, (double)j * 5.0, 0.0));
+            matrixT->addChild(geode);
+            matrixT->setName(materials[i * col + j]->getName());
+
+            PBRMaterialCallback().operator()(materials[i*col + j], 0L);
+            auto* pbr = new PbrLightEffect();
+            pbr->attach(geode->getOrCreateStateSet());
+            gp->addChild(matrixT);
+        }
+       
+    }*/
     std::vector<osg::ref_ptr<ExtensionedMaterial>> materials = std::move(createMaterials());
-
-    std::vector<osg::Matrix> scales = { osg::Matrix::scale(1.0, 1.0, 1.0),
-        osg::Matrix::scale(1.0, 3.0, 1.0),
-        osg::Matrix::scale(3.0, 1.0, 1.0),
-        osg::Matrix::scale(1.0, 1.0, 3.0) };
-
-    size_t cnt = materials.size();
-    for (size_t i = 0; i < cnt; i++)
+    for (size_t i = 0; i < materials.size(); i++)
     {
         osg::ref_ptr<osg::Geode> geode = new osg::Geode();
         osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
@@ -456,18 +629,18 @@ osg::ref_ptr<osg::Group> createMaterialSpheres()
         geode->getOrCreateStateSet()->setAttributeAndModes(materials[i], osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
 
         osg::ref_ptr<osg::MatrixTransform> matrixT = new osg::MatrixTransform();
-       
-        
-        
-        //scales[i]*
-        matrixT->setMatrix(osg::Matrix::translate((double)i * 6.0, 0.0, 0.0));
+
+
+        matrixT->setMatrix(osg::Matrix::translate((double)i * 5.0, 0.0, 0.0));
         matrixT->addChild(geode);
         matrixT->setName(materials[i]->getName());
-        
+
         ExtensionedMaterialCallback().operator()(materials[i], 0L);
         auto* pbr = new PbrLightEffect();
         pbr->attach(geode->getOrCreateStateSet());
         gp->addChild(matrixT);
+        
+
     }
     return gp;
     
@@ -533,8 +706,17 @@ int main(int argc, char** argv)
     osg::Light* lightState = new osg::Light;
    auto light = CreateLight(sphere->getOrCreateStateSet(), lightState);
 
-    
-   
+   auto materialPanel = new TestGUI(materialSpheres.get());
+   auto findCallback = [materialPanel](osg::MatrixTransform* node)
+   {
+    /*   auto matrix = node->getMatrix();
+
+       node->setMatrix(matrix * osg::Matrix(osg::Quat(0.01, osg::Vec3(0.0, 0.0, 1.0))));*/
+
+       node->getName();
+       materialPanel->setNode(node);
+       return true;
+   };
 
 
     auto func = [&](osg::MatrixTransform* node, osg::NodeVisitor* nv)
@@ -551,14 +733,17 @@ int main(int argc, char** argv)
 
     viewer.setReleaseContextAtEndOfFrameHint(false);
 
-    viewer.addEventHandler(new osgViewer::HelpHandler(arguments.getApplicationUsage()));
+    //viewer.addEventHandler(new osgViewer::HelpHandler(arguments.getApplicationUsage()));
+    viewer.addEventHandler(new RayPicker(&viewer,findCallback));
 
     // Call this to enable ImGui rendering.
     // If you use the MapNodeHelper, call this first.
     viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
 
     GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
-    gui->add("Demo", new TestGUI(materialSpheres.get()));
+
+   
+    gui->add("Demo", materialPanel);
     gui->add("Demo2", new LightGUI(lightState));
 
     viewer.setSceneData(group);

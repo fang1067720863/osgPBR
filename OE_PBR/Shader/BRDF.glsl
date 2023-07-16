@@ -108,16 +108,19 @@ vec3 BRDF(
 
     vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor);
    // vec3 diffuse = BRDF_Diffuse_Burley(VdotH, NdotL, NdotV, roughness, diffuseColor);
-    vec3 diffuseContrib = diffuse * kD;
+    vec3 diffuseContrib = diffuse;
     
     vec3 Lo = NdotL * lightColor * (diffuseContrib + specContrib);
 
     //Lo *= ao;
     Lo += emissive;
 
+
     return Lo;
     
 }
+
+
 
 
 vec3 normalInWorldWithoutTangent(vec3 normal, vec3 eyePos,vec2 uv, vec3 normalFromTexture)

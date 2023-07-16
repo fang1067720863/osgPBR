@@ -239,7 +239,7 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             unit = material->texUnitCnt();
             stateSet->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
            
-            stateSet->getOrCreateUniform("prefilterMap", uniformType)->set(unit);
+            stateSet->getOrCreateUniform("prefilterMap", osg::Uniform::SAMPLER_2D)->set(unit);
             std::cout << "prefilterMap " << unit << std::endl;
             material->incementTexUnit();
 
@@ -248,6 +248,8 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             unit = material->texUnitCnt();
             stateSet->getOrCreateUniform("brdfLUT", uniformType)->set(material->texUnitCnt());
             material->incementTexUnit();
+
+            stateSet->getOrCreateUniform("envMapIntensity", osg::Uniform::FLOAT)->set(material->getAoStrength());
           
         }
 
