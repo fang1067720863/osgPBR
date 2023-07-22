@@ -56,7 +56,7 @@ vec2 sphericalUV(vec3 v)
         uniform sampler2D irradianceMap;
         uniform sampler2D prefilterMap;
     #endif
-    uniform sampler2D brdfLUT;
+   
     uniform mat4 osg_ViewMatrixInverse;
     vec3 getIBLIrradiance(vec3 normal)
     {
@@ -104,7 +104,7 @@ vec2 sphericalUV(vec3 v)
             }
             }
         }
-        return (_umip+2) * mipLevel/11;
+        return mipLevel -1 - (_umip+2) * mipLevel/11;
 
     }
 
@@ -159,7 +159,7 @@ struct GeometricContext
 	vec3 viewDir;
 };
 
-
+uniform sampler2D brdfLUT;
 void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance,
 								const in GeometricContext geometry, const in pbr_Material material, inout ReflectedLight reflectedLight)
 {
@@ -175,17 +175,18 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
    
 	//computeMultiscattering( geometry.normal, geometry.viewDir, material.specularColor, material.specularF90, material.roughness, singleScattering, multiScattering );
     computeMultiscattering( geometry.normal, geometry.viewDir, specularColor, material.metallicFactor, material.roughnessFactor, singleScattering, multiScattering);
-    //  float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
-    // vec3 F = fresnelSchlickRoughness(NdotV, vec3(0.04), material.roughnessFactor);
-    // vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
-    // singleScattering = (F * brdf.x + brdf.y);
+     float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
+    vec3 F = fresnelSchlickRoughness(NdotV, vec3(0.04), material.roughnessFactor);
+    vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
+    singleScattering = (F * brdf.x + brdf.y);
 
 
 	vec3 scattering = singleScattering + multiScattering;
-	vec3 diffuse = material.baseColorFactor.rgb;  //人工放大 如初原本色
-    // * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) );
-
-	reflectedLight.indirectSpecular += singleScattering * radiance * 0.5; //人工缩小 减少反光色
+	vec3 diffuse = material.baseColorFactor.rgb * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) ); 
+    //
+    // reflectedLight.indirectSpecular += vec3(singleScattering);
+    // return;
+	reflectedLight.indirectSpecular += singleScattering * radiance; 
    
    
 	reflectedLight.indirectSpecular += multiScattering * cosineWeightedIrradiance;

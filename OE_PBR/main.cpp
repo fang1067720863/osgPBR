@@ -255,11 +255,9 @@ public:
 
 class IndirectLightGUI :public osgEarth::GUI::BaseGUI
 {
-public:
 
-    osg::Light* _light;
 public:
-    IndirectLightGUI(osg::Light* light) :GUI::BaseGUI("IndirectLightGUI"), _light(light)
+    IndirectLightGUI() :GUI::BaseGUI("IndirectLightGUI")
     {
 
 
@@ -274,33 +272,17 @@ public:
 
         ImGui::Separator();
         {
-            //IMGUI_DEMO_MARKER("Widgets/Basic/ColorEdit3, ColorEdit4");
-            auto ambient = _light->getAmbient();
-            auto diffuse = _light->getDiffuse();
-            auto direction = _light->getDirection();
-            static float col1[4] = { ambient[0],ambient[1], ambient[2], ambient[3] };
-            static float col2[4] = { diffuse[0],diffuse[1], diffuse[2], diffuse[3] };
-            static float col3[4] = { 0.4f, 0.7f, 0.0f, 0.5f };
-            static float col4[3] = { direction[0],direction[1], direction[2] };
+   
             static float itensity = 0.5f;
             static bool lightenable = true;
             if (ImGui::Checkbox("on/off", &lightenable))
             {
-                if (lightenable)
-                {
-                    _light->setAmbient(osg::Vec4(col1[0], col1[1], col1[2], col1[3]));
-                    _light->setDiffuse(osg::Vec4(col2[0], col2[1], col2[2], col2[3]));
-                    _light->setDirection(osg::Vec3(col4[0], col4[1], col4[2]));
-                }
-                else {
-                    _light->setAmbient(osg::Vec4(0.0, 0.0, 0.0, 0.0));
-                    _light->setDiffuse(osg::Vec4(0.0, 0.0, 0.0, 0.0));
-                    _light->setDirection(osg::Vec3(0.0, 0.0, 0.0));
-                }
+                EnvLightEffect::instance()->setEnable(lightenable);
             }
             if (ImGui::SliderFloat("intensity", &itensity, 0.0f, 1.0f))
             {
-                _light->setSpotExponent(itensity);
+                std::cout << "itensity" << itensity << std::endl;
+                EnvLightEffect::instance()->setLightIntensity(itensity);
 
             }
 
@@ -308,6 +290,33 @@ public:
         }
         ImGui::End();
     }
+};
+class CullCallback : public osg::NodeCallback
+{
+    virtual void operator()(osg::Node* node, osg::NodeVisitor* nv)
+    {
+        std::cout << "cull callback - pre traverse" << node << std::endl;
+        traverse(node, nv);
+        std::cout << "cull callback - post traverse" << node << std::endl;
+    }
+};
+
+struct DrawCallback : public osg::Drawable::DrawCallback
+{
+
+    DrawCallback() :
+        _firstTime(true) {}
+
+    virtual void drawImplementation(osg::RenderInfo& renderInfo, const osg::Drawable* drawable) const
+    {
+        osg::State& state = *renderInfo.getState();
+
+        OE_PROFILING_ZONE_NAMED("CustomDrawCallback");
+
+        drawable->drawImplementation(renderInfo);
+    }
+
+    mutable bool _firstTime;
 };
 
 float _uroughnessToMip( float _uroughness) {
@@ -465,11 +474,16 @@ osg::Node* CreateLight(osg::StateSet* rootStateSet, osg::Light * myLight1)
     lightS1->setLight(myLight1);
     lightS1->setLocalStateSetModes(osg::StateAttribute::ON);
 
-    lightS1->setStateSetModes(*rootStateSet, osg::StateAttribute::ON);
+   /* lightS1->setStateSetModes(*rootStateSet, osg::StateAttribute::ON);*/
     lightGroup->addChild(lightS1);
 #ifdef NDEBUG
-    lightS1->addCullCallback(new LightSourceGL3UniformGenerator());
+    auto cb = new LightSourceGL3UniformGenerator();
+    lightS1->addCullCallback(cb);
 #endif 
+
+    EnvLightSource* els = new EnvLightSource;
+    els->addCullCallback(new EnvLightGL3UniformGenerator());
+    lightGroup->addChild(els);
     return lightGroup;
 }
 
@@ -518,6 +532,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     m->setRoughnessFactor(0.108f);
     m->setAoStrength(0.15f);
     m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "metal/normal.png");
+    //m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "metal/albedo.png");
     m->setReceiveEnvLight(true);
 
     m->addTextureAttribute("metalMap",  "metal/metal.png", "OE_ENABLE_Metal_MAP");
@@ -553,7 +568,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     gray->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
     gray->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
     gray->setMetallicFactor(0.5f);
-    gray->setRoughnessFactor(0.668f);
+    gray->setRoughnessFactor(0.176f);
     //gray->setAoStrength(0.1f);
     gray->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "gray/normal.png");
     //gray->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "gray/ao.png");
@@ -592,20 +607,20 @@ osg::ref_ptr<osg::Group> createMaterialSpheres()
     osg::ref_ptr<osg::Group> gp = new osg::Group();
    
   
-
-    //size_t cnt = materials.size();
-  /*  std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
+    std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
     int row, col;
-    row = col = 8;*/
- /*   for (size_t i = 0; i < 8; i++)
+    row = col = 8;
+
+    for (size_t i = 0; i < row; i++)
     {
-        for (size_t j = 0; j < 8; j++)
+        for (size_t j = 0; j < col; j++)
         {
             osg::ref_ptr<osg::Geode> geode = new osg::Geode();
             osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
             geode->addDrawable(sd);
+            sd->setDrawCallback(new DrawCallback());
             geode->getOrCreateStateSet()->setAttributeAndModes(materials[i * col + j], osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
-
+            geode->getOrCreateStateSet()->setName("110");
             osg::ref_ptr<osg::MatrixTransform> matrixT = new osg::MatrixTransform();
 
 
@@ -619,8 +634,8 @@ osg::ref_ptr<osg::Group> createMaterialSpheres()
             gp->addChild(matrixT);
         }
        
-    }*/
-    std::vector<osg::ref_ptr<ExtensionedMaterial>> materials = std::move(createMaterials());
+    }
+ /*   std::vector<osg::ref_ptr<ExtensionedMaterial>> materials = std::move(createMaterials());
     for (size_t i = 0; i < materials.size(); i++)
     {
         osg::ref_ptr<osg::Geode> geode = new osg::Geode();
@@ -641,12 +656,17 @@ osg::ref_ptr<osg::Group> createMaterialSpheres()
         gp->addChild(matrixT);
         
 
-    }
+    }*/
     return gp;
     
 }
 int main(int argc, char** argv)
 {
+    for (int i = 0; i < 50; i++)
+    {
+        std::cout << _uroughnessToMip(i * 0.02f) << " " << std::endl;
+    }
+  
     osg::ArgumentParser arguments(&argc, argv);
 
     int versio = osg::getGLVersionNumber();
@@ -709,10 +729,6 @@ int main(int argc, char** argv)
    auto materialPanel = new TestGUI(materialSpheres.get());
    auto findCallback = [materialPanel](osg::MatrixTransform* node)
    {
-    /*   auto matrix = node->getMatrix();
-
-       node->setMatrix(matrix * osg::Matrix(osg::Quat(0.01, osg::Vec3(0.0, 0.0, 1.0))));*/
-
        node->getName();
        materialPanel->setNode(node);
        return true;
@@ -728,7 +744,7 @@ int main(int argc, char** argv)
 
    // gltfModel.getNode()->addUpdateCallback(new CB<osg::MatrixTransform>(func));
     
-    group->addChild(light);
+   group->addChild(light);
 
 
     viewer.setReleaseContextAtEndOfFrameHint(false);
@@ -745,6 +761,8 @@ int main(int argc, char** argv)
    
     gui->add("Demo", materialPanel);
     gui->add("Demo2", new LightGUI(lightState));
+    gui->add("Demo3", new IndirectLightGUI());
+    
 
     viewer.setSceneData(group);
 
@@ -753,8 +771,11 @@ int main(int argc, char** argv)
     viewer.realize();
 
     viewer.getEventHandlers().push_front(gui);
-    viewer.run();
-    return 0;
+    Metrics::setEnabled(true);
+    Metrics::setGPUProfilingEnabled(true);
+    return Metrics::run(viewer);
+  /*  viewer.run();*/
+    /*return 0;*/
 }
 
 

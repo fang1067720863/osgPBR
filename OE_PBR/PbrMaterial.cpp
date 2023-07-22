@@ -225,6 +225,7 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             auto uniformType = EnvLightEffect::instance()->useCubeUV() ? osg::Uniform::SAMPLER_CUBE : osg::Uniform::SAMPLER_2D;
             stateSet->setDefine("USE_ENV_CUBE_UV", useCubeUV);
             
+            float envLightIntensity = EnvLightEffect::instance()->lightIntensity();
             int unit;
             //material->texUnitCnt()
             osg::Texture* diffuseEnvMap = EnvLightEffect::instance()->getIrridianceMap();
@@ -249,7 +250,7 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             stateSet->getOrCreateUniform("brdfLUT", uniformType)->set(material->texUnitCnt());
             material->incementTexUnit();
 
-            stateSet->getOrCreateUniform("envMapIntensity", osg::Uniform::FLOAT)->set(material->getAoStrength());
+           // stateSet->getOrCreateUniform("envLightIntensity", osg::Uniform::FLOAT)->set(0.7f);
           
         }
 

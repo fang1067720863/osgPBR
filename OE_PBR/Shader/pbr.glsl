@@ -99,7 +99,9 @@ uniform pbr_Material oe_pbr;
 #ifdef cascade
     uniform sampler2DArray pbrMaps;
 #endif
-// uniform mat4 osg_ViewMatrixInverse;
+#ifdef USE_ENV_MAP
+    uniform float envLightIntensity;
+#endif
 
 # MATERIAL_UNIFORMS
 
@@ -134,14 +136,14 @@ void fragment_main_pbr(inout vec4 color)
     float roughnessFactor = oe_pbr.roughnessFactor;
     float metallicFactor = oe_pbr.metallicFactor;
     vec3 emissiveFactor = oe_pbr.emissiveFactor;
-    roughnessFactor = metallicFactor = 1.0;
+    // roughnessFactor = metallicFactor = 1.0;
 
     
     float roughness = roughnessFactor;
     float metallic = metallicFactor;
     float ao = oe_pbr.aoStrength;
     vec3 emissive = emissiveFactor;
-    vec3 diffuseColor =vec3(0.0);
+    vec3 diffuseColor =vec3(1.0);
 
     //f0 = mix(f0, pow(baseColor,vec3(2.2)), vec3(oe_pbr.metallicFactor));
     //diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
@@ -151,8 +153,9 @@ void fragment_main_pbr(inout vec4 color)
     // vec3 res = normal + vec3(1.0);
     // color.rgb = 0.5 * res;
     // return;
-    //diffuseColor *= 1.0 - metallic;
+    
     diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
+    diffuseColor *= (1.0 - metallic);
     
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
@@ -190,13 +193,16 @@ void fragment_main_pbr(inout vec4 color)
     // irradiance += getLightMapIrradiance();
     vec3 irradianceIBL = vec3(0.0);
     vec3 radianceIBL = vec3(0.0);
+
+     ReflectedLight reflectedLight;
+    reflectedLight.indirectDiffuse = vec3(0.0);
+    reflectedLight.indirectSpecular = vec3(0.0);
+
 #ifdef USE_ENV_MAP
     //irradianceIBL = getIBLIrradiance(n);
     radianceIBL = getIBLRadiance(n, roughnessFactor,v);
-#endif
-    ReflectedLight reflectedLight;
-    reflectedLight.indirectDiffuse = vec3(0.0);
-    reflectedLight.indirectSpecular = vec3(0.0);
+
+   
     
     GeometricContext geometry;
     geometry.viewDir = v;
@@ -210,6 +216,10 @@ void fragment_main_pbr(inout vec4 color)
 
     RE_IndirectDiffuse_Physical(irradiance, diffuseColor, reflectedLight);
     RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,geometry, material, reflectedLight);
+
+#endif
+    // color.rgb = reflectedLight.indirectSpecular;
+    // return; 
     // float tmp = reflectedLight.indirectSpecular.x;
     // if(reflectedLight.indirectSpecular.x<0.3)
     // {
@@ -227,7 +237,10 @@ void fragment_main_pbr(inout vec4 color)
     //     color.rgb = vec3(0.0);
     // }
     // return;
-    color.rgb = Lo + reflectedLight.indirectSpecular * oe_pbr.aoStrength + reflectedLight.indirectDiffuse * oe_pbr.aoStrength;
+    color.rgb = Lo;
+    #ifdef USE_ENV_MAP
+        color.rgb += (reflectedLight.indirectSpecular * envLightIntensity + reflectedLight.indirectDiffuse * envLightIntensity);
+    #endif
     //reflectedLight.indirectDiffuse * oe_pbr.aoStrength + 
     //+ reflectedLight.indirectDiffuse;
     //+ reflectedLight.indirectDiffuse + reflectedLight.indirectSpecular;

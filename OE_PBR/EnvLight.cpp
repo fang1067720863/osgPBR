@@ -127,7 +127,7 @@ void EnvLightEffect::InitEnvMapAtlas()
    
    
 
-    auto brdfLUTPath = "Cerberus_NBrdf.dds";
+    auto brdfLUTPath = "brdfLUT.png";
     auto brdfImage = osgDB::readRefImageFile(brdfLUTPath, readOption.get());
 
     brdfLUTMap = new osg::Texture2D();
@@ -140,4 +140,68 @@ void EnvLightEffect::InitEnvMapAtlas()
     brdfLUTMap->setNumMipmapLevels(1);
 
     
+}
+
+EnvLightGL3UniformGenerator::EnvLightGL3UniformGenerator():
+_statesetsMutex("EnvLightGL3UniformGenerator(OE)")
+{
+}
+
+bool EnvLightGL3UniformGenerator::run(osg::Object* obj, osg::Object* data)
+{
+    EnvLightSource* lightSource = dynamic_cast<EnvLightSource*>(obj);
+    osgUtil::CullVisitor* cv = dynamic_cast<osgUtil::CullVisitor*>(data);
+
+
+    if (cv && lightSource )
+    {
+        auto envLight = lightSource->getEnvLightEffect()->instance();
+
+        osg::StateSet* ss = cv->getCurrentRenderStage()->getStateSet();
+        if (ss == 0L)
+        {
+            cv->getCurrentRenderStage()->setStateSet(ss = new osg::StateSet());
+
+            Threading::ScopedMutexLock lock(_statesetsMutex);
+            _statesets.push_back(ss);
+        }
+       // std::cout << ss->getBinName()<< envLight->lightIntensity() << std::endl;
+        ss->getOrCreateUniform("envLightIntensity", osg::Uniform::FLOAT)->set(envLight->lightIntensity());
+      
+       
+    }
+    return traverse(obj, data);
+
+}
+
+void EnvLightGL3UniformGenerator::resizeGLBufferObjects(unsigned maxSize)
+{
+    Threading::ScopedMutexLock lock(_statesetsMutex);
+    for (unsigned i = 0; i < _statesets.size(); ++i)
+        _statesets[i]->resizeGLObjectBuffers(maxSize);
+}
+
+void EnvLightGL3UniformGenerator::releaseGLObjects(osg::State* state) const
+{
+    Threading::ScopedMutexLock lock(_statesetsMutex);
+    for (unsigned i = 0; i < _statesets.size(); ++i)
+        _statesets[i]->releaseGLObjects(state);
+    _statesets.clear();
+}
+
+osg::ref_ptr<EnvLightEffect>& EnvLightSource::getEnvLightEffect()
+{
+     
+    static osg::ref_ptr<EnvLightEffect> s_registry = new EnvLightEffect();
+    /*  if (erase)
+        {
+            s_registry->destruct();
+            s_registry = 0;
+        }*/
+    return s_registry; // will return NULL on erase
+    
+}
+
+EnvLightSource::~EnvLightSource()
+{
 }
