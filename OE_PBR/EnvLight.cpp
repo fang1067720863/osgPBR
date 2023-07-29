@@ -29,7 +29,7 @@ osg::ref_ptr<EnvLightEffect>& EnvLightEffect::instance()
 
 void EnvLightEffect::InitEnvMapAtlas()
 {
-    std::string path = "C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL";
+    std::string path = "C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL\\pisaHDR";
     osg::ref_ptr<osgDB::Options> readOption = new osgDB::Options ("IBL");
     readOption->setDatabasePath(path);
 
@@ -76,7 +76,7 @@ void EnvLightEffect::InitEnvMapAtlas()
         //irridianceMap->setNumMipmapLevels(1);
     }
     else {
-        auto prefilterMapPath = "specular_quad.dds";
+        auto prefilterMapPath = "specular.dds";
         prefilterMap = new osg::Texture2D();
         auto prefilterMapImage = osgDB::readRefImageFile(prefilterMapPath, readOption.get());
         osg::Texture2D* prefilterMap2D = dynamic_cast<osg::Texture2D*>(prefilterMap.get());
@@ -93,7 +93,7 @@ void EnvLightEffect::InitEnvMapAtlas()
         prefilterMap2D->setUseHardwareMipMapGeneration(false);
         prefilterMap = prefilterMap2D;
 
-        auto envCubeMapPath = "abandoned_bakery_4k.hdr";
+        auto envCubeMapPath = "env.dds";
         envCubeMap = new osg::Texture2D();
         auto envCubeMapImage = osgDB::readRefImageFile(envCubeMapPath, readOption.get());
         osg::Texture2D* envCubeMap2D = dynamic_cast<osg::Texture2D*>(envCubeMap.get());
@@ -110,7 +110,7 @@ void EnvLightEffect::InitEnvMapAtlas()
         envCubeMap2D->setUseHardwareMipMapGeneration(true);
         envCubeMap = envCubeMap2D;
 
-        auto irridianceMapPath = "diffuse_quad.png";
+        auto irridianceMapPath = "diffuse.png";
         irridianceMap = new osg::Texture2D();
         auto irridianceMapImage = osgDB::readRefImageFile(irridianceMapPath, readOption.get());
         osg::Texture2D* irridianceMap2D = dynamic_cast<osg::Texture2D*>(irridianceMap.get());

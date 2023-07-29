@@ -463,14 +463,15 @@ int main(int argc, char** argv)
 
     auto materialSpheres = createMaterialSpheres();
 
-    //group->addChild(createSkyBox());
-    //group->addChild(materialSpheres);
+    group->addChild(createSkyBox());
+    group->addChild(materialSpheres);
 
-    //std::vector<std::string> input = { "px.hdr","nx.hdr","ny.hdr","py.hdr", "pz.hdr","nz.hdr" };
-    auto output = "output.dds";
-    auto path = "C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL\\pisaHDR";
-    osg::ref_ptr<  QuadTextureTransitor > trans = new  QuadTextureTransitor(group, &viewer);
-    trans->translate(path, "pisaSpecularHDR.dds", output, 1024, 512, 1);
+    //std::vector<std::string> input = { "px.png","nx.png","ny.png","py.png", "pz.png","nz.png" };
+    //std::string input = "pisaDiffuseHDR.dds";
+    //auto output = "diffuse.dds";
+    //auto path = "C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL\\pisaHDR";
+    //osg::ref_ptr<  QuadTextureTransitor > trans = new  QuadTextureTransitor(group, &viewer);
+    //trans->translate(path, input, output, 256, 128, 1);
      
     
    

@@ -1144,16 +1144,6 @@ std::vector<osg::Image*> ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
     //return osgImage.release();
 }
 
-void filpMipmap(osg::Image* image)
-{
-    osg::Image::DataIterator imgData(image);
-    unsigned int imgDataOffset = 0;
-    //write main image: imageSize bytes
-    for (osg::Image::DataIterator img_itr(img); img_itr.valid(); ++img_itr)
-    {
-        writeCharArray((char*)img_itr.data(), img_itr.size());
-    }
-}
 
 
 bool WriteDDSFile2(const osg::Image* img, std::ostream& fout, bool autoFlipDDSWrite)

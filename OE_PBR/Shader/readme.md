@@ -9,6 +9,7 @@
 - 新增透明材质
 - 新增IBL环境光照
 - 扩展了dds插件对CubeMap的读取 和 GL_RGBA_ARB扩展压缩格式的支持
+- 【Tool】 cubemap -> quadMap
 
  ## V1.2
 - 提供osgEarth::ExtensionedMaterial 可自定义材质

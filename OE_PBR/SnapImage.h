@@ -167,17 +167,23 @@ struct SnapMipmap: public SwitchOption, public osg::Camera::DrawCallback
         image->setImage(_images[0]->s(), _images[0]->t(), 1, GL_RGBA32F_ARB, GL_RGBA, GL_FLOAT, ptr, osg::Image::USE_NEW_DELETE, 1);
         image->setMipmapLevels(mipmapData);
 
+
         unsigned int size = width * height;
         for (i = 0; size > 0,i < miplevel ; size >>= 2,  ++i)
         {
             for (osg::Image::DataIterator itr(_images[i]); itr.valid(); ++itr)
             {
+                
                 memcpy(ptr, itr.data(), itr.size());
                 ptr += itr.size();
+
+               /* auto top = itr.data();
+                width >>= 2;*/
             }
         }
-        //osgDB::writeImageFile(*image, _filename);
+        image->flipVertical();
         writeDDSNew(*image, _filename);
+       
 
     }
 
@@ -185,6 +191,22 @@ struct SnapMipmap: public SwitchOption, public osg::Camera::DrawCallback
     std::string _filename;
 };
 
+void flipImageVertical(unsigned char* top, unsigned char* bottom, unsigned int rowSize, unsigned int rowStep)
+{
+    while (top < bottom)
+    {
+        unsigned char* t = top;
+        unsigned char* b = bottom;
+        for (unsigned int i = 0; i < rowSize; ++i, ++t, ++b)
+        {
+            unsigned char temp = *t;
+            *t = *b;
+            *b = temp;
+        }
+        top += rowStep;
+        bottom -= rowStep;
+    }
+}
 
 class SnapImageV2 : public SwitchOption,public osg::Drawable::DrawCallback
 {

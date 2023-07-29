@@ -131,30 +131,30 @@ public:
         tcm->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP);
         tcm->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP);
         tcm->setWrap(osg::Texture::WRAP_R, osg::Texture::CLAMP);
-        tcm->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR_MIPMAP_LINEAR);
+        tcm->setFilter(osg::Texture::MIN_FILTER, osg::Texture::NEAREST_MIPMAP_LINEAR);
         tcm->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
-        tcm->setUseHardwareMipMapGeneration(true);
+        //tcm->setUseHardwareMipMapGeneration(true);
         
-
-        tcm->setImage(osg::TextureCubeMap::POSITIVE_X, osgDB::readImageFile(imagePath[0], readOption));
-        tcm->setImage(osg::TextureCubeMap::NEGATIVE_X, osgDB::readImageFile(imagePath[1], readOption));
-        tcm->setImage(osg::TextureCubeMap::POSITIVE_Y, osgDB::readImageFile(imagePath[2], readOption));
-        tcm->setImage(osg::TextureCubeMap::NEGATIVE_Y, osgDB::readImageFile(imagePath[3], readOption));
-        tcm->setImage(osg::TextureCubeMap::POSITIVE_Z, osgDB::readImageFile(imagePath[4], readOption));
-        tcm->setImage(osg::TextureCubeMap::NEGATIVE_Z, osgDB::readImageFile(imagePath[5], readOption));
+        for (unsigned int i = 0;i < 6; i++)
+        {
+            auto image = osgDB::readImageFile(imagePath[i], readOption);
+           // image->flipHorizontal();
+            tcm->setImage(i, image);
+        }
+       
         return tcm;
     }
 
     osg::TextureCubeMap* createCubeMap(const std::string& imagePath, osgDB::Options* readOption)
     {
         osg::TextureCubeMap* tcm = new osg::TextureCubeMap;
-        tcm->setNumMipmapLevels(5);
+       // tcm->setNumMipmapLevels(9);
         tcm->setWrap(osg::Texture::WRAP_S, osg::Texture::CLAMP);
         tcm->setWrap(osg::Texture::WRAP_T, osg::Texture::CLAMP);
         tcm->setWrap(osg::Texture::WRAP_R, osg::Texture::CLAMP);
-        tcm->setFilter(osg::Texture::MIN_FILTER, osg::Texture::LINEAR_MIPMAP_LINEAR);
+        tcm->setFilter(osg::Texture::MIN_FILTER, osg::Texture::NEAREST_MIPMAP_LINEAR);
         tcm->setFilter(osg::Texture::MAG_FILTER, osg::Texture::LINEAR);
-        tcm->setUseHardwareMipMapGeneration(true);
+       // tcm->setUseHardwareMipMapGeneration(false);
 
         auto images = readCubeImages(imagePath, readOption);
         if (images.size() > 0)
@@ -164,26 +164,31 @@ public:
       
         for (uint32_t i = 0; i < 6; i++)
         {
+            images[i]->flipHorizontal();
             tcm->setImage(i, images[i]);
-           /* if (i % 2 == 0)
-            {
-                tcm->setImage(i, images[i+1]);
-            }
-            else {
-                tcm->setImage(i, images[i -1]);
-            }*/
+
             
         }
         return tcm;
       
     }
-
+    
+    void filpMipmap(osg::Image* image)
+    {
+        osg::Image::DataIterator imgData(image);
+        unsigned int imgDataOffset = 0;
+        //write main image: imageSize bytes
+        for (osg::Image::DataIterator img_itr(image); img_itr.valid(); ++img_itr)
+        {
+            std::cout<< img_itr.size() << std::endl;
+        }
+    }
     void translate(const std::string& imageDir, const std::vector<std::string>& cubeImages, const std::string& outputPath, uint32_t outWidth, uint32_t outHeight, uint32_t mipmapLevel)
     {
         std::string path = imageDir;
-        osg::ref_ptr<osgDB::Options> readOption = new osgDB::Options("IBL");
-        readOption->setDatabasePath(path);
-        auto inputMap = createCubeMap(cubeImages, readOption.get());
+        _dbo = new osgDB::Options("IBL");
+        _dbo->setDatabasePath(path);
+        auto inputMap = createCubeMap(cubeImages, _dbo.get());
         _setup(outputPath, outWidth, outHeight, mipmapLevel, inputMap);
     }
     void translate(const std::string& imageDir, const std::string& cubeImages, const std::string& outputPath, uint32_t outWidth, uint32_t outHeight, uint32_t mipmapLevel)
@@ -192,9 +197,9 @@ public:
         int height = outHeight;
 
         std::string path = imageDir;
-        osg::ref_ptr<osgDB::Options> readOption = new osgDB::Options("IBL");
-        readOption->setDatabasePath(path);
-        auto inputMap = createCubeMap(cubeImages, readOption.get());
+        _dbo = new osgDB::Options("IBL");
+        _dbo->setDatabasePath(path);
+        auto inputMap = createCubeMap(cubeImages, _dbo.get());
         _setup(outputPath, outWidth, outHeight, mipmapLevel, inputMap);
     }
     void _setup(const std::string& outputPath, uint32_t outWidth, uint32_t outHeight, uint32_t mipmapLevel, osg::TextureCubeMap* inputMap)
@@ -202,15 +207,15 @@ public:
         auto shaderPath = "..//..//OE_PBR//Shader";
         auto shaderPath2 = "..//OE_PBR//Shader";
 
-        _dbo = new osgDB::Options();
+        osg::ref_ptr< osgDB::Options>  shaderDB = new osgDB::Options();
         if (osgDB::fileExists(osgEarth::getAbsolutePath(shaderPath)))
         {
-            _dbo->setDatabasePath(osgEarth::getAbsolutePath(shaderPath));
+            shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath));
         }
         else {
-            _dbo->setDatabasePath(osgEarth::getAbsolutePath(shaderPath2));
+            shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath2));
         }
-        _dbo->setName("osgEarthShader");
+        shaderDB->setName("osgEarthShader");
 
 
 
@@ -231,7 +236,7 @@ public:
 
             osgEarth::VirtualProgram* vp = osgEarth::VirtualProgram::getOrCreate(node->getOrCreateStateSet());
             osgEarth::ShaderPackage shaders;
-            shaders.load(vp, cube_to_quad, _dbo.get());
+            shaders.load(vp, cube_to_quad, shaderDB.get());
 
             osg::ref_ptr<osg::MatrixTransform> matT = new osg::MatrixTransform();
             matT->setMatrix(osg::Matrixd::translate(0.0, 0.0, i*offset));
@@ -239,8 +244,9 @@ public:
 
             node->getOrCreateStateSet()->setTextureAttributeAndModes(0, inputMap, osg::StateAttribute::ON);
             node->getOrCreateStateSet()->getOrCreateUniform("IrradianceMap", osg::Uniform::SAMPLER_CUBE)->set(0);
-            node->getOrCreateStateSet()->getOrCreateUniform("mipLevel", osg::Uniform::FLOAT)->set(i * 1.0f);
 
+            // debug模式下 设置uniform不生效？
+            node->getOrCreateStateSet()->getOrCreateUniform("mipLevel", osg::Uniform::FLOAT)->set(i * 1.0f);
 
             osg::ref_ptr<osg::Camera> cam = new osg::Camera();
             if (i == 0)
@@ -272,9 +278,13 @@ public:
             offset += 0.5;
         }
         std::string fileName = outputPath;
+        
         if (!_dbo->getDatabasePathList().empty())
         {
-            fileName = *_dbo->getDatabasePathList().begin() + fileName;
+            fileName = osgDB::concatPaths(*_dbo->getDatabasePathList().begin(), fileName);
+          /*  std::string path = osgDB::findDataFile(uri.full(), _dbo);*/
+            std::cout << " fileName " << fileName << std::endl;
+
         }
         auto cb = new SnapMipmap(fileName, std::move(images));
         cam0->addPostDrawCallback(cb);
