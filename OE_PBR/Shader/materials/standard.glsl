@@ -7,13 +7,14 @@
     oe_texcoord = abs(oe_texcoord);
     #ifdef OE_ENABLE_BASECOLOR_MAP
         diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
-       // diffuseColor = pow(diffuseColor.rgb, vec3(2.2));
+      //  color.rgb = diffuseColor;
+      //  return;
     #endif
 
     #ifdef OE_ENABLE_MR_MAP
         vec3 tmp =  texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_MR_MAP)).rgb;
-        metallic = metallicFactor * tmp.x;
-        roughness = roughnessFactor * tmp.y;
+        metallic = tmp.b;
+        roughness = tmp.g;
     #endif
 
     #ifdef OE_ENABLE_NORMAL_MAP
@@ -24,10 +25,11 @@
 
     #endif
 
-    #ifdef OE_ENABLE_AO_MAP
-        float aoFromMap = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_AO_MAP)).r;
-        ao *= aoFromMap;
-    #endif
+    // #ifdef OE_ENABLE_AO_MAP
+    //     vec3 aoFromMap = texture(pbrMaps, vec3(oe_texcoord,0.0)).rgb;
+    //     //color.rgb = aoFromMap;
+    //    // return;
+    // #endif
 
         #ifdef OE_ENABLE_EMISSIVE_MAP
         vec3 emissiveFromMap = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_EMISSIVE_MAP)).rgb;  

@@ -1,10 +1,14 @@
 #pragma once
 
 
-#include<osgGA/GUIEventHandler>
-#include<osgViewer/Viewer>
-#include<osgUtil/LineSegmentIntersector>
+
 #include<iostream>
+
+#include<osgViewer/Viewer>
+#include<osgGA/GUIEventHandler>
+#include<osgUtil/LineSegmentIntersector>
+
+
 class RayPicker:public osgGA::GUIEventHandler
 {
 
@@ -18,7 +22,6 @@ public:
 		case osgGA::GUIEventAdapter::PUSH:
 			if (ea.getButton() == osgGA::GUIEventAdapter::LEFT_MOUSE_BUTTON)
 			{
-				std::cout << "111";
 				Pick(ea.getX(), ea.getY());
 			}
 			return true;
@@ -33,28 +36,21 @@ protected:
 		osgUtil::LineSegmentIntersector::Intersections intersections;
 		if (_viewer->computeIntersections(x,y,intersections))
 		{
-			std::cout << "555";
 			auto hiter = intersections.begin();
-			for (; hiter != intersections.end(); hiter++)
+			if (!hiter->nodePath.empty())
 			{
-				if (!hiter->nodePath.empty())
+				const auto& nodePath = hiter->nodePath;
+				for (const auto& node : nodePath)
 				{
-					// && !(hiter->nodePath.back()->getName().empty())
-					const auto& nodePath = hiter->nodePath;
-					for (const auto& node : nodePath)
-					{
 						
-						std::cout << node->getCompoundClassName()<<" " << node->getName() << std::endl;
-						auto maT = node->asTransform() ? node->asTransform()->asMatrixTransform() : NULL;
-						if (maT)
-						{
-							_cb(maT);
-						}
+					std::cout << node->getCompoundClassName()<<" " << node->getName() << std::endl;
+					auto maT = node->asTransform() ? node->asTransform()->asMatrixTransform() : NULL;
+					if (maT)
+					{
+						_cb(maT);
 					}
-					std::cout <<  std::endl;
 				}
 			}
-
 		}
 	}
 private:

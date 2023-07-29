@@ -106,15 +106,6 @@ uniform pbr_Material oe_pbr;
 # MATERIAL_UNIFORMS
 
 
-
-
-// const vec2 invAtan = vec2(0.1591, 0.3183);
-// vec2 sphericalUV(vec3 v)
-// {
-//     vec2 uv = vec2(atan(v.z, v.x), asin(v.y));
-//     uv *= invAtan; uv += vec2(0.5); return uv;
-// }
-
 vec4 linearTosRGB(in vec4 value)
 {
     return vec4(mix(((pow(value.xyz, vec3(0.41666001, 0.41666001, 0.41666001)) * 1.0549999) - vec3(0.055, 0.055, 0.055)), \
@@ -133,21 +124,11 @@ void fragment_main_pbr(inout vec4 color)
     vec3 normal = oe_normal;
     vec3 normalEC = normal;
 
-    float roughnessFactor = oe_pbr.roughnessFactor;
-    float metallicFactor = oe_pbr.metallicFactor;
-    vec3 emissiveFactor = oe_pbr.emissiveFactor;
-    // roughnessFactor = metallicFactor = 1.0;
-
-    
-    float roughness = roughnessFactor;
-    float metallic = metallicFactor;
+    float roughness = oe_pbr.roughnessFactor;
+    float metallic = oe_pbr.metallicFactor;
     float ao = oe_pbr.aoStrength;
-    vec3 emissive = emissiveFactor;
+    vec3 emissive = oe_pbr.emissiveFactor;
     vec3 diffuseColor =vec3(1.0);
-
-    //f0 = mix(f0, pow(baseColor,vec3(2.2)), vec3(oe_pbr.metallicFactor));
-    //diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
-   
 
     # MATERIAL_BODY
     // vec3 res = normal + vec3(1.0);
@@ -155,6 +136,7 @@ void fragment_main_pbr(inout vec4 color)
     // return;
     
     diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
+    f0 = mix(f0, diffuseColor, vec3(metallic));
     diffuseColor *= (1.0 - metallic);
     
     vec3 n = normalize(normal);
@@ -166,8 +148,6 @@ void fragment_main_pbr(inout vec4 color)
 
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
-        // per-light radiance: view space?
-        //vec3 l = normalize(osg_LightSource[i].position.xyz - oe_posView);
         vec3 l = normalize(-osg_LightSource[i].spotDirection.xyz);
         vec3 h = normalize(l + v);
 
@@ -177,14 +157,12 @@ void fragment_main_pbr(inout vec4 color)
         float NdotV = max(dot(n, v), 0.0f);
         
         vec3 lightColor = vec3(osg_LightSource[i].diffuse);
-       // lightColor *= 2.0;
-        Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao,emissive);
+        Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao);
         Lo *= osg_LightSource[i].spotExponent;
     }
 
     // indirect light accumulate
     vec3 ambient =vec3(0.0);
-    
     vec3 irradiance = vec3(0.0);
     vec3 radiance = vec3(0.0);
 
@@ -194,59 +172,36 @@ void fragment_main_pbr(inout vec4 color)
     vec3 irradianceIBL = vec3(0.0);
     vec3 radianceIBL = vec3(0.0);
 
-     ReflectedLight reflectedLight;
+    ReflectedLight reflectedLight;
     reflectedLight.indirectDiffuse = vec3(0.0);
     reflectedLight.indirectSpecular = vec3(0.0);
 
 #ifdef USE_ENV_MAP
-    //irradianceIBL = getIBLIrradiance(n);
-    radianceIBL = getIBLRadiance(n, roughnessFactor,v);
+    radianceIBL = getIBLRadiance(n, roughness,v);
 
-   
-    
     GeometricContext geometry;
     geometry.viewDir = v;
     geometry.normal = n;
 
     pbr_Material material;
     material.baseColorFactor=vec4(diffuseColor,1.0);
-    material.metallicFactor=roughness;
-    material.roughnessFactor=metallic;
+    material.metallicFactor=metallic;
+    material.roughnessFactor=roughness;
     material.aoStrength=ao;
 
     RE_IndirectDiffuse_Physical(irradiance, diffuseColor, reflectedLight);
-    RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,geometry, material, reflectedLight);
+    RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,f0,geometry, material, reflectedLight);
 
 #endif
-    // color.rgb = reflectedLight.indirectSpecular;
-    // return; 
-    // float tmp = reflectedLight.indirectSpecular.x;
-    // if(reflectedLight.indirectSpecular.x<0.3)
-    // {
-    //     reflectedLight.indirectSpecular = vec3(0.0);
-    // }else if (reflectedLight.indirectSpecular.x<0.7)
-    // {
-    //     reflectedLight.indirectSpecular = vec3(0.5);
-    // }else{
-    //     reflectedLight.indirectSpecular = vec3(1.0);
-    // }
-    // if(tmp<0.95)
-    // {
-    //     color.rgb =reflectedLight.indirectSpecular;
-    // }else{
-    //     color.rgb = vec3(0.0);
-    // }
-    // return;
+
     color.rgb = Lo;
-    #ifdef USE_ENV_MAP
-        color.rgb += (reflectedLight.indirectSpecular * envLightIntensity + reflectedLight.indirectDiffuse * envLightIntensity);
+    #ifdef OE_ENABLE_EMISSIVE_MAP
+        color.rgb += emissive;
     #endif
-    //reflectedLight.indirectDiffuse * oe_pbr.aoStrength + 
-    //+ reflectedLight.indirectDiffuse;
-    //+ reflectedLight.indirectDiffuse + reflectedLight.indirectSpecular;
-    //irradianceIBL * 1/PI * baseColor;
-    //reflectedLight.indirectDiffuse;
-    // reflectedLight.indirectDiffuse;
+    #ifdef USE_ENV_MAP
+        color.rgb += (reflectedLight.indirectSpecular* ao * envLightIntensity + reflectedLight.indirectDiffuse * envLightIntensity);
+    #endif
+
 
     // tone map:
     //color.rgb = color.rgb / (color.rgb + vec3(1.0));
@@ -255,8 +210,7 @@ void fragment_main_pbr(inout vec4 color)
     
     // boost:
     color.rgb *= 2.2;
-    color.rgb = pow(color.rgb, vec3(1.0/2.2));
-   // color = linearTosRGB(color);
+    color = linearTosRGB(color);
 
     // add in the haze
     //color.rgb += atmos_color;
@@ -276,3 +230,30 @@ void fragment_main_pbr(inout vec4 color)
     color = texture(pbrMaps, vec3(oe_texcoord,4));
 }
 #endif
+
+    // color.rgb = reflectedLight.indirectSpecular;
+    // return; 
+    // float tmp = reflectedLight.indirectSpecular.x;
+    // if(reflectedLight.indirectSpecular.x<0.3)
+    // {
+    //     reflectedLight.indirectSpecular = vec3(0.0);
+    // }else if (reflectedLight.indirectSpecular.x<0.7)
+    // {
+    //     reflectedLight.indirectSpecular = vec3(0.5);
+    // }else{
+    //     reflectedLight.indirectSpecular = vec3(1.0);
+    // }
+    // if(tmp<0.95)
+    // {
+    //     color.rgb =reflectedLight.indirectSpecular;
+    // }else{
+    //     color.rgb = vec3(0.0);
+    // }
+    // return;
+
+        //reflectedLight.indirectDiffuse * oe_pbr.aoStrength + 
+    //+ reflectedLight.indirectDiffuse;
+    //+ reflectedLight.indirectDiffuse + reflectedLight.indirectSpecular;
+    //irradianceIBL * 1/PI * baseColor;
+    //reflectedLight.indirectDiffuse;
+    // reflectedLight.indirectDiffuse;

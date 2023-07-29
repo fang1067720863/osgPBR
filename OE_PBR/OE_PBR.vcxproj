@@ -177,7 +177,9 @@
     <ClInclude Include="PbrLightEffect.h" />
     <ClInclude Include="PbrMaterial.h" />
     <ClInclude Include="RayPicker.h" />
+    <ClInclude Include="SkyBox.h" />
     <ClInclude Include="SnapImage.h" />
+    <ClInclude Include="TestUI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -20,3 +20,7 @@
 # TODO
 - 直接通过mipmap Texture 写入到硬盘
 - IBLBaker 生成的diffuse和specular还有问题
+- 可以切换 HDR
+- trackball 重写
+- 两个插件写好
+- 后处理

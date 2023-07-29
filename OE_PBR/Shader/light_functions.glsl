@@ -160,7 +160,7 @@ struct GeometricContext
 };
 
 uniform sampler2D brdfLUT;
-void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance,
+void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance,const in vec3 f0,
 								const in GeometricContext geometry, const in pbr_Material material, inout ReflectedLight reflectedLight)
 {
 
@@ -176,7 +176,7 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 	//computeMultiscattering( geometry.normal, geometry.viewDir, material.specularColor, material.specularF90, material.roughness, singleScattering, multiScattering );
     computeMultiscattering( geometry.normal, geometry.viewDir, specularColor, material.metallicFactor, material.roughnessFactor, singleScattering, multiScattering);
      float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
-    vec3 F = fresnelSchlickRoughness(NdotV, vec3(0.04), material.roughnessFactor);
+    vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
     vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
     singleScattering = (F * brdf.x + brdf.y);
 

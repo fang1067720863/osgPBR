@@ -13,10 +13,10 @@
 #include<osg/Vec4>
 #include<osg/State>
 #include<osg/StateAttribute>
-
+#include<osgDB/Options>
 #include <osgEarth/Common>
 #include <osgEarth/Threading>
-#include<osgDB/Options>
+
 #include"Export.h"
 
 

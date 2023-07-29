@@ -140,7 +140,7 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
             continue;
         }
 
-
+        std::cout << info._path << " true" << std::endl;
         //if (s < 0)
         //{
         //    s = osgEarth::nextPowerOf2(image->s());
@@ -169,12 +169,12 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
 
    // OE_INFO << LC << "Created atlas with " << _atlasImages.size() << " unique images" << std::endl;
 
-    tex->setFilter(tex->MIN_FILTER, tex->NEAREST_MIPMAP_LINEAR);
-    tex->setFilter(tex->MAG_FILTER, tex->NEAREST_MIPMAP_LINEAR);
+    tex->setFilter(tex->MIN_FILTER, tex->LINEAR);
+    tex->setFilter(tex->MAG_FILTER, tex->LINEAR);
     tex->setWrap(tex->WRAP_S, tex->REPEAT);
     tex->setWrap(tex->WRAP_T, tex->REPEAT);
     tex->setUnRefImageDataAfterApply(osgEarth::Registry::instance()->unRefImageDataAfterApply().get());
-    tex->setMaxAnisotropy(4.0);
+    //tex->setMaxAnisotropy(4.0);
 
     // Let the GPU do it since we only download this at startup
     tex->setUseHardwareMipMapGeneration(true);
@@ -212,7 +212,8 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
         for (auto iter = material->_maps.begin(); iter != material->_maps.end(); iter++)
         {
             auto textureInfo = iter->second;
-            auto enable = textureInfo._imageValid ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
+           
+            bool enable = textureInfo._imageValid ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
             stateSet->setDefine(textureInfo._defineKey, textureInfo._defineVal, enable);
         }
 
@@ -227,7 +228,6 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             
             float envLightIntensity = EnvLightEffect::instance()->lightIntensity();
             int unit;
-            //material->texUnitCnt()
             osg::Texture* diffuseEnvMap = EnvLightEffect::instance()->getIrridianceMap();
             unit = material->texUnitCnt();
             stateSet->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
@@ -250,8 +250,7 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
             stateSet->getOrCreateUniform("brdfLUT", uniformType)->set(material->texUnitCnt());
             material->incementTexUnit();
 
-           // stateSet->getOrCreateUniform("envLightIntensity", osg::Uniform::FLOAT)->set(0.7f);
-          
+
         }
 
     }
@@ -275,7 +274,6 @@ void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr
             osg::Texture* tex = material->createTexture(iter->second._path);
             stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
             stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D)->set(material->texUnitCnt());
-            std::cout << uniformKey << material->texUnitCnt() << std::endl;
             material->incementTexUnit();
             
             auto textureInfo = iter->second;

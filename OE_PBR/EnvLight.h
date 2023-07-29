@@ -59,40 +59,6 @@ public:
         ABSOLUTE_RF
     };
 
-    /** Set the light sources's ReferenceFrame, either to be relative to its
-      * parent reference frame, or relative to an absolute coordinate
-      * frame. RELATIVE_RF is the default.
-      * Note: setting the ReferenceFrame to be ABSOLUTE_RF will
-      * also set the CullingActive flag on the light source, and hence all
-      * of its parents, to false, thereby disabling culling of it and
-      * all its parents.  This is necessary to prevent inappropriate
-      * culling, but may impact cull times if the absolute light source is
-      * deep in the scene graph.  It is therefore recommended to only use
-      * absolute light source at the top of the scene.
-    */
-    //void setReferenceFrame(ReferenceFrame rf);
-
-    //ReferenceFrame getReferenceFrame() const { return _referenceFrame; }
-
-    ///** Set the attached light. */
-    //void setLight(Light* light);
-
-    ///** Get the attached light. */
-    //inline Light* getLight() { return _light.get(); }
-
-    ///** Get the const attached light. */
-    //inline const Light* getLight() const { return _light.get(); }
-
-    ///** Set the GLModes on StateSet associated with the LightSource. */
-    //void setStateSetModes(StateSet&, StateAttribute::GLModeValue) const;
-
-    ///** Set up the local StateSet. */
-    //void setLocalStateSetModes(StateAttribute::GLModeValue value = StateAttribute::ON);
-
-    ///** Set whether to use a mutex to ensure ref() and unref() are thread safe.*/
-    //virtual void setThreadSafeRefUnref(bool threadSafe);
-
-    //virtual BoundingSphere computeBound() const;
 
 protected:
 
@@ -110,13 +76,7 @@ class  EnvLightGL3UniformGenerator : public osg::NodeCallback
 public:
     EnvLightGL3UniformGenerator();
 
-    /**
-     * Creates and installs Uniforms on the stateset for the Light components
-     * of the Light that are non-positional (everything but the position and direction)
-     */
-  /*  void generateNonPositionalData(osg::StateSet* ss, osg::Light* light);*/
-
-public: // osg::NodeCallback
+public:
 
     bool run(osg::Object* obj, osg::Object* data);
 

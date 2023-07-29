@@ -1117,20 +1117,19 @@ std::vector<osg::Image*> ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
     }
         //osgImage->setMipmapLevels(mipmap_offsets);
 
-    if (flipDDSRead) {
-        /*osgImage->setOrigin(osg::Image::BOTTOM_LEFT);*/
-        for (auto img : images)    img->setOrigin(osg::Image::BOTTOM_LEFT);
-          
-        
-        if (!isDXTC || ((s > 4 && s % 4 == 0 && t > 4 && t % 4 == 0) || s <= 4)) // Flip may crash (access violation) or fail for non %4 dimensions (except for s<4). Tested with revision trunk 2013-02-22.
-        {
-            OSG_INFO << "Flipping dds on load" << std::endl;
-            for (auto img : images)    img->flipVertical();
-        }
-        else
-        {
-            OSG_WARN << "ReadDDSFile warning: Vertical flip was skipped. Image dimensions have to be multiple of 4." << std::endl;
-        }
+    if (true) {
+       for (auto img : images)    img->setOrigin(osg::Image::BOTTOM_LEFT);
+       for (auto img : images)    img->flipHorizontal();
+       
+        //if (!isDXTC || ((s > 4 && s % 4 == 0 && t > 4 && t % 4 == 0) || s <= 4)) // Flip may crash (access violation) or fail for non %4 dimensions (except for s<4). Tested with revision trunk 2013-02-22.
+        //{
+        //    OSG_INFO << "Flipping dds on load" << std::endl;
+        //    for (auto img : images)    img->flipHorizontal();
+        //}
+        //else
+        //{
+        //    OSG_WARN << "ReadDDSFile warning: Vertical flip was skipped. Image dimensions have to be multiple of 4." << std::endl;
+        //}
     }
     //for (int i = 0; i < 6; i++)
     //{
@@ -1143,6 +1142,17 @@ std::vector<osg::Image*> ReadDDSFile2(std::istream& _istream, bool flipDDSRead)
     return images;
     // Return Image.
     //return osgImage.release();
+}
+
+void filpMipmap(osg::Image* image)
+{
+    osg::Image::DataIterator imgData(image);
+    unsigned int imgDataOffset = 0;
+    //write main image: imageSize bytes
+    for (osg::Image::DataIterator img_itr(img); img_itr.valid(); ++img_itr)
+    {
+        writeCharArray((char*)img_itr.data(), img_itr.size());
+    }
 }
 
 
@@ -1471,7 +1481,7 @@ std::vector<osg::Image*> readCubeImages(const std::string& file, const osgDB::Op
             if (opt == "dds_dxt1_detect_rgba") dds_dxt1_detect_rgba = true;
         }
     }
-    auto osgImages = ReadDDSFile2(fin, dds_flip);
+    auto osgImages = ReadDDSFile2(fin, true);
     for (int i = 0; i < 6; i++)
     {
         osgImages[i]->setName("iiimage" + std::to_string(i));

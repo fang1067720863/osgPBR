@@ -26,6 +26,8 @@ vec3 invSphericalUV(vec2 v)
 void fs(inout vec4 c) {
     
     vec3 N = normalize(invSphericalUV(TexCoords.xy));
+    // vec3 N = invSphericalUV(TexCoords.xy);
+    // N = normalize(vec3(-N.x,N.y,N.z));
     // vec3 up = vec3(0.0, 1.0, 0.0);
     // vec3 right = cross(up, N); up = cross(N, right);  // tangent space calculation
 

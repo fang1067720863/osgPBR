@@ -156,8 +156,7 @@ vec3 BRDF(
          vec3 f0,
          vec3 diffuseColor,
          vec3 lightColor,
-         float ao,
-         vec3 emissive
+         float ao
         )
 {
     float D = microfacetDistribution(NdotH, roughness);
@@ -166,7 +165,6 @@ vec3 BRDF(
 
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
-    kD *= 1.0 - metalness;
 
 
     vec3 numerator = D * G * F;
@@ -175,7 +173,7 @@ vec3 BRDF(
 
     vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor);
    // vec3 diffuse = BRDF_Diffuse_Burley(VdotH, NdotL, NdotV, roughness, diffuseColor);
-    vec3 diffuseContrib = diffuse;
+    vec3 diffuseContrib = diffuse * kD;
     
     vec3 Lo = NdotL * lightColor * (diffuseContrib + specContrib);
 
