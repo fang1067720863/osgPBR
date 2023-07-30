@@ -352,7 +352,7 @@ osg::ref_ptr<osg::Group> createMaterialSpheres()
     osg::ref_ptr<osg::Group> gp = new osg::Group();
    
   
-   /* std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
+    std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
     int row, col;
     row = col = 9;
 
@@ -379,8 +379,8 @@ osg::ref_ptr<osg::Group> createMaterialSpheres()
             gp->addChild(matrixT);
         }
        
-    }*/
-    std::vector<osg::ref_ptr<ExtensionedMaterial>> materials = std::move(createMaterials());
+    }
+   /* std::vector<osg::ref_ptr<ExtensionedMaterial>> materials = std::move(createMaterials());
     for (size_t i = 0; i < materials.size(); i++)
     {
         std::cout << " gsfdg "<<i  << std::endl;
@@ -402,7 +402,7 @@ osg::ref_ptr<osg::Group> createMaterialSpheres()
         gp->addChild(matrixT);
         
 
-    }
+    }*/
     return gp;
     
 }
@@ -427,13 +427,11 @@ int main(int argc, char** argv)
     traits->x = 20; traits->y = 30;
     traits->width = width; traits->height = height;
     traits->windowDecoration = true;
-    /*traits->glContextVersion = version;*/
     traits->glContextProfileMask = 0X1;
     traits->doubleBuffer = true;
     traits->readDISPLAY();
     traits->setUndefinedScreenDetailsToDefaultScreen();
     osg::ref_ptr< osg::GraphicsContext > gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-    //gc->getState()->setCheckForGLErrors(osg::State::NEVER_CHECK_GL_ERRORS);
     osg::setNotifyLevel(osg::NotifySeverity::ALWAYS);
     if (!gc.valid())
     {
@@ -442,18 +440,23 @@ int main(int argc, char** argv)
     }
 
 
+    osg::ref_ptr< osgDB::Options> modelDB = new osgDB::Options("model");
+    modelDB->setDatabasePath("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset");
 
+    auto iblDB = new osgDB::Options("IBL");
+    iblDB->setDatabasePath("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL");
 
     osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
 
     auto group = new osg::Group();
-
+    EnvLightEffect::instance()->setEnvMapAtlas({ "pisaHDR\\diffuse.png", "pisaHDR\\specular.dds", "pisaHDR\\env.dds" }, iblDB);
     EnvLightEffect::instance()->setEnable(true);
 
     GLTFReaderV2 reader;
     //Sponza BoomBox
     
-    auto gltfModel = reader.read("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\BoomBox\\BoomBox.gltf", false, new osgDB::Options("..//..//OE_PBR//Asset//BoomBox"));
+   
+    auto gltfModel = reader.read("Helmet\\DamagedHelmet.gltf", false, modelDB);
     auto node = gltfModel.getNode();
     auto* phong = new PbrLightEffect();
     phong->attach(gltfModel.getNode()->getOrCreateStateSet());
@@ -484,7 +487,7 @@ int main(int argc, char** argv)
    auto findCallback = [materialPanel](osg::MatrixTransform* node)
    {
        node->getName();
-     //  materialPanel->setNode(node);
+       //materialPanel->setNode(node);
        return true;
    };
 

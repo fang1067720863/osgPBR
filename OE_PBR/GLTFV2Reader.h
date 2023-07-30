@@ -127,6 +127,9 @@ public:
         tinygltf::Options opt;
         opt.skip_imagery = readOptions && readOptions->getOptionString().find("gltfSkipImagery") != std::string::npos;
 
+        std::string fileName = osgDB::findDataFile(location, readOptions);
+        if (fileName.empty()) return osgDB::ReaderWriter::ReadResult::FILE_NOT_FOUND;
+
         if (osgDB::containsServerAddress(location))
         {
             osgEarth::ReadResult rr = osgEarth::URI(location).readString(readOptions);
@@ -150,13 +153,14 @@ public:
         }
         else
         {
+            
             if (isBinary)
             {
-                loader.LoadBinaryFromFile(&model, &err, &warn, location, tinygltf::SectionCheck::REQUIRE_VERSION, &opt);
+                loader.LoadBinaryFromFile(&model, &err, &warn, fileName, tinygltf::SectionCheck::REQUIRE_VERSION, &opt);
             }
             else
             {
-                loader.LoadASCIIFromFile(&model, &err, &warn, location, tinygltf::SectionCheck::REQUIRE_VERSION, &opt);
+                loader.LoadASCIIFromFile(&model, &err, &warn, fileName, tinygltf::SectionCheck::REQUIRE_VERSION, &opt);
             }
         }
 
@@ -166,7 +170,7 @@ public:
             return osgDB::ReaderWriter::ReadResult::ERROR_IN_READING_FILE;
         }
 
-        Env env(location, readOptions);
+        Env env(fileName, readOptions);
         return makeNodeFromModel(model, env);
     }
 
@@ -716,6 +720,7 @@ public:
                     }
                     else if (it->first.compare("TEXCOORD_0") == 0)
                     {
+                        auto texcoords = arrays[it->second].get();
                         geom->setTexCoordArray(0, arrays[it->second].get());
                     }
                     else if (it->first.compare("TEXCOORD_1") == 0)

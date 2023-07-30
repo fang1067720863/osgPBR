@@ -51,23 +51,14 @@ public:
     META_Node(osg, EnvLightSource);
 
     static osg::ref_ptr<EnvLightEffect>& getEnvLightEffect();
-   
-
     enum ReferenceFrame
     {
         RELATIVE_RF,
         ABSOLUTE_RF
     };
-
-
 protected:
-
     virtual ~EnvLightSource();
 
-    //StateAttribute::GLModeValue     _value;
-    //ref_ptr<Light>                  _light;
-
-  /*  ReferenceFrame                  _referenceFrame;*/
 };
 
 
@@ -92,37 +83,39 @@ public: // osg::Object
 class EnvLightEffect:public osg::Object
 {
     friend class EnvLightSource;
+    friend class EnvLightGL3UniformGenerator;
+
+    struct EnvMapConfig
+    {
+        std::string _diffuseMap;
+        std::string _specularMap;
+        std::string _envMap;
+    };
+    using Functor = std::function<void(void)>;
 public:
     META_Object(osgEarth, EnvLightEffect)
 
-    /** Maintain a DisplaySettings singleton for objects to query at runtime.*/
     static osg::ref_ptr<EnvLightEffect>& instance();
+   
+    bool enabled() const { return _enable; }
+    bool useCubeUV() const { return _useCubeUV; }
+    float lightIntensity() const { return _lightIntensity; }
+    float maxReflectionLOD() const { return _maxReflectionLOD; }
+    void setEnable(bool enable);
+    void setLightIntensity(float i) { _lightIntensity = i; }
+    void setEnvMapAtlas(const EnvMapConfig& config, osgDB::Options* opts = nullptr);
+    void addReplaceCallback(Functor&& f) { replaceCallbacks.push_back(std::move(f)); }
+   
+protected:
+    EnvLightEffect();
+    EnvLightEffect(const std::string& envCubeFile);
+    void _ResetEnvMapAtlas();
+
     osg::Texture* getEnvCubeMap() { return _enable ? envCubeMap.get() : nullptr; }
     osg::Texture* getIrridianceMap() { return _enable ? irridianceMap.get() : nullptr; }
     osg::Texture* getPrefilterMap() { return _enable ? prefilterMap.get() : nullptr; }
     osg::Texture* getBrdfLUTMap() { return _enable ? brdfLUTMap.get() : nullptr; }
 
-    bool enabled() const { return _enable; }
-    bool useCubeUV() const { return _useCubeUV; }
-    float lightIntensity() const { return _lightIntensity; }
-    void setEnable(bool enable) {
-        _enable = enable;
-        if (enable && !_texturesReady) InitEnvMapAtlas();
-        _lightIntensity = 0.5;
-    }
-    void setLightIntensity(float i) { _lightIntensity = i; }
-   
-protected:
-    EnvLightEffect() :_enable(false), _texturesReady(false){}
-    EnvLightEffect(const std::string& envCubeFile):_enable(false), _texturesReady(false)
-    {
-
-
-    }
-    
-
-    void changeEnvMap() {}
-    void InitEnvMapAtlas();
 private:
     EnvLightEffect(const EnvLightEffect& rhs, const osg::CopyOp& copyop = osg::CopyOp::DEEP_COPY_ALL) {  }
     bool _enable;
@@ -132,6 +125,13 @@ private:
     osg::ref_ptr<osg::Texture> irridianceMap;
     osg::ref_ptr<osg::Texture> prefilterMap;
     osg::ref_ptr<osg::Texture2D> brdfLUTMap;
+    osg::ref_ptr<osgDB::Options> _options{ 0 };
+
+   
+    EnvMapConfig _config;
     float _lightIntensity{ 0.0f };
+    float _maxReflectionLOD{ 1.0f };
+    std::vector<Functor> replaceCallbacks;
+    
 };
 

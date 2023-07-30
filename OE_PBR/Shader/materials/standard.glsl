@@ -4,6 +4,7 @@
 
 
 #ifdef cascade
+   // oe_texcoord = abs(normalize( oe_texcoord ));
     oe_texcoord = abs(oe_texcoord);
     #ifdef OE_ENABLE_BASECOLOR_MAP
         diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
@@ -13,7 +14,7 @@
 
     #ifdef OE_ENABLE_MR_MAP
         vec3 tmp =  texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_MR_MAP)).rgb;
-        metallic = tmp.b;
+        metallic = tmp.r;
         roughness = tmp.g;
     #endif
 

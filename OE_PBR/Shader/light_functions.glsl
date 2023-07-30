@@ -108,19 +108,22 @@ vec2 sphericalUV(vec3 v)
 
     }
 
-    // uniform mat4 osg_ViewMatrixInverse;
+    uniform float MAX_REFLECTION_LOD;
     vec3 getIBLRadiance(vec3 normal, float roughnessFactor, vec3 viewDir)
     {
-        const float MAX_REFLECTION_LOD = 4.0;
+        //const float MAX_REFLECTION_LOD = 9.0;
         float envMapIntensity = 1.0;
 
         vec3 r = reflect(-viewDir, normal); 
+        float lod = MAX_REFLECTION_LOD;
+        
 
        
 
          vec3 reflectWC = (osg_ViewMatrixInverse * vec4(r, 0.0)).rgb;
         reflectWC = normalize(reflectWC);
         float mip = roughToMip(roughnessFactor, MAX_REFLECTION_LOD);
+        //return vec3(mip/lod);
     #ifdef USE_ENV_CUBE_UV
         vec3 prefilteredColor = textureLod(prefilterMap, reflectWC,  mip).rgb;
     #else

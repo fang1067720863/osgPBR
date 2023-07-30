@@ -203,9 +203,6 @@ void osgEarth::Util::PbrLightEffect::detach(osg::StateSet* stateset)
 {
     if (stateset && _supported)
     {
-        //if ( _lightingUniform.valid() )
-        //    stateset->removeUniform( _lightingUniform.get() );
-
         stateset->removeDefine(OE_LIGHTING_DEFINE);
 
         VirtualProgram* vp = VirtualProgram::get(stateset);

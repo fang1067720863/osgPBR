@@ -191,6 +191,7 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
     static const std::string ALPHAMASK = UPREFIX "alphaMask";
     static const std::string ALPHAMASKCUTOFF = UPREFIX "alphaMaskCutoff";
     static const std::string AMBIENTOCCLUSION = UPREFIX "aoStrength";
+    static const std::string RECEIVEENVLIGHT = UPREFIX "aoStrength";
 
     osgEarth::StandardPBRMaterial* material = static_cast<osgEarth::StandardPBRMaterial*>(attr);
     for (unsigned int i = 0; i < attr->getNumParents(); i++)
@@ -204,6 +205,7 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
         stateSet->getOrCreateUniform(ALPHAMASK, osg::Uniform::FLOAT)->set(material->getAlphaMask());
         stateSet->getOrCreateUniform(ALPHAMASKCUTOFF, osg::Uniform::FLOAT)->set(material->getAlphaMaskCutoff());
         stateSet->getOrCreateUniform(AMBIENTOCCLUSION, osg::Uniform::FLOAT)->set(material->getAoStrength());
+        
 
         osg::Texture* tex = material->createTextureAtlas();
         stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
@@ -215,42 +217,6 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
            
             bool enable = textureInfo._imageValid ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
             stateSet->setDefine(textureInfo._defineKey, textureInfo._defineVal, enable);
-        }
-
-        if (material->getReceiveEnvLight()&& EnvLightEffect::instance()->enabled())
-        {
-           
-            auto useCubeUV = EnvLightEffect::instance()->useCubeUV() ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
-            stateSet->setDefine("USE_ENV_MAP");
-
-            auto uniformType = EnvLightEffect::instance()->useCubeUV() ? osg::Uniform::SAMPLER_CUBE : osg::Uniform::SAMPLER_2D;
-            stateSet->setDefine("USE_ENV_CUBE_UV", useCubeUV);
-            
-            float envLightIntensity = EnvLightEffect::instance()->lightIntensity();
-            int unit;
-            osg::Texture* diffuseEnvMap = EnvLightEffect::instance()->getIrridianceMap();
-            unit = material->texUnitCnt();
-            stateSet->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
-          
-            stateSet->getOrCreateUniform("irradianceMap", uniformType)->set(unit);
-            std::cout << "irradianceMap " << unit << std::endl;
-            material->incementTexUnit();
-
-            osg::Texture* specularEnvMap = EnvLightEffect::instance()->getPrefilterMap();
-            unit = material->texUnitCnt();
-            stateSet->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
-           
-            stateSet->getOrCreateUniform("prefilterMap", osg::Uniform::SAMPLER_2D)->set(unit);
-            std::cout << "prefilterMap " << unit << std::endl;
-            material->incementTexUnit();
-
-            osg::Texture* brdfLUTMap = EnvLightEffect::instance()->getBrdfLUTMap();
-            stateSet->setTextureAttributeAndModes(material->texUnitCnt(), brdfLUTMap, osg::StateAttribute::ON);
-            unit = material->texUnitCnt();
-            stateSet->getOrCreateUniform("brdfLUT", uniformType)->set(material->texUnitCnt());
-            material->incementTexUnit();
-
-
         }
 
     }
@@ -269,8 +235,7 @@ void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr
         {
             osg::StateSet* stateSet = attr->getParent(i);
             auto uniformKey = iter->first;
-            
-            
+
             osg::Texture* tex = material->createTexture(iter->second._path);
             stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
             stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D)->set(material->texUnitCnt());

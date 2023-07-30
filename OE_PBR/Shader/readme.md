@@ -13,15 +13,17 @@
 
  ## V1.2
 - 提供osgEarth::ExtensionedMaterial 可自定义材质
-- waterial example from ue
 - 提供osg自己的材质资产格式 .omat
-
+- 可以切换 HDR specularHDR 可设置mipmap
 
 
 # TODO
 - 直接通过mipmap Texture 写入到硬盘
 - IBLBaker 生成的diffuse和specular还有问题
-- 可以切换 HDR
+- waterial example from ue
 - trackball 重写
+- 透明材质
 - 两个插件写好
 - 后处理
+- 高级材质
+- gltf reader uv解析
