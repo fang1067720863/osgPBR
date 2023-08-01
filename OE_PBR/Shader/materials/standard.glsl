@@ -26,14 +26,17 @@
 
     #endif
 
-    // #ifdef OE_ENABLE_AO_MAP
-    //     vec3 aoFromMap = texture(pbrMaps, vec3(oe_texcoord,0.0)).rgb;
-    //     //color.rgb = aoFromMap;
-    //    // return;
-    // #endif
+    #ifdef OE_ENABLE_AO_MAP
+        vec3 aoFromMap = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_AO_MAP)).rgb;
+      
+    #endif
 
         #ifdef OE_ENABLE_EMISSIVE_MAP
         vec3 emissiveFromMap = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_EMISSIVE_MAP)).rgb;  
         emissive *= emissiveFromMap;
     #endif
+#endif
+
+#ifdef debug_texture
+    color.rgb = aoFromMap;
 #endif
