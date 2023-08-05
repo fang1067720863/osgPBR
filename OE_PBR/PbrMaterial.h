@@ -93,8 +93,8 @@ namespace osgEarth {
         PROPERTY_DEFAULT(Vec3, EmissiveFactor, Vec3(0.1, 0.1, 0.1))
         PROPERTY_DEFAULT(float, RoughnessFactor, 0.2f)
         PROPERTY_DEFAULT(float, MetallicFactor, 1.0f)
-        PROPERTY_DEFAULT(float, AlphaMask, 0.1)
-        PROPERTY_DEFAULT(AlphaMode, AlphaMode, AlphaMode::Blend)
+        PROPERTY_DEFAULT(float, AlphaMask, 1.0f)
+        PROPERTY_DEFAULT(AlphaMode, AlphaMode, AlphaMode::Opaque)
         PROPERTY_DEFAULT(float, AlphaMaskCutoff, 0.2)
         PROPERTY_DEFAULT(float, AoStrength, 0.1)
 
@@ -127,9 +127,9 @@ namespace osgEarth {
     public:
         const std::string& materialFile() const { return _materialPath; }
         const CustomTextureMaps customMaps() const { return _customMaps; }
-        void setMaterialFile(const std::string& file) { _materialPath = file; }
+        void setMaterialFile(const std::string& file) { _materialPath = file; }  // shader中不要出现中文字符串
 
-        void addTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName, unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON){
+        void extTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName, unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON){
             if (_customMaps.find(name) == _customMaps.end())
             {
                 _customMaps[name] = TextureInfo();
@@ -141,9 +141,7 @@ namespace osgEarth {
         }
 
     private:
-        std::string _materialPath;
-
-      
+        std::string _materialPath;   
         CustomTextureMaps _customMaps;
     };
 

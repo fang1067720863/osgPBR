@@ -6,18 +6,22 @@ uniform sampler2D perlin_Noise;
 
 
 // calc normal
-	float osg_FrameTime = 0.1f;
+	
 	const float noiseSpeed = 0.4;
 	// large wave
-	float time = sin(oe_pos.x/150.f + noiseSpeed);
-	vec2 speed = vec2(-0.06f, -0.04f);
+	float time = sin(oe_pos.x/150.f + osg_FrameTime * noiseSpeed);
 
-	vec2 uv_sin = vec2(0.18f,0.15f) + time * speed;
+	vec2 uv_sin = vec2(0.18f,0.15f) + time * vec2(-0.06f, -0.04f);
 	vec2 uv_color = vec2(0.75f) + osg_FrameTime *vec2(-0.07f);
 	vec2 uv_normal = vec2(0.05f, 0.08f) + osg_FrameTime *vec2(-0.03f, -0.02f);
+	uv_sin = fract(oe_texcoord + uv_sin);
+	uv_color = fract(oe_texcoord + uv_color);
+	uv_normal = fract(oe_texcoord + uv_normal);
 
 	vec3 baseNormal = texture(water_N, uv_normal).rgb;
-	vec3 additionalNormal = texture(water_N, uv_sin).rgb * vec3(-1,-1,1);
+	vec3 additionalNormal = texture(water_N, uv_sin).rgb * vec3(-1,1,-1);
+	baseNormal = getNormal(normal, baseNormal);
+	additionalNormal = getNormal(normal, additionalNormal);
 
 	vec3 pixelNomal = vec3(1.0f,0.0f,0.0f);
 	vec3 worldNormal = oe_normal;
@@ -33,6 +37,7 @@ uniform sampler2D perlin_Noise;
 	float gradient = clamp((pixelDepth + pixelDepthWithNoise - 1000.0f)/2000.0f,0.0,1.0f);
 
 	vec3 smallNormal = mix(texture(water_N, uv_color).rgb, vec3(0,0,1), gradient);
+	smallNormal = getNormal(normal, smallNormal);
 	//BlendAngleCorrectedNormals
 	vec3 finalNormal = normalize(mix(largeNormal, smallNormal, pow(1 - dot(pixelNomal, worldNormal), 2)));
 	normal = finalNormal;
@@ -51,3 +56,6 @@ uniform sampler2D perlin_Noise;
 // calc roughness
 	roughness = 0.1f;
 
+#ifdef debug_texture
+    color.rgb = normal;
+#endif

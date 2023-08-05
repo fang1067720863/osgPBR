@@ -15,7 +15,7 @@
 - 提供osgEarth::ExtensionedMaterial 可自定义材质
 - 提供osg自己的材质资产格式 .omat
 - 可以切换 HDR specularHDR 可设置mipmap
-
+- OPAQUE
 
 # TODO
 - 直接通过mipmap Texture 写入到硬盘
@@ -27,3 +27,6 @@
 - 后处理
 - 高级材质
 - gltf reader uv解析
+
+- sheen tranmission ior anisotropy variants iridescence 
+- exposure

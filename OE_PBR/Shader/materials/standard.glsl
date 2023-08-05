@@ -5,7 +5,7 @@
 
 #ifdef cascade
    // oe_texcoord = abs(normalize( oe_texcoord ));
-    oe_texcoord = abs(oe_texcoord);
+     oe_texcoord = vec2(oe_texcoord.x, 1.0f - oe_texcoord.y);
     #ifdef OE_ENABLE_BASECOLOR_MAP
         diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
       //  color.rgb = diffuseColor;
@@ -14,7 +14,7 @@
 
     #ifdef OE_ENABLE_MR_MAP
         vec3 tmp =  texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_MR_MAP)).rgb;
-        metallic = tmp.r;
+        metallic = tmp.b;
         roughness = tmp.g;
     #endif
 
@@ -35,8 +35,4 @@
         vec3 emissiveFromMap = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_EMISSIVE_MAP)).rgb;  
         emissive *= emissiveFromMap;
     #endif
-#endif
-
-#ifdef debug_texture
-    color.rgb = aoFromMap;
 #endif

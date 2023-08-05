@@ -137,10 +137,11 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
 
         if (image.valid() == false)
         {
+            std::cout << "info._path" << info._path << "is not valid!" << std::endl;
             continue;
         }
 
-        std::cout << info._path << " true" << std::endl;
+        std::cout << info._path << " valid" << std::endl;
         //if (s < 0)
         //{
         //    s = osgEarth::nextPowerOf2(image->s());
@@ -173,11 +174,8 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
     tex->setFilter(tex->MAG_FILTER, tex->LINEAR);
     tex->setWrap(tex->WRAP_S, tex->REPEAT);
     tex->setWrap(tex->WRAP_T, tex->REPEAT);
-    tex->setUnRefImageDataAfterApply(osgEarth::Registry::instance()->unRefImageDataAfterApply().get());
-    //tex->setMaxAnisotropy(4.0);
-
-    // Let the GPU do it since we only download this at startup
-    tex->setUseHardwareMipMapGeneration(true);
+    tex->setUnRefImageDataAfterApply(true);
+    tex->setResizeNonPowerOfTwoHint(false);
 
     return tex;
 }

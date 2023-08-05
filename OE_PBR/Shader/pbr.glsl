@@ -9,7 +9,7 @@ vec3 vp_Normal;  //same as gl_Normal
 out vec3 oe_posView;
 out vec2 oe_texcoord;
 out vec3 oe_normal;
-
+out vec3 oe_pos;
 /*vs define attribute binding and how todefine
 */ 
 void vertex_main_pbr(inout vec4 VertexVIEW)
@@ -21,7 +21,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
     oe_posView = VertexVIEW.xyz / VertexVIEW.w;
     oe_texcoord = gl_MultiTexCoord0.xy;
     oe_normal = vp_Normal;
-    
+    oe_pos = gl_Vertex.xyz;
 }
 
 [break]
@@ -34,7 +34,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 
 #define PI 3.14159265359f
 #define RECIPROCAL_PI 0.318309886142228
-
+// #define debug_texture 1
 #pragma import_defines(MATERIAL_DEFINES)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
@@ -46,7 +46,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 in vec3 oe_posView;  // view space
 in vec2 oe_texcoord;
 in vec3 oe_normal;  // world space
-
+in vec3 oe_pos;
 // stage global
 in vec3 vp_Normal;
 // in pbr_Material oe_pbr;
@@ -131,9 +131,10 @@ void fragment_main_pbr(inout vec4 color)
     vec3 diffuseColor =vec3(1.0);
 
     # MATERIAL_BODY
-    // vec3 res = normal + vec3(1.0);
-    // color.rgb = 0.5 * res;
-    // return;
+#ifdef debug_texture
+    return;
+#endif
+
     
     diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
     f0 = mix(f0, diffuseColor, vec3(metallic));
@@ -203,14 +204,17 @@ void fragment_main_pbr(inout vec4 color)
     #endif
 
 
-    // tone map:
-    //color.rgb = color.rgb / (color.rgb + vec3(1.0));
-    // linear tone map
-    //color.rgb = clamp(color.rgb * 0.5,0.0,1.0);
+   
+
     
-    // boost:
-    color.rgb *= 2.2;
+     // tonemap:
+    float exposure = 2.2f;
+    color.rgb *= exposure;
+    //color.rgb = color.rgb / (color.rgb + vec3(1.0));
+    
     color = linearTosRGB(color);
+
+    color.a = oe_pbr.alphaMask;
 
     // add in the haze
     //color.rgb += atmos_color;

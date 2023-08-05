@@ -6,7 +6,7 @@ uniform sampler2D roughnessMap;
 uniform sampler2D metalMap;
 
 
-oe_texcoord = abs(oe_texcoord);
+
 
 #ifdef OE_ENABLE_Metal_MAP
     vec3 metal =  texture(metalMap, oe_texcoord).rgb;

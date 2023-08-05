@@ -96,6 +96,7 @@ public:
     META_Object(osgEarth, EnvLightEffect)
 
     static osg::ref_ptr<EnvLightEffect>& instance();
+    osg::Texture* getEnvCubeMap() { return _enable ? envCubeMap.get() : nullptr; }
    
     bool enabled() const { return _enable; }
     bool useCubeUV() const { return _useCubeUV; }
@@ -106,12 +107,12 @@ public:
     void setEnvMapAtlas(const EnvMapConfig& config, osgDB::Options* opts = nullptr);
     void addReplaceCallback(Functor&& f) { replaceCallbacks.push_back(std::move(f)); }
    
+   
 protected:
     EnvLightEffect();
     EnvLightEffect(const std::string& envCubeFile);
     void _ResetEnvMapAtlas();
 
-    osg::Texture* getEnvCubeMap() { return _enable ? envCubeMap.get() : nullptr; }
     osg::Texture* getIrridianceMap() { return _enable ? irridianceMap.get() : nullptr; }
     osg::Texture* getPrefilterMap() { return _enable ? prefilterMap.get() : nullptr; }
     osg::Texture* getBrdfLUTMap() { return _enable ? brdfLUTMap.get() : nullptr; }

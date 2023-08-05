@@ -32,15 +32,18 @@ public:
         UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
         UniformSpec roughness{ "oe_pbr.roughnessFactor" ,0.0f,1.0f,0.5f };
         UniformSpec aoStrength{ "oe_pbr.aoStrength" ,0.0f,1.0f,0.5f };
+        UniformSpec alphaMask{ "oe_pbr.alphaMask" ,0.0f,1.0f,0.99f };
         DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true };
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true };
         DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true };
         DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"1", true };
         DefineSpec baseColor{ "OE_ENABLE_BASECOLOR_MAP" ,"0", true };
+       // UniformSpec alphaMode{ "oe_pbr.alphaMode" , 1 };
 
         _uniforms.emplace_back(metallic);
         _uniforms.emplace_back(roughness);
         _uniforms.emplace_back(aoStrength);
+        _uniforms.emplace_back(alphaMask);
 
         _defines.emplace_back(normal);
         _defines.emplace_back(mr);
@@ -51,6 +54,10 @@ public:
     }
     bool setNode(osg::MatrixTransform* node)
     {
+        if (!node->asMatrixTransform())
+        {
+            return false;
+        }
         osg::Node* child = node->getChild(0);
         strcpy(material, node->getName().c_str());
         _node = child;
@@ -59,20 +66,42 @@ public:
             if (def._name == "oe_pbr.metallicFactor")
             {
                 float metallicFactor;
-                child->getOrCreateStateSet()->getUniform("oe_pbr.metallicFactor")->get(metallicFactor);
-                def._value = metallicFactor;
+                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.metallicFactor");
+                if (u)
+                {
+                    u->get(metallicFactor);
+                    def._value = metallicFactor;
+                }
             }
             if (def._name == "oe_pbr.roughnessFactor")
             {
                 float roughnessFactor;
-                child->getOrCreateStateSet()->getUniform("oe_pbr.roughnessFactor")->get(roughnessFactor);
-                def._value = roughnessFactor;
+                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.roughnessFactor");
+                if (u)
+                {
+                    u->get(roughnessFactor);
+                    def._value = roughnessFactor;
+                }
             }
             if (def._name == "oe_pbr.aoStrength")
             {
                 float aoStrength;
-                child->getOrCreateStateSet()->getUniform("oe_pbr.aoStrength")->get(aoStrength);
-                def._value = aoStrength;
+                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.aoStrength");
+                if (u)
+                {
+                    u->get(aoStrength);
+                    def._value = aoStrength;
+                }
+            }
+            if (def._name == "oe_pbr.alphaMask")
+            {
+                float alphaMask;
+                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.alphaMask");
+                if (u)
+                {
+                    u->get(alphaMask);
+                    def._value = alphaMask;
+                }
             }
         }
 
@@ -103,6 +132,22 @@ public:
 
             }
         }
+
+        const char* items[] = { "opaque", "blend" };
+        static int item_current = 0;
+        if (ImGui::Combo("AlphaMode", &item_current, items, IM_ARRAYSIZE(items)))
+        {
+            if (item_current == 0)
+            {
+                _node->getOrCreateStateSet()->setMode(GL_BLEND, 0);
+            }
+            else {
+
+                _node->getOrCreateStateSet()->setMode(GL_BLEND, 1);
+            }
+
+        }
+
         for (auto& def : _defines)
         {
             if (ImGui::Checkbox(def._name.c_str(), &def._checked))
