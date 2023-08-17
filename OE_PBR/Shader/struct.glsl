@@ -1,3 +1,4 @@
+
 struct pbr_Material
 {
     vec4  baseColorFactor;
@@ -7,6 +8,19 @@ struct pbr_Material
     float alphaMask;
     float alphaMaskCutoff;
     float aoStrength;
+};
+
+struct ReflectedLight
+{
+	vec3 indirectDiffuse;
+	vec3 indirectSpecular;
+	vec3 directDiffuse;
+	vec3 directSpecular;
+};
+struct GeometricContext
+{
+	vec3 normal;
+	vec3 viewDir;
 };
 struct osg_LightSourceParameters 
 {   
@@ -24,15 +38,3 @@ struct osg_LightSourceParameters
 
    bool enabled;
 };
-
-struct ReflectedLight
-{
-	vec3 indirectDiffuse;
-	vec3 indirectSpecular;
-	vec3 directDiffuse;
-	vec3 indirectSpecular;
-}
-struct GeometricContext
-{
-	vec3 normal;
-}

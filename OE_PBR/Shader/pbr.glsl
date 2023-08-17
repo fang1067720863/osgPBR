@@ -41,6 +41,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
 #pragma include BRDF.glsl
 #pragma include light_functions.glsl
+#pragma include struct.glsl
 
 
 in vec3 oe_posView;  // view space
@@ -53,47 +54,7 @@ in vec3 vp_Normal;
 
 
 // varying decorated with flat, the data will not change when pass from vs to ps, and not introplote ,every fragment share same data
-struct pbr_Material
-{
-    vec4  baseColorFactor;
-    vec3  emissiveFactor;
-    float metallicFactor;
-    float roughnessFactor;
-    float alphaMask;
-    float alphaMaskCutoff;
-    float aoStrength;
-    #ifdef USE_SHEEN
-    #endif
-};
-struct osg_LightSourceParameters 
-{   
-   vec4 ambient;
-   vec4 diffuse;
-   vec4 specular;
-   vec4 position;
-   vec3 spotDirection;
-   float spotExponent;
-   float spotCutoff;
-   float spotCosCutoff;
-   float constantAttenuation;
-   float linearAttenuation;
-   float quadraticAttenuation;
 
-   bool enabled;
-};
-
-struct ReflectedLight
-{
-	vec3 indirectDiffuse;
-	vec3 indirectSpecular;
-	vec3 directDiffuse;
-	vec3 directSpecular;
-};
-struct GeometricContext
-{
-	vec3 normal;
-	vec3 viewDir;
-};
 
 uniform osg_LightSourceParameters osg_LightSource[OE_NUM_LIGHTS];
 
@@ -176,7 +137,7 @@ void fragment_main_pbr(inout vec4 color)
         float NdotH = max(dot(n, h), 0.0f);
         float NdotV = max(dot(n, v), 0.0f);
         
-        vec3 lightColor = vec3(osg_LightSource[i].diffuse);
+        //vec3 lightColor = vec3(osg_LightSource[i].diffuse);
         // Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao);
         // Lo *= osg_LightSource[i].spotExponent;
         RE_Direct_Physical( osg_LightSource[i], geometry, f0, material, reflectedLight);
@@ -204,7 +165,7 @@ void fragment_main_pbr(inout vec4 color)
 
 #endif
 
-    color.rgb = Lo;
+    color.rgb = reflectedLight.directDiffuse + reflectedLight.directSpecular;
     #ifdef OE_ENABLE_EMISSIVE_MAP
         color.rgb += emissive;
     #endif
