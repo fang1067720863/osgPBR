@@ -284,7 +284,7 @@ void IBLTechnique::createBrdfLUTPass()
 
 }
 
-void IBLTechnique::createHDRCubePass()
+void IBLTechnique::createHDRCubePass(osg::Texture* envCubeMap)
 {
 
 
@@ -319,7 +319,7 @@ void IBLTechnique::createHDRCubePass()
     )";
 
     ShaderLoader::load(vp, pick_preview);
-    osg::Node* cameras = createSlaveCameras(box.get(), envCubeMap);
+	osg::Node* cameras = createSlaveCameras(box.get(), envCubeMap);
     root->addChild(cameras);
 }
 

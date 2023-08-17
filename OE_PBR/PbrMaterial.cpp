@@ -50,15 +50,6 @@ std::string osgEarth::StandardPBRMaterial::getDefaultDefineName(TextureEnum mapE
     case osgEarth::StandardPBRMaterial::MetalRoughenssMap:
         name = "OE_ENABLE_MR_MAP";
         break;
-    case osgEarth::StandardPBRMaterial::EnvMap:
-        name = "OE_ENABLE_MR_MAP";
-        break;
-    case osgEarth::StandardPBRMaterial::CustomMap:
-        name = "OE_ENABLE_MR_MAP";
-        break;
-    case osgEarth::StandardPBRMaterial::Undefined:
-        name = "OE_ENABLE_MR_MAP";
-        break;
     default:
         break;
     }

@@ -60,7 +60,7 @@ public:
     void createBrdfLUTPass();
 
 
-    void createHDRCubePass();
+    void createHDRCubePass(osg::Texture* envCubeMap);
     void createRadianceQuadPass();
 
     void createTextures();

@@ -224,7 +224,7 @@ public:
         double offset = 2.0;
         osg::Camera* cam0 = nullptr;
         std::vector<osg::Image*> images;
-        for (int i = 0; i < mipmapLevel; i++)
+		for (uint32_t i = 0; i < mipmapLevel; i++)
         {
 
             osg::Image* image = new osg::Image;

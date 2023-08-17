@@ -62,6 +62,8 @@ struct pbr_Material
     float alphaMask;
     float alphaMaskCutoff;
     float aoStrength;
+    #ifdef USE_SHEEN
+    #endif
 };
 struct osg_LightSourceParameters 
 {   
@@ -147,6 +149,23 @@ void fragment_main_pbr(inout vec4 color)
 
     vec3 Lo = vec3(0.0);
 
+    GeometricContext geometry;
+    geometry.viewDir = v;
+    geometry.normal = n;
+
+    pbr_Material material;
+    material.baseColorFactor=vec4(diffuseColor,1.0);
+    material.metallicFactor=metallic;
+    material.roughnessFactor=roughness;
+    material.aoStrength=ao;
+
+    ReflectedLight reflectedLight;
+    reflectedLight.indirectDiffuse = vec3(0.0);
+    reflectedLight.indirectSpecular = vec3(0.0);
+    reflectedLight.directDiffuse = vec3(0.0);
+    reflectedLight.directSpecular = vec3(0.0);
+
+
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
         vec3 l = normalize(-osg_LightSource[i].spotDirection.xyz);
@@ -158,8 +177,9 @@ void fragment_main_pbr(inout vec4 color)
         float NdotV = max(dot(n, v), 0.0f);
         
         vec3 lightColor = vec3(osg_LightSource[i].diffuse);
-        Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao);
-        Lo *= osg_LightSource[i].spotExponent;
+        // Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao);
+        // Lo *= osg_LightSource[i].spotExponent;
+        RE_Direct_Physical( osg_LightSource[i], geometry, f0, material, reflectedLight);
     }
 
     // indirect light accumulate
@@ -173,23 +193,12 @@ void fragment_main_pbr(inout vec4 color)
     vec3 irradianceIBL = vec3(0.0);
     vec3 radianceIBL = vec3(0.0);
 
-    ReflectedLight reflectedLight;
-    reflectedLight.indirectDiffuse = vec3(0.0);
-    reflectedLight.indirectSpecular = vec3(0.0);
+    
 
 #ifdef USE_ENV_MAP
     radianceIBL = getIBLRadiance(n, roughness,v);
 
-    GeometricContext geometry;
-    geometry.viewDir = v;
-    geometry.normal = n;
-
-    pbr_Material material;
-    material.baseColorFactor=vec4(diffuseColor,1.0);
-    material.metallicFactor=metallic;
-    material.roughnessFactor=roughness;
-    material.aoStrength=ao;
-
+  
     RE_IndirectDiffuse_Physical(irradiance, diffuseColor, reflectedLight);
     RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,f0,geometry, material, reflectedLight);
 

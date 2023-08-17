@@ -165,8 +165,10 @@
     <ClCompile Include="osgearth\ImGui.cpp" />
     <ClCompile Include="PbrLightEffect.cpp" />
     <ClCompile Include="PbrMaterial.cpp" />
+    <ClCompile Include="ReflectionProbe.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AdvancedMaterial.h" />
     <ClInclude Include="CubeToQuad.h" />
     <ClInclude Include="ddsNew.h" />
     <ClInclude Include="EnvLight.h" />
@@ -177,6 +179,7 @@
     <ClInclude Include="PbrLightEffect.h" />
     <ClInclude Include="PbrMaterial.h" />
     <ClInclude Include="RayPicker.h" />
+    <ClInclude Include="ReflectionProbe.h" />
     <ClInclude Include="SkyBox.h" />
     <ClInclude Include="SnapImage.h" />
     <ClInclude Include="TestUI.h" />

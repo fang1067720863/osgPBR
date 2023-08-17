@@ -8,7 +8,7 @@
 #include <osgViewer/Viewer>
 #include<osg/ShapeDrawable>
 #include<osgGA/TrackballManipulator>
-
+#include <osgManipulator/TranslateAxisDragger>
 #include<osg/MatrixTransform>
 #include <osgEarth/Notify>
 #include <osgEarth/EarthManipulator>
@@ -17,6 +17,7 @@
 #include <osgEarth/Threading>
 #include <osgEarth/ShaderGenerator>
 #include <osgDB/ReadFile>
+#include<osgShadow/ConvexPolyhedron>
 
 #include <osgUtil/Optimizer>
 #include <iostream>
@@ -30,7 +31,8 @@
 #include<osgEarth/PhongLightingEffect>
 #include<osgEarth/VirtualProgram>
 #include<osg/TextureCubeMap>
-
+#include<osg/Texture>
+#include<osg/Texture2D>
 
 #include"PbrLightEffect.h"
 #include"PbrMaterial.h"
@@ -40,6 +42,7 @@
 #include"IBLBaker.h"
 #include"CubeToQuad.h"
 #include"RayPicker.h"
+#include"ReflectionProbe.h"
 #include"SkyBox.h"
 
 //#define LC "[viewer] "
@@ -200,7 +203,7 @@ osg::ref_ptr<osg::Node> CreateExtensionedMaterialSphere()
    
     return geode;
 }
-osg::Node* CreateLight(osg::Light * myLight1)
+osg::Node* CreateLight(osg::Light * myLight1,osg::Node* node)
 {
     osg::Group* lightGroup = new osg::Group;
 
@@ -225,9 +228,9 @@ osg::Node* CreateLight(osg::Light * myLight1)
     lightS1->addCullCallback(cb);
 #endif 
 
-    EnvLightSource* els = new EnvLightSource;
+   /* EnvLightSource* els = new EnvLightSource;
     els->addCullCallback(new EnvLightGL3UniformGenerator());
-    lightGroup->addChild(els);
+    lightGroup->addChild(els);*/
     return lightGroup;
 }
 
@@ -265,28 +268,24 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
         dbo->setDatabasePath(absolutePath);
     }
 
-
-
-    
-
-    //osg::ref_ptr<osgEarth::ExtensionedMaterial> grass = new osgEarth::ExtensionedMaterial();
-    //grass->setName("grass");
-    //grass->setDataBaseOption(dbo);
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> grass = new osgEarth::ExtensionedMaterial();
+    grass->setName("grass");
+    grass->setDataBaseOption(dbo);
    
-    //grass->setBaseColorFactor(osg::Vec4f(0.5f, 0.5f, 0.5f, 0.5f));
-    //grass->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
-    //grass->setMetallicFactor(0.29f);
-    //grass->setRoughnessFactor(0.81f);
-    //grass->setAoStrength(0.15f);
-    //grass->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "grass/normal.png");
-    //grass->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "grass/albedo.png");
-    //grass->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "grass/ao.png");
-    //grass->setReceiveEnvLight(true);
-    //
-    //grass->extTextureAttribute("metalMap", "grass/metallic.png", "OE_ENABLE_Metal_MAP");
-    //grass->extTextureAttribute("roughnessMap", "grass/roughness.png", "OE_ENABLE_Roughness_MAP");
-    //grass->setMaterialFile("materials/metalroughness.glsl");
-    //result.push_back(grass);
+    grass->setBaseColorFactor(osg::Vec4f(0.5f, 0.5f, 0.5f, 0.5f));
+    grass->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    grass->setMetallicFactor(0.29f);
+    grass->setRoughnessFactor(0.81f);
+    grass->setAoStrength(0.15f);
+    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "grass/normal.png");
+    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "grass/ao.png");
+    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "grass/albedo.png");
+    grass->setReceiveEnvLight(true);
+    
+    grass->extTextureAttribute("metalMap", "grass/metallic.png", "OE_ENABLE_Metal_MAP");
+    grass->extTextureAttribute("roughnessMap", "grass/roughness.png", "OE_ENABLE_Roughness_MAP");
+    grass->setMaterialFile("materials/metalroughness.glsl");
+    result.push_back(grass);
 
     osg::ref_ptr<osgEarth::ExtensionedMaterial> m = new osgEarth::ExtensionedMaterial();
     m->setName("metal");
@@ -305,24 +304,24 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     m->setMaterialFile("materials/metalroughness.glsl");
     result.push_back(m);
 
-    //osg::ref_ptr<osgEarth::ExtensionedMaterial> marber = new osgEarth::ExtensionedMaterial();
-    //marber->setName("dalishi");
-    //marber->setDataBaseOption(dbo);
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> marber = new osgEarth::ExtensionedMaterial();
+    marber->setName("dalishi");
+    marber->setDataBaseOption(dbo);
     
-    //marber->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-    //marber->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
-    //marber->setMetallicFactor(0.5f);
-    //marber->setRoughnessFactor(0.176f);
-    //marber->setAoStrength(0.1f);
-    //marber->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "gray/normal.png");
-    //marber->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "gray/albedo.png");
-    //marber->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "gray/ao.png");
-    //marber->setReceiveEnvLight(true);
+    marber->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    marber->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    marber->setMetallicFactor(0.5f);
+    marber->setRoughnessFactor(0.176f);
+    marber->setAoStrength(0.1f);
+    marber->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "gray/normal.png");
+    marber->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "gray/ao.png");
+    marber->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "gray/albedo.png");
+    marber->setReceiveEnvLight(true);
 
-    //marber->extTextureAttribute("metalMap", "gray/metallic.png", "OE_ENABLE_Metal_MAP");
-    //marber->extTextureAttribute("roughnessMap", "gray/roughness.png", "OE_ENABLE_Roughness_MAP");
-    //marber->setMaterialFile("materials/metalroughness.glsl");
-    //result.push_back(marber);
+    marber->extTextureAttribute("metalMap", "gray/metallic.png", "OE_ENABLE_Metal_MAP");
+    marber->extTextureAttribute("roughnessMap", "gray/roughness.png", "OE_ENABLE_Roughness_MAP");
+    marber->setMaterialFile("materials/metalroughness.glsl");
+    result.push_back(marber);
 
     osg::ref_ptr<osgEarth::ExtensionedMaterial> rock = new osgEarth::ExtensionedMaterial();
     rock->setName("rock");
@@ -356,8 +355,6 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     water->extTextureAttribute("water_N", "unreal/Textures/T_Water_N.tga", "water_N");
     water->extTextureAttribute("perlin_Noise", "unreal/Textures/T_Perlin_Noise_M.tga", "perlin_Noise");
     water->setMaterialFile("materials/water_ocean.glsl");
-
-
 
     result.push_back(water);
 
@@ -418,7 +415,7 @@ osg::ref_ptr<osg::Group> createMaterialSpheres(bool noTexture = true)
             matrixT->setMatrix(osg::Matrix::translate((double)i * 5.0, 0.0, 0.0));
             matrixT->addChild(geode);
             matrixT->setName(materials[i]->getName());
-
+            //materials[i]->setUpdateCallback(new ExtensionedMaterialCallback());
             ExtensionedMaterialCallback().operator()(materials[i], 0L);
             auto* pbr = new PbrLightEffect();
             pbr->attach(geode->getOrCreateStateSet());
@@ -432,6 +429,124 @@ osg::ref_ptr<osg::Group> createMaterialSpheres(bool noTexture = true)
     return gp;
     
 }
+osg::Camera* createHUDCamera(osg::Texture* _texture,osgDB::Options * shaderDB)
+{
+    osg::Camera* camera = new osg::Camera;
+
+    // set the projection matrix
+    camera->setProjectionMatrix(osg::Matrix::ortho2D(0, 200, 0, 200));
+
+    // set the view matrix
+    camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+    camera->setViewMatrix(osg::Matrix::identity());
+
+    // only clear the depth buffer
+    camera->setClearMask(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+
+    // draw subgraph after main camera view.
+    camera->setRenderOrder(osg::Camera::POST_RENDER);
+
+    // we don't want the camera to grab event focus from the viewers main camera(s).
+    camera->setAllowEventFocus(false);
+
+    { // Add geode and drawable with BaseClass display
+      // create geode to contain hud drawables
+        osg::Geode* geode = new osg::Geode;
+        camera->addChild(geode);
+        auto _hudOrigin = osg::Vec2(-100, -100);
+        auto _hudSize = osg::Vec2(200, 200);
+        // finally create and attach hud geometry
+        osg::Geometry* geometry = osg::createTexturedQuadGeometry
+        (osg::Vec3(_hudOrigin[0], _hudOrigin[1], 0),
+            osg::Vec3(_hudSize[0], 0, 0),
+            osg::Vec3(0, _hudSize[1], 0));
+
+        osg::StateSet* stateset = geometry->getOrCreateStateSet();
+        stateset->setTextureAttribute(0, _texture, osg::StateAttribute::ON);
+        stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+        osgEarth::VirtualProgram* vp = osgEarth::VirtualProgram::getOrCreate(stateset);
+        osgEarth::ShaderPackage shaders;
+        shaders.load(vp, "cube_to_quad.glsl", shaderDB);
+
+        //ss->setTextureAttributeAndModes(0, inputMap, osg::StateAttribute::ON);
+        stateset->getOrCreateUniform("IrradianceMap", osg::Uniform::SAMPLER_CUBE)->set(0);
+        stateset->getOrCreateUniform("mipLevel", osg::Uniform::FLOAT)->set(0 * 1.0f);
+
+        geode->addDrawable(geometry);
+    }
+    return camera;
+}
+osg::Group* setupCamera(osg::Node* reflectedSubgraph, osg::Texture* texture)
+{
+	auto clearColor = osg::Vec4(0, 0, 0, 0);
+
+	unsigned int tex_width, tex_height;
+	tex_width = tex_height = 256;
+	typedef std::pair<osg::Vec3, osg::Vec3> ImageData;
+	const ImageData id[] =
+	    {
+	        ImageData(osg::Vec3(1, 0, 0), osg::Vec3(0, -1, 0)),  // +X
+	        ImageData(osg::Vec3(-1, 0, 0), osg::Vec3(0, -1, 0)), // -X
+	        ImageData(osg::Vec3(0, 1, 0), osg::Vec3(0, 0, 1)),   // +Y
+	        ImageData(osg::Vec3(0, -1, 0), osg::Vec3(0, 0, -1)), // -Y
+	        ImageData(osg::Vec3(0, 0, 1), osg::Vec3(0, -1, 0)),  // +Z
+	        ImageData(osg::Vec3(0, 0, -1), osg::Vec3(0, -1, 0))  // -Z
+	    };
+	osg::Group* cameras = new osg::Group();
+	for (unsigned int i = 0; i < 6; ++i)
+	{
+		// create the camera
+		osg::Camera* camera = new osg::Camera;
+		
+		camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		camera->setClearColor(clearColor);
+
+		// set viewport
+		camera->setViewport(0, 0, tex_width, tex_height);
+
+		// set the camera to render before the main camera.
+		camera->setRenderOrder(osg::Camera::PRE_RENDER);
+        camera -> setComputeNearFarMode(osg::CullSettings::COMPUTE_NEAR_FAR_USING_PRIMITIVES);
+
+		// tell the camera to use OpenGL frame buffer object where supported.
+		camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
+        camera->setImplicitBufferAttachmentMask(0, 0);
+        camera->setReferenceFrame(osg::Camera::ABSOLUTE_RF);
+		// attach the texture and use it as the color buffer.
+		camera->attach(osg::Camera::COLOR_BUFFER, texture, 0, i);
+
+        osg::Matrix viewMat;
+		osg::Vec3d position(1.0, 6.0, 0.0);
+		viewMat.makeLookAt(position, position + id[i].first, id[i].second);
+
+		// add subgraph to render
+		camera->addChild(reflectedSubgraph);
+		double size = 5.0;
+		//camera->setProjectionMatrixAsOrtho2D(-size, size, -size, size);
+		camera->setProjectionMatrixAsFrustum(-1.0, 1.0, -1.0, 1.0, 1.0, 10.0);
+		camera->setViewMatrix(viewMat);
+
+
+        if (i == 0)
+        {
+            osg::Matrix debug_mvp = camera->getViewMatrix() * camera->getProjectionMatrix();
+            osgShadow::ConvexPolyhedron frustum;
+            frustum.setToUnitFrustum();
+            frustum.transform(osg::Matrix::inverse(debug_mvp), debug_mvp);
+            osg::Geometry* geom = frustum.buildGeometry(osg::Vec4(0.0, 1.0, 0.0, 1.0), osg::Vec4(0.0, 0.0, 1.0, 0.0));
+            osg::Geode* geode = new osg::Geode();
+            geode->addDrawable(geom);
+            cameras->addChild(geode);
+            
+        }
+
+        cameras->addChild(camera);
+        
+
+	}
+	return cameras;
+}
+
 
 
 int main(int argc, char** argv)
@@ -472,6 +587,19 @@ int main(int argc, char** argv)
     auto iblDB = new osgDB::Options("IBL");
     iblDB->setDatabasePath("C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL");
 
+    auto shaderPath = "..//..//OE_PBR//Shader";
+    auto shaderPath2 = "..//OE_PBR//Shader";
+
+    osg::ref_ptr< osgDB::Options>  shaderDB = new osgDB::Options();
+    if (osgDB::fileExists(osgEarth::getAbsolutePath(shaderPath)))
+    {
+        shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath));
+    }
+    else {
+        shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath2));
+    }
+    shaderDB->setName("osgEarthShader");
+
     osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
 
     auto group = new osg::Group();
@@ -482,33 +610,24 @@ int main(int argc, char** argv)
     //Sponza BoomBox
     
    
-    auto gltfModel = reader.read("BoomBox\\BoomBox.gltf", false, modelDB);
-    //Helmet\\DamagedHelmet
+    auto gltfModel = reader.read("Helmet\\DamagedHelmet.gltf", false, modelDB);
+    //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza
     auto node = gltfModel.getNode();
-    auto* phong = new PbrLightEffect();
-    phong->attach(gltfModel.getNode()->getOrCreateStateSet());
+    auto* pbrEffect = new PbrLightEffect();
+    pbrEffect->attach(gltfModel.getNode()->getOrCreateStateSet());
     auto* vp = osgEarth::VirtualProgram::get(gltfModel.getNode()->getOrCreateStateSet());
     vp->setShaderLogging(true);
 
 
     auto materialSpheres = createMaterialSpheres(false);
 
-    group->addChild(createSkyBox());
-    group->addChild(materialSpheres);
-
-    //std::vector<std::string> input = { "px.png","nx.png","ny.png","py.png", "pz.png","nz.png" };
-    //std::string input = "pisaDiffuseHDR.dds";
-    //auto output = "diffuse.dds";
-    //auto path = "C:\\Users\\10677\\source\\repos\\OE_PBR\\OE_PBR\\Asset\\IBL\\pisaHDR";
-    //osg::ref_ptr<  QuadTextureTransitor > trans = new  QuadTextureTransitor(group, &viewer);
-    //trans->translate(path, input, output, 256, 128, 1);
-     
-    
+    //group->addChild(createSkyBox());
+	group->addChild(node);
    
 
 
     osg::Light* lightState = new osg::Light;
-   auto light = CreateLight(lightState);
+   auto light = CreateLight(lightState, group);
 
    auto materialPanel = new TestGUI();
    auto findCallback = [materialPanel](osg::MatrixTransform* node)
@@ -529,8 +648,16 @@ int main(int argc, char** argv)
    // gltfModel.getNode()->addUpdateCallback(new CB<osg::MatrixTransform>(func));
     
    group->addChild(light);
+    
+  /* auto cams = setupCamera(group, envCubeMap);*/
+  
 
-
+   //osg::ref_ptr<ReflectionProbe> probe = new ReflectionProbe();
+   //probe->setPosition(osg::Vec3(-5.0, 0.0, 0.0));
+   //auto cams = probe->getCubeCameras();
+   //probe->addReflectedGraph(group);
+   // set up cameras to render on the first window available.
+  
     viewer.setReleaseContextAtEndOfFrameHint(false);
 
     //viewer.addEventHandler(new osgViewer::HelpHandler(arguments.getApplicationUsage()));
@@ -541,19 +668,23 @@ int main(int argc, char** argv)
     viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
 
     GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
-
-   
     gui->add("Demo", materialPanel);
     gui->add("Demo2", new LightGUI(lightState));
     gui->add("Demo3", new IndirectLightGUI());
-    
 
-    viewer.setSceneData(group);
+	osg::Group* sceneData = new osg::Group;
+	sceneData->addChild(group);
+  /*  sceneData->addChild(probe->getNode());*/
 
+    auto nv = new GenerateEnvLightUniforms();
+    group->accept(*nv);
+
+    viewer.setSceneData(sceneData);
     viewer.setCameraManipulator(new osgGA::TrackballManipulator);
     viewer.setUpViewInWindow(100, 100, 800, 600);
+    osgViewer::Viewer::Windows windows;
+    viewer.getWindows(windows);
     viewer.realize();
-
     viewer.getEventHandlers().push_front(gui);
     Metrics::setEnabled(true);
     Metrics::setGPUProfilingEnabled(true);

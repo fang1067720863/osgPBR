@@ -9,7 +9,7 @@
 #include<osg/Texture2DArray>
 
 #include<osg/MatrixTransform>
-//#include"SnapImage.h"
+#include"PbrMaterial.h"
 
 
 
@@ -153,31 +153,37 @@ bool EnvLightGL3UniformGenerator::run(osg::Object* obj, osg::Object* data)
             Threading::ScopedMutexLock lock(_statesetsMutex);
             _statesets.push_back(ss);
         }
+        auto material = ss->getAttribute(osg::StateAttribute::MATERIAL);
+        if (dynamic_cast<osgEarth::StandardPBRMaterial*>(material))
+        {
+            auto useCubeUV = envLight->useCubeUV() ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
+            ss->setDefine("USE_ENV_MAP");
 
-        auto useCubeUV = envLight->useCubeUV() ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
-        ss->setDefine("USE_ENV_MAP");
+            auto uniformType = envLight->useCubeUV() ? osg::Uniform::SAMPLER_CUBE : osg::Uniform::SAMPLER_2D;
+            ss->setDefine("USE_ENV_CUBE_UV", useCubeUV);
 
-        auto uniformType = envLight->useCubeUV() ? osg::Uniform::SAMPLER_CUBE : osg::Uniform::SAMPLER_2D;
-        ss->setDefine("USE_ENV_CUBE_UV", useCubeUV);
+            ss->getOrCreateUniform("envLightIntensity", osg::Uniform::FLOAT)->set(envLight->lightIntensity());
+            ss->getOrCreateUniform("MAX_REFLECTION_LOD", osg::Uniform::FLOAT)->set(envLight->maxReflectionLOD());
 
-        ss->getOrCreateUniform("envLightIntensity", osg::Uniform::FLOAT)->set(envLight->lightIntensity());
-        ss->getOrCreateUniform("MAX_REFLECTION_LOD", osg::Uniform::FLOAT)->set(envLight->maxReflectionLOD());
+
+
+            int unit = 5;
+            osg::Texture* diffuseEnvMap = envLight->getIrridianceMap();
+            ss->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
+            ss->getOrCreateUniform("irradianceMap", uniformType)->set(unit++);
+
+            osg::Texture* specularEnvMap = envLight->getPrefilterMap();
+            ss->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
+            ss->getOrCreateUniform("prefilterMap", osg::Uniform::SAMPLER_2D)->set(unit++);
+
+
+            osg::Texture* brdfLUTMap = envLight->getBrdfLUTMap();
+            ss->setTextureAttributeAndModes(unit, brdfLUTMap, osg::StateAttribute::ON);
+            ss->getOrCreateUniform("brdfLUT", osg::Uniform::SAMPLER_2D)->set(unit++);
+        }
+
+
         
-
-
-        int unit = 5;
-        osg::Texture* diffuseEnvMap = envLight->getIrridianceMap();
-        ss->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
-        ss->getOrCreateUniform("irradianceMap", uniformType)->set(unit++);
-
-        osg::Texture* specularEnvMap = envLight->getPrefilterMap();
-        ss->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
-        ss->getOrCreateUniform("prefilterMap", osg::Uniform::SAMPLER_2D)->set(unit++);
-
-
-        osg::Texture* brdfLUTMap = envLight->getBrdfLUTMap();
-        ss->setTextureAttributeAndModes(unit, brdfLUTMap, osg::StateAttribute::ON);
-        ss->getOrCreateUniform("brdfLUT", osg::Uniform::SAMPLER_2D)->set(unit++);
     }
     return traverse(obj, data);
 
@@ -213,4 +219,74 @@ osg::ref_ptr<EnvLightEffect>& EnvLightSource::getEnvLightEffect()
 
 EnvLightSource::~EnvLightSource()
 {
+}
+
+GenerateEnvLightUniforms::GenerateEnvLightUniforms():osg::NodeVisitor(TRAVERSE_ALL_CHILDREN)
+{
+    setNodeMaskOverride(~0);
+}
+
+void GenerateEnvLightUniforms::apply(osg::Node& node)
+{
+    osg::StateSet* ss = node.getStateSet();
+    if (ss)
+    {
+        if (_statesets.find(ss) == _statesets.end())
+        {
+            const osg::StateSet::RefAttributePair* rap = ss->getAttributePair(osg::StateAttribute::MATERIAL);
+            if (rap)
+            {
+                osgEarth::StandardPBRMaterial* material = dynamic_cast<osgEarth::StandardPBRMaterial*>(rap->first.get());
+                if (material)
+                {
+                    if (material->getUpdateCallback())
+                    {
+                        return;
+                    }
+                    material->setUpdateCallback(new EnvLightGL3UniformCallback());  
+                }
+
+                // mark this stateset as visited.
+                _statesets.insert(ss);
+            }
+        }
+    }
+    traverse(node);
+}
+
+void EnvLightGL3UniformCallback::operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
+{
+    for (unsigned int i = 0; i < attr->getNumParents(); i++)
+    {
+        osg::StateSet* ss = attr->getParent(i);
+
+        auto envLight = EnvLightEffect::instance();
+
+
+        auto useCubeUV = envLight->useCubeUV() ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
+        ss->setDefine("USE_ENV_MAP");
+
+        auto uniformType = envLight->useCubeUV() ? osg::Uniform::SAMPLER_CUBE : osg::Uniform::SAMPLER_2D;
+        ss->setDefine("USE_ENV_CUBE_UV", useCubeUV);
+
+        ss->getOrCreateUniform("envLightIntensity", osg::Uniform::FLOAT)->set(envLight->lightIntensity());
+        ss->getOrCreateUniform("MAX_REFLECTION_LOD", osg::Uniform::FLOAT)->set(envLight->maxReflectionLOD());
+
+
+
+        int unit = 5;
+        osg::Texture* diffuseEnvMap = envLight->getIrridianceMap();
+        ss->setTextureAttributeAndModes(unit, diffuseEnvMap, osg::StateAttribute::ON);
+        ss->getOrCreateUniform("irradianceMap", uniformType)->set(unit++);
+
+        osg::Texture* specularEnvMap = envLight->getPrefilterMap();
+        ss->setTextureAttributeAndModes(unit, specularEnvMap, osg::StateAttribute::ON);
+        ss->getOrCreateUniform("prefilterMap", osg::Uniform::SAMPLER_2D)->set(unit++);
+
+
+        osg::Texture* brdfLUTMap = envLight->getBrdfLUTMap();
+        ss->setTextureAttributeAndModes(unit, brdfLUTMap, osg::StateAttribute::ON);
+        ss->getOrCreateUniform("brdfLUT", osg::Uniform::SAMPLER_2D)->set(unit++);
+    }
+   
 }

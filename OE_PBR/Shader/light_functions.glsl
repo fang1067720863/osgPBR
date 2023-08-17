@@ -161,6 +161,27 @@ struct GeometricContext
 	vec3 normal;
 	vec3 viewDir;
 };
+struct osg_LightSourceParameters 
+{   
+   vec4 ambient;
+   vec4 diffuse;
+   vec4 specular;
+   vec4 position;
+   vec3 spotDirection;
+   float spotExponent;
+   float spotCutoff;
+   float spotCosCutoff;
+   float constantAttenuation;
+   float linearAttenuation;
+   float quadraticAttenuation;
+
+   bool enabled;
+};
+
+// vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+// {
+//     return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+// }   
 
 uniform sampler2D brdfLUT;
 void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance,const in vec3 f0,
@@ -203,4 +224,72 @@ void RE_IndirectDiffuse_Physical(vec3 irradiance, vec3 diffuseColor, inout Refle
 {
 	reflectedLight.indirectDiffuse =  irradiance * RECIPROCAL_PI * diffuseColor;
 	return;
+}
+
+// vec3 fresnel_Epic(float VdotH, vec3 f0)
+// {
+//     return f0 + (1 - f0) * exp2((-5.55473 * VdotH - 6.98316) * VdotH);
+// }
+
+// float microfacetDistribution(float NdotH, float roughness)
+// {
+//     float roughness2 = roughness * roughness;
+//     float f = NdotH * NdotH * (roughness2 - 1) + 1.0;
+//     return roughness2 / (PI * f * f);
+// }
+
+// float geometricOcclusion(float NdotL, float NdotV, float roughness)
+// {
+//     // End result of remapping:
+//     float k = pow(roughness + 1, 2) / 8.0f;
+//     float attenuationV = NdotV / (NdotV * (1 - k) + k);
+//     float attenuationL = NdotL / (NdotL * (1 - k) + k);
+//     return attenuationL * attenuationV;
+// }
+
+// vec3 BRDF_Diffuse_Lambert(vec3 albedo)
+// {
+//     return albedo / PI;
+// }
+
+vec3 BRDF_GGX(
+        vec3 direction,
+        vec3 viewDir,
+        vec3 normal,
+        float roughness,
+        float metalness,
+        vec3 f0
+        )
+{
+    vec3 h = normalize(direction + viewDir);
+
+    float NdotL = max(dot(normal, direction), 0.0f);
+    float VdotH = max(dot(h, viewDir), 0.0f);
+    float NdotH = max(dot(normal, h), 0.0f);
+    float NdotV = max(dot(normal, viewDir), 0.0f);
+
+    float D = microfacetDistribution(NdotH, roughness);
+    vec3 F = fresnel_Epic(VdotH, f0);
+    float G = geometricOcclusion(NdotL, NdotV, roughness);
+
+    // vec3 kS = F;
+    // vec3 kD = vec3(1.0) - kS;
+     // vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor);
+    // vec3 diffuseContrib = diffuse * kD;
+
+    vec3 numerator = D * G * F;
+    float denominator = 4.0 * NdotV * NdotL;
+    vec3 specContrib = numerator / max(denominator, 0.001);
+    return specContrib;
+
+    
+}
+
+void RE_Direct_Physical( const in osg_LightSourceParameters directLight, const in GeometricContext geometry, const in vec3 f0, const in pbr_Material material, inout ReflectedLight reflectedLight) {
+
+    vec3 direction = normalize(-directLight.spotDirection.xyz);
+	float dotNL = max(dot(geometry.normal, direction),0.0f);
+	vec3 irradiance = dotNL * vec3(directLight.diffuse);
+	reflectedLight.directSpecular += irradiance * BRDF_GGX(direction, geometry.viewDir, geometry.normal, material.roughnessFactor, material.metallicFactor, f0 );
+	reflectedLight.directDiffuse += irradiance * BRDF_Diffuse_Lambert( material.baseColorFactor.rgb );
 }

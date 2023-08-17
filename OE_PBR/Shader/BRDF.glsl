@@ -177,9 +177,6 @@ vec3 BRDF(
     
     vec3 Lo = NdotL * lightColor * (diffuseContrib + specContrib);
 
-    // specularColor = mix( vec3( 0.04 ), diffuseColor.rgb, metalnessFactor );
-	// material.specularF90 = 1.0;
-
 
     return Lo;
     
