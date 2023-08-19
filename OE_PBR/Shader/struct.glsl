@@ -8,6 +8,10 @@ struct pbr_Material
     float alphaMask;
     float alphaMaskCutoff;
     float aoStrength;
+#ifdef USE_SHEEN
+    vec3 sheenColor;
+    float sheenRoughness;
+#endif
 };
 
 struct ReflectedLight
@@ -16,6 +20,9 @@ struct ReflectedLight
 	vec3 indirectSpecular;
 	vec3 directDiffuse;
 	vec3 directSpecular;
+#ifdef USE_SHEEN
+    vec3 sheenSpecular;
+#endif
 };
 struct GeometricContext
 {

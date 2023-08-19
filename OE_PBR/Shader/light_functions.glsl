@@ -153,9 +153,6 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
 
     vec3 specularColor =vec3(1.0);
-
-   
-	//computeMultiscattering( geometry.normal, geometry.viewDir, material.specularColor, material.specularF90, material.roughness, singleScattering, multiScattering );
     computeMultiscattering( geometry.normal, geometry.viewDir, specularColor, material.metallicFactor, material.roughnessFactor, singleScattering, multiScattering);
      float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
     vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
@@ -165,9 +162,7 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 
 	vec3 scattering = singleScattering + multiScattering;
 	vec3 diffuse = material.baseColorFactor.rgb * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) ); 
-    //
-    // reflectedLight.indirectSpecular += vec3(singleScattering);
-    // return;
+
 	reflectedLight.indirectSpecular += singleScattering * radiance; 
    
    
@@ -219,13 +214,64 @@ vec3 BRDF_GGX(
     
 }
 
+#ifdef USE_SHEEN
+
+    float saturate(float v)
+    {
+        return max(v,0.0f);
+    }
+
+    float D_Charlie( float roughness, float dotNH ) {
+
+        float alpha = roughness * roughness;
+
+        // Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
+        float invAlpha = 1.0 / alpha;
+        float cos2h = dotNH * dotNH;
+        float sin2h = max( 1.0 - cos2h, 0.0078125 ); // 2^(-14/2), so sin2h^2 > 0 in fp16
+
+        return ( 2.0 + invAlpha ) * pow( sin2h, invAlpha * 0.5 ) / ( 2.0 * PI );
+
+    }
+
+    float V_Neubelt( float dotNV, float dotNL ) {
+
+        // Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
+        return saturate( 1.0 / ( 4.0 * ( dotNL + dotNV - dotNL * dotNV ) ) );
+
+    }
+
+    vec3 BRDF_Sheen( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, vec3 sheenColor, const in float sheenRoughness ) {
+
+        vec3 halfDir = normalize( lightDir + viewDir );
+
+        float dotNL = saturate( dot( normal, lightDir ) );
+        float dotNV = saturate( dot( normal, viewDir ) );
+        float dotNH = saturate( dot( normal, halfDir ) );
+
+        float D = D_Charlie( sheenRoughness, dotNH );
+        float V = V_Neubelt( dotNV, dotNL );
+
+        return sheenColor * ( D * V );
+
+    }
+
+#endif
+
+
 void RE_Direct_Physical( const in osg_LightSourceParameters directLight, const in GeometricContext geometry, const in vec3 f0, const in pbr_Material material, inout ReflectedLight reflectedLight) {
 
-    vec3 direction = normalize(-directLight.spotDirection.xyz);
-	float dotNL = max(dot(geometry.normal, direction),0.0f);
+    vec3 lightDir = normalize(-directLight.spotDirection.xyz);
+	float dotNL = max(dot(geometry.normal, lightDir),0.0f);
 	vec3 irradiance = dotNL * vec3(directLight.diffuse);
-	reflectedLight.directSpecular += irradiance * BRDF_GGX(direction, geometry.viewDir, geometry.normal, material.roughnessFactor, material.metallicFactor, f0 );
+    irradiance *= directLight.spotExponent;
+
+    #ifdef USE_SHEEN
+		vec3 sheenSpecular = irradiance * BRDF_Sheen( lightDir, geometry.viewDir, geometry.normal, material.sheenColor, material.sheenRoughness );
+        reflectedLight.sheenSpecular += sheenSpecular;
+	#endif
+
+
+	reflectedLight.directSpecular += irradiance * BRDF_GGX(lightDir, geometry.viewDir, geometry.normal, material.roughnessFactor, material.metallicFactor, f0 );
 	reflectedLight.directDiffuse += irradiance * BRDF_Diffuse_Lambert( material.baseColorFactor.rgb );
-    reflectedLight.directSpecular *= directLight.spotExponent;
-    reflectedLight.directDiffuse *= directLight.spotExponent;
 }

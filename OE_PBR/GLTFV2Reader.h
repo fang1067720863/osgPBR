@@ -521,7 +521,7 @@ public:
                     const tinygltf::Texture& texture = model.textures[index];
                     const tinygltf::Image& image = model.images[texture.source];
                     osgEarth::URI imageURI(image.uri, env.referrer);
-                    pbrMat->setTextureAttribute(StandardPBRMaterial::EmissiveMap, imageURI.full());
+                    pbrMat->setMaterialImage(StandardPBRMaterial::EmissiveMap, imageURI.full());
                 }
 
                 index = material.occlusionTexture.index;
@@ -530,7 +530,7 @@ public:
                     const tinygltf::Texture& texture = model.textures[index];
                     const tinygltf::Image& image = model.images[texture.source];
                     osgEarth::URI imageURI(image.uri, env.referrer);
-                    pbrMat->setTextureAttribute(StandardPBRMaterial::OcclusionMap, imageURI.full());
+                    pbrMat->setMaterialImage(StandardPBRMaterial::OcclusionMap, imageURI.full());
                 }
                 index = material.normalTexture.index;
                 if (index > 0)
@@ -538,7 +538,7 @@ public:
                     const tinygltf::Texture& texture = model.textures[index];
                     const tinygltf::Image& image = model.images[texture.source];
                     osgEarth::URI imageURI(image.uri, env.referrer);
-                    pbrMat->setTextureAttribute(StandardPBRMaterial::NormalMap, imageURI.full());
+                    pbrMat->setMaterialImage(StandardPBRMaterial::NormalMap, imageURI.full());
                 }
 
 
@@ -602,7 +602,7 @@ public:
                             const tinygltf::Texture& texture = model.textures[index];
                             const tinygltf::Image& image = model.images[texture.source];
                             osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setTextureAttribute(StandardPBRMaterial::BaseColorMap, imageURI.full());
+                            pbrMat->setMaterialImage(StandardPBRMaterial::BaseColorMap, imageURI.full());
                         }
 
                     }
@@ -615,7 +615,7 @@ public:
                             const tinygltf::Texture& texture = model.textures[index];
                             const tinygltf::Image& image = model.images[texture.source];
                             osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setTextureAttribute(StandardPBRMaterial::NormalMap, imageURI.full());
+                            pbrMat->setMaterialImage(StandardPBRMaterial::NormalMap, imageURI.full());
                         }
 
                     }
@@ -628,7 +628,7 @@ public:
                             const tinygltf::Texture& texture = model.textures[index];
                             const tinygltf::Image& image = model.images[texture.source];
                             osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setTextureAttribute(StandardPBRMaterial::MetalRoughenssMap, imageURI.full());
+                            pbrMat->setMaterialImage(StandardPBRMaterial::MetalRoughenssMap, imageURI.full());
                         }
 
                     }
@@ -641,7 +641,7 @@ public:
                             const tinygltf::Texture& texture = model.textures[index];
                             const tinygltf::Image& image = model.images[texture.source];
                             osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setTextureAttribute(StandardPBRMaterial::OcclusionMap, imageURI.full());
+                            pbrMat->setMaterialImage(StandardPBRMaterial::OcclusionMap, imageURI.full());
                         }
 
                     }
@@ -654,7 +654,7 @@ public:
                             const tinygltf::Texture& texture = model.textures[index];
                             const tinygltf::Image& image = model.images[texture.source];
                             osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setTextureAttribute(StandardPBRMaterial::EmissiveMap, imageURI.full());
+                            pbrMat->setMaterialImage(StandardPBRMaterial::EmissiveMap, imageURI.full());
                         }
 
                     }

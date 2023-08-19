@@ -54,6 +54,9 @@
     <ClCompile Include="ReflectionProbe.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="AdvancedMaterial.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PbrLightEffect.h">

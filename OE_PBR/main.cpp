@@ -36,6 +36,7 @@
 
 #include"PbrLightEffect.h"
 #include"PbrMaterial.h"
+#include"AdvancedMaterial.h"
 #include"GLTFV2Reader.h"
 #include"FlyCameraManipulator.h"
 #include"EnvLight.h"
@@ -129,7 +130,7 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
     }
     else if (usePBR) {
        
-        osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
+      /*  osg::ref_ptr<osgEarth::StandardPBRMaterial> m = new osgEarth::StandardPBRMaterial();
         m->setName("PBR_MATERIAL");
 
         m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
@@ -155,7 +156,7 @@ osg::ref_ptr<osg::Node> CreatePbrSphere()
         PBRMaterialCallback().operator()(m, 0L);
 
         auto* pbr = new PbrLightEffect();
-        pbr->attach(geode->getOrCreateStateSet());
+        pbr->attach(geode->getOrCreateStateSet());*/
 
     }
    
@@ -183,7 +184,7 @@ osg::ref_ptr<osg::Node> CreateExtensionedMaterialSphere()
     m->extTextureAttribute("metalMap", dir + "metal" + format, "OE_ENABLE_Metal_MAP");
     m->extTextureAttribute("roughnessMap", dir + "rough" + format, "OE_ENABLE_Roughness_MAP");
 
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, dir + "normal" + format);
+    m->setMaterialImage(osgEarth::StandardPBRMaterial::NormalMap, dir + "normal" + format);
 
     m->setMaterialFile("materials/metalroughness.glsl");
 
@@ -277,9 +278,9 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     grass->setMetallicFactor(0.29f);
     grass->setRoughnessFactor(0.81f);
     grass->setAoStrength(0.15f);
-    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "grass/normal.png");
-    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "grass/ao.png");
-    grass->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "grass/albedo.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::NormalMap, "grass/normal.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::OcclusionMap, "grass/ao.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::BaseColorMap, "grass/albedo.png");
     grass->setReceiveEnvLight(true);
     
     grass->extTextureAttribute("metalMap", "grass/metallic.png", "OE_ENABLE_Metal_MAP");
@@ -296,7 +297,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     m->setMetallicFactor(1.00f);
     m->setRoughnessFactor(0.108f);
     m->setAoStrength(0.15f);
-    m->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "metal/albedo.png");
+    m->setMaterialImage(osgEarth::StandardPBRMaterial::BaseColorMap, "metal/albedo.png");
     m->setReceiveEnvLight(true);
 
     m->extTextureAttribute("metalMap", "metal/metal.png", "OE_ENABLE_Metal_MAP");
@@ -304,70 +305,81 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     m->setMaterialFile("materials/metalroughness.glsl");
     result.push_back(m);
 
-    osg::ref_ptr<osgEarth::ExtensionedMaterial> marber = new osgEarth::ExtensionedMaterial();
-    marber->setName("dalishi");
-    marber->setDataBaseOption(dbo);
-    
-    marber->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-    marber->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
-    marber->setMetallicFactor(0.5f);
-    marber->setRoughnessFactor(0.176f);
-    marber->setAoStrength(0.1f);
-    marber->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "gray/normal.png");
-    marber->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "gray/ao.png");
-    marber->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "gray/albedo.png");
-    marber->setReceiveEnvLight(true);
+    //osg::ref_ptr<osgEarth::ExtensionedMaterial> marber = new osgEarth::ExtensionedMaterial();
+    //marber->setName("dalishi");
+    //marber->setDataBaseOption(dbo);
+    //
+    //marber->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    //marber->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    //marber->setMetallicFactor(0.5f);
+    //marber->setRoughnessFactor(0.176f);
+    //marber->setAoStrength(0.1f);
+    //marber->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "gray/normal.png");
+    //marber->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "gray/ao.png");
+    //marber->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "gray/albedo.png");
+    //marber->setReceiveEnvLight(true);
 
-    marber->extTextureAttribute("metalMap", "gray/metallic.png", "OE_ENABLE_Metal_MAP");
-    marber->extTextureAttribute("roughnessMap", "gray/roughness.png", "OE_ENABLE_Roughness_MAP");
-    marber->setMaterialFile("materials/metalroughness.glsl");
-    result.push_back(marber);
+    //marber->extTextureAttribute("metalMap", "gray/metallic.png", "OE_ENABLE_Metal_MAP");
+    //marber->extTextureAttribute("roughnessMap", "gray/roughness.png", "OE_ENABLE_Roughness_MAP");
+    //marber->setMaterialFile("materials/metalroughness.glsl");
+    //result.push_back(marber);
 
-    osg::ref_ptr<osgEarth::ExtensionedMaterial> rock = new osgEarth::ExtensionedMaterial();
-    rock->setName("rock");
-    rock->setDataBaseOption(dbo);
-    
-    rock->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-    rock->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
-    rock->setMetallicFactor(0.5f);
-    rock->setRoughnessFactor(0.668f);
-    rock->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "rock/normal.png");
-    rock->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "rock/ao.png");
-    rock->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "rock/albedo.png");
-    rock->setReceiveEnvLight(true);
-    
-    rock->extTextureAttribute("metalMap", "rock/metallic.png", "OE_ENABLE_Metal_MAP");
-    rock->extTextureAttribute("roughnessMap", "rock/roughness.png", "OE_ENABLE_Roughness_MAP");
-    rock->setMaterialFile("materials/metalroughness.glsl");
-    result.push_back(rock);
+    //osg::ref_ptr<osgEarth::ExtensionedMaterial> rock = new osgEarth::ExtensionedMaterial();
+    //rock->setName("rock");
+    //rock->setDataBaseOption(dbo);
+    //
+    //rock->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    //rock->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    //rock->setMetallicFactor(0.5f);
+    //rock->setRoughnessFactor(0.668f);
+    //rock->setTextureAttribute(osgEarth::StandardPBRMaterial::NormalMap, "rock/normal.png");
+    //rock->setTextureAttribute(osgEarth::StandardPBRMaterial::OcclusionMap, "rock/ao.png");
+    //rock->setTextureAttribute(osgEarth::StandardPBRMaterial::BaseColorMap, "rock/albedo.png");
+    //rock->setReceiveEnvLight(true);
+    //
+    //rock->extTextureAttribute("metalMap", "rock/metallic.png", "OE_ENABLE_Metal_MAP");
+    //rock->extTextureAttribute("roughnessMap", "rock/roughness.png", "OE_ENABLE_Roughness_MAP");
+    //rock->setMaterialFile("materials/metalroughness.glsl");
+    //result.push_back(rock);
 
-    osg::ref_ptr<osgEarth::ExtensionedMaterial> water = new osgEarth::ExtensionedMaterial();
-    water->setName("water");
-    water->setDataBaseOption(dbo);
-    
-    water->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-    water->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
-    water->setMetallicFactor(0.04f);
-    water->setRoughnessFactor(0.668f);
-    water->setReceiveEnvLight(true);
-    
-    water->extTextureAttribute("water_M", "unreal/Textures/T_Water_M.tga", "water_M");
-    water->extTextureAttribute("water_N", "unreal/Textures/T_Water_N.tga", "water_N");
-    water->extTextureAttribute("perlin_Noise", "unreal/Textures/T_Perlin_Noise_M.tga", "perlin_Noise");
-    water->setMaterialFile("materials/water_ocean.glsl");
+    //osg::ref_ptr<osgEarth::ExtensionedMaterial> water = new osgEarth::ExtensionedMaterial();
+    //water->setName("water");
+    //water->setDataBaseOption(dbo);
+    //
+    //water->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    //water->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    //water->setMetallicFactor(0.04f);
+    //water->setRoughnessFactor(0.668f);
+    //water->setReceiveEnvLight(true);
+    //
+    //water->extTextureAttribute("water_M", "unreal/Textures/T_Water_M.tga", "water_M");
+    //water->extTextureAttribute("water_N", "unreal/Textures/T_Water_N.tga", "water_N");
+    //water->extTextureAttribute("perlin_Noise", "unreal/Textures/T_Perlin_Noise_M.tga", "perlin_Noise");
+    //water->setMaterialFile("materials/water_ocean.glsl");
 
-    result.push_back(water);
+    //result.push_back(water);
 
 
     return result;
    
 }
 
-osg::ref_ptr<osg::Group> createMaterialSpheres(bool noTexture = true)
+std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
+{
+    std::vector<osg::ref_ptr<AdvancedMaterial>> result;
+    osg::ref_ptr<osgEarth::AdvancedMaterial> m = new osgEarth::AdvancedMaterial();
+
+    m->setUseSheen(true);
+    m->setSheenColor(osg::Vec3f(1.0f, 0.0f, 1.0f));
+    m->setSheenRoughness(0.5f);
+    result.push_back(m);
+    return result;
+}
+osg::ref_ptr<osg::Group> createMaterialSpheres(int matType =1)
 {
     osg::ref_ptr<osg::Group> gp = new osg::Group();
    
-    if (noTexture)
+    if (matType==1)
     {
         std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
         int row, col;
@@ -399,8 +411,8 @@ osg::ref_ptr<osg::Group> createMaterialSpheres(bool noTexture = true)
 
         }
     }
-    else {
-        std::vector<osg::ref_ptr<ExtensionedMaterial>> materials = std::move(createMaterials());
+    else if(matType==2) {
+        auto materials = std::move(createMaterials());
         for (size_t i = 0; i < materials.size(); i++)
         {
             std::cout << " gsfdg " << i << std::endl;
@@ -417,6 +429,30 @@ osg::ref_ptr<osg::Group> createMaterialSpheres(bool noTexture = true)
             matrixT->setName(materials[i]->getName());
             //materials[i]->setUpdateCallback(new ExtensionedMaterialCallback());
             ExtensionedMaterialCallback().operator()(materials[i], 0L);
+            auto* pbr = new PbrLightEffect();
+            pbr->attach(geode->getOrCreateStateSet());
+            gp->addChild(matrixT);
+
+
+        }
+    }
+    else {
+        auto materials = std::move(createAdvancedMaterials());
+        for (size_t i = 0; i < materials.size(); i++)
+        {
+            std::cout << " gsfdg " << i << std::endl;
+            osg::ref_ptr<osg::Geode> geode = new osg::Geode();
+            osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
+            geode->addDrawable(sd);
+            geode->getOrCreateStateSet()->setAttributeAndModes(materials[i], osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+
+            osg::ref_ptr<osg::MatrixTransform> matrixT = new osg::MatrixTransform();
+
+
+            matrixT->setMatrix(osg::Matrix::translate((double)i * 5.0, 0.0, 0.0));
+            matrixT->addChild(geode);
+            matrixT->setName(materials[i]->getName());
+         
             auto* pbr = new PbrLightEffect();
             pbr->attach(geode->getOrCreateStateSet());
             gp->addChild(matrixT);
@@ -611,7 +647,7 @@ int main(int argc, char** argv)
     
    
     auto gltfModel = reader.read("Helmet\\DamagedHelmet.gltf", false, modelDB);
-    //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza
+    //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza  Sheen\\SheenChair.glb
     auto node = gltfModel.getNode();
     auto* pbrEffect = new PbrLightEffect();
     pbrEffect->attach(gltfModel.getNode()->getOrCreateStateSet());
@@ -619,7 +655,7 @@ int main(int argc, char** argv)
     vp->setShaderLogging(true);
 
 
-    auto materialSpheres = createMaterialSpheres(false);
+    auto materialSpheres = createMaterialSpheres(2);
 
     //group->addChild(createSkyBox());
 	group->addChild(node);

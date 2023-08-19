@@ -1,11 +1,29 @@
 #pragma once
 #include "PbrMaterial.h"
+#include<vector>
+#include<osg/Texture2D>
 
 namespace osgEarth
 {
+using F = std::function<void(osg::StateAttribute* attr, osg::NodeVisitor* nv)>;
+struct SAttrCallback : public osg::StateAttributeCallback
+{
+	SAttrCallback()  {}
+	void operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv) {
+		for (auto& f : _funList)
+		{
+			f(attr, nv);
+		}
+	}
+	std::vector<F> _funList;
+public:
+	void addUpdateCallback(F&& f) { _funList.push_back(std::move(f)); }
+};
 
 class OE_MATERIAL_PULGIN AdvancedMaterial : public StandardPBRMaterial
 {
+public:
+	AdvancedMaterial();
 	enum TextureEnum
 	{
 		CLEARCOATMAP = 6,
@@ -38,11 +56,14 @@ class OE_MATERIAL_PULGIN AdvancedMaterial : public StandardPBRMaterial
 	PROPERTY_DEFAULT(float, Iridescence, 0.1f)
 	PROPERTY_DEFAULT(float, IridescenceIOR, 0.1f)
 	PROPERTY_DEFAULT(float, IridescenceThickness, 0.1f)
-	PROPERTY_DEFAULT(Vec3f, iridescenceFresnel, Vec3(0.0f, 0.0f, 0.0f))
-	PROPERTY_DEFAULT(float, iridescenceF0, 0.1f)
+	PROPERTY_DEFAULT(Vec3f, IridescenceFresnel, Vec3(0.0f, 0.0f, 0.0f))
+	PROPERTY_DEFAULT(float, IridescenceF0, 0.1f)
 
-	PROPERTY_DEFAULT(float, SheenColor, 0.1f)
+	PROPERTY_DEFAULT(bool,  UseSheen,false)
+	PROPERTY_DEFAULT(Vec3f, SheenColor, Vec3(0.0f, 0.5f, 0.0f))
 	PROPERTY_DEFAULT(float, SheenRoughness, 0.1f)
+	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, SheenColorMap, 0)
+	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, SheenRoughnessMap, 0)
 
 	PROPERTY_DEFAULT(float, Transmission, 0.1f)
 	PROPERTY_DEFAULT(float, TransmissionAlpha, 0.1f)
@@ -51,6 +72,11 @@ class OE_MATERIAL_PULGIN AdvancedMaterial : public StandardPBRMaterial
 	PROPERTY_DEFAULT(Vec3f, AttenuationColor, Vec3(0.0f, 0.0f, 0.0f))
 
 protected:
+
+	void initTechniqueCallback();
+	void addUpdateCallback();
+
+	osg::ref_ptr<SAttrCallback> _techniqueCallbacks;
 	static constexpr const char* IOR = "IOR";
 	static constexpr const char* CLEARCOAT = "CLEARCOAT";
 	static constexpr const char* IRIDESCENCE = "IRIDESCENCE";
@@ -58,5 +84,12 @@ protected:
 	static constexpr const char* TRANSMISSION = "TRANSMISSION";
 
 	static constexpr const char* SHADER_MODEL = "PRINCIPLE_BSDF";
+
+
+	static const std::string USE_IOR;
+	static const std::string USE_CLEARCOAT;
+	static const std::string USE_IRIDESCENCE;
+	static const std::string USE_SHEEN;
+	static const std::string USE_TRANSMISSION;
 };
 } // namespace osgEarth

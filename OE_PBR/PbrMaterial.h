@@ -52,21 +52,28 @@ public:
 		Blend = 1,
 		Mask = 2
 	};
+
+	const std::unordered_map<TextureEnum, std::string> textureDefines = {
+		{BaseColorMap, "OE_ENABLE_BASECOLOR_MAP"},
+		{EmissiveMap, "OE_ENABLE_EMISSIVE_MAP"},
+		{OcclusionMap, "OE_ENABLE_AO_MAP"},
+		{NormalMap, "OE_ENABLE_NORMAL_MAP"},
+		{MetalRoughenssMap, "OE_ENABLE_MR_MAP"},
+	};
+
 	struct TextureInfo
 	{
-		std::string _defineKey;
-		std::string _defineVal;
-		std::string _path;
-		bool _imageValid{false};
+		int layer;
 	};
 	using TextureMaps = std::map<TextureEnum, TextureInfo>;
 
-	StandardPBRMaterial() {}
+	StandardPBRMaterial();
 
 	StandardPBRMaterial(const StandardPBRMaterial& mat, const CopyOp& copyop = CopyOp::SHALLOW_COPY)
 	    : StateAttribute(mat, copyop)
 	{
 	}
+	
 #ifdef META_StateAttribute
 	META_StateAttribute(osgEarth, StandardPBRMaterial, OE_MATERIAL)
 #endif // META_StateAttribute
@@ -85,11 +92,10 @@ public:
 	}
 
 	virtual void apply(State& state) const;
+	
+	void setMaterialImage(TextureEnum mapEnum, osg::Image* image);
+	void setMaterialImage(TextureEnum mapEnum, const std::string& imageUrl);
 
-	void setTextureAttribute(TextureEnum mapEnum, const std::string& fileName, const std::string& defineName = "",
-	                         StateAttribute::OverrideValue value = StateAttribute::ON);
-	void setTextureEnable(TextureEnum mapEnum, StateAttribute::OverrideValue enable);
-	bool setTextures(const TextureMaps& maps);
 	void setDataBaseOption(osg::ref_ptr<osgDB::Options> options) { _options = options; }
 	int texUnitCnt() const { return _texUnitCnt; }
 	void incementTexUnit() { _texUnitCnt++; }
@@ -102,12 +108,13 @@ public:
 	PROPERTY_DEFAULT(float, AoStrength, 0.1)
 	PROPERTY_DEFAULT(AlphaMode, AlphaMode, AlphaMode::Opaque)
 	PROPERTY_DEFAULT(float, AlphaMaskCutoff, 0.2)
+	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture>, TextureAtlas, 0)
 
 	PROPERTY_DEFAULT(bool, ReceiveEnvLight, true)
 
 protected:
 	virtual ~StandardPBRMaterial(){};
-	osg::Texture* createTextureAtlas();
+	/*osg::Texture* createTextureAtlas();*/
 	osg::Texture* createTexture(const std::string& imagePath);
 
 private:
@@ -136,13 +143,13 @@ public:
 	void extTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName,
 	                         unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON)
 	{
-		if (_customMaps.find(name) == _customMaps.end())
+		/*if (_customMaps.find(name) == _customMaps.end())
 		{
 			_customMaps[name] = TextureInfo();
 		}
 		auto& info = _customMaps[name];
 		info._path = fileName;
-		info._defineKey = defineName;
+		info._defineKey = defineName;*/
 	}
 
 private:

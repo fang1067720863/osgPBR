@@ -39,6 +39,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
+#pragma import_defines(USE_SHEEN)
 #pragma include BRDF.glsl
 #pragma include light_functions.glsl
 #pragma include struct.glsl
@@ -50,7 +51,6 @@ in vec3 oe_normal;  // world space
 in vec3 oe_pos;
 // stage global
 in vec3 vp_Normal;
-// in pbr_Material oe_pbr;
 
 
 // varying decorated with flat, the data will not change when pass from vs to ps, and not introplote ,every fragment share same data
@@ -119,6 +119,10 @@ void fragment_main_pbr(inout vec4 color)
     material.metallicFactor=metallic;
     material.roughnessFactor=roughness;
     material.aoStrength=ao;
+#ifdef USE_SHEEN
+    material.sheenColor = oe_pbr.sheenColor;
+    material.sheenRoughness = oe_pbr.sheenRoughness;
+#endif
 
     ReflectedLight reflectedLight;
     reflectedLight.indirectDiffuse = vec3(0.0);
@@ -129,17 +133,14 @@ void fragment_main_pbr(inout vec4 color)
 
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
-        vec3 l = normalize(-osg_LightSource[i].spotDirection.xyz);
-        vec3 h = normalize(l + v);
+        // vec3 l = normalize(-osg_LightSource[i].spotDirection.xyz);
+        // vec3 h = normalize(l + v);
 
-        float NdotL = max(dot(n, l), 0.0f);
-        float VdotH = max(dot(h, v), 0.0f);
-        float NdotH = max(dot(n, h), 0.0f);
-        float NdotV = max(dot(n, v), 0.0f);
+        // float NdotL = max(dot(n, l), 0.0f);
+        // float VdotH = max(dot(h, v), 0.0f);
+        // float NdotH = max(dot(n, h), 0.0f);
+        // float NdotV = max(dot(n, v), 0.0f);
         
-        //vec3 lightColor = vec3(osg_LightSource[i].diffuse);
-        // Lo +=  BRDF(VdotH,NdotH, NdotL,NdotV,roughness, metallic,f0, diffuseColor,lightColor,ao);
-        // Lo *= osg_LightSource[i].spotExponent;
         RE_Direct_Physical( osg_LightSource[i], geometry, f0, material, reflectedLight);
     }
 
@@ -158,8 +159,6 @@ void fragment_main_pbr(inout vec4 color)
 
 #ifdef USE_ENV_MAP
     radianceIBL = getIBLRadiance(n, roughness,v);
-
-  
     RE_IndirectDiffuse_Physical(irradiance, diffuseColor, reflectedLight);
     RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,f0,geometry, material, reflectedLight);
 
@@ -172,6 +171,15 @@ void fragment_main_pbr(inout vec4 color)
     #ifdef USE_ENV_MAP
         color.rgb += (reflectedLight.indirectSpecular* ao * envLightIntensity + reflectedLight.indirectDiffuse * envLightIntensity);
     #endif
+
+    #ifdef USE_SHEEN
+
+		// Sheen energy compensation approximation calculation can be found at the end of
+		// https://drive.google.com/file/d/1T0D1VSyR4AllqIJTQAraEIzjlb5h4FKH/view?usp=sharing
+		float sheenEnergyComp = 1.0 - 0.157 * material.sheenColor.r;
+
+		color.rgb = color.rgb * sheenEnergyComp + reflectedLight.sheenSpecular;
+	#endif
 
 
    
@@ -204,30 +212,3 @@ void fragment_main_pbr(inout vec4 color)
     color = texture(pbrMaps, vec3(oe_texcoord,4));
 }
 #endif
-
-    // color.rgb = reflectedLight.indirectSpecular;
-    // return; 
-    // float tmp = reflectedLight.indirectSpecular.x;
-    // if(reflectedLight.indirectSpecular.x<0.3)
-    // {
-    //     reflectedLight.indirectSpecular = vec3(0.0);
-    // }else if (reflectedLight.indirectSpecular.x<0.7)
-    // {
-    //     reflectedLight.indirectSpecular = vec3(0.5);
-    // }else{
-    //     reflectedLight.indirectSpecular = vec3(1.0);
-    // }
-    // if(tmp<0.95)
-    // {
-    //     color.rgb =reflectedLight.indirectSpecular;
-    // }else{
-    //     color.rgb = vec3(0.0);
-    // }
-    // return;
-
-        //reflectedLight.indirectDiffuse * oe_pbr.aoStrength + 
-    //+ reflectedLight.indirectDiffuse;
-    //+ reflectedLight.indirectDiffuse + reflectedLight.indirectSpecular;
-    //irradianceIBL * 1/PI * baseColor;
-    //reflectedLight.indirectDiffuse;
-    // reflectedLight.indirectDiffuse;

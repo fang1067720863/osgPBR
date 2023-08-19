@@ -7,60 +7,59 @@
 #include<Windows.h>
 #include "PbrMaterial.h"
 
-#include<osg/Texture2DArray>
+
 #include <osgEarth/Common>
 #include<osgEarth/Registry>
 #include<osgEarth/Math>
 #include<osgDB/ReadFile>
 #include"EnvLight.h"
 
-
-void osgEarth::StandardPBRMaterial::setTextureAttribute(TextureEnum mapEnum, const std::string& fileName, const std::string& defineName, StateAttribute::OverrideValue value)
+osgEarth::StandardPBRMaterial::StandardPBRMaterial()
 {
-	 
-    if (_maps.find(mapEnum) == _maps.end())
-    {
-        _maps[mapEnum] = TextureInfo();
-               
-    }
-    auto& info = _maps[mapEnum];
-    info._path = fileName;
-    info._defineKey = defineName.empty() ? getDefaultDefineName(mapEnum) : defineName;
-    info._defineVal = std::to_string(1.0f*(int)mapEnum);
-        
+    mTextureAtlas = new osg::Texture2DArray();
+    mTextureAtlas->setFilter(osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR);
+    mTextureAtlas->setFilter(osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR);
+    mTextureAtlas->setWrap(osg::Texture2D::WRAP_S, osg::Texture2D::REPEAT);
+    mTextureAtlas->setWrap(osg::Texture2D:: WRAP_T, osg::Texture2D::REPEAT);
+    mTextureAtlas->setUnRefImageDataAfterApply(true);
+    mTextureAtlas->setResizeNonPowerOfTwoHint(false);
 }
+
+//void osgEarth::StandardPBRMaterial::setMaterialImage(osg::Image* image, TextureEnum mapEnum)
+//{
+//   
+//}
+
+//void osgEarth::StandardPBRMaterial::setTextureAttribute(TextureEnum mapEnum, const std::string& fileName, const std::string& defineName, StateAttribute::OverrideValue value)
+//{
+//	 
+//    if (_maps.find(mapEnum) == _maps.end())
+//    {
+//        _maps[mapEnum] = TextureInfo();
+//               
+//    }
+//    auto& info = _maps[mapEnum];
+//    info._path = fileName;
+//    info._defineKey = defineName.empty() ? getDefaultDefineName(mapEnum) : defineName;
+//    info._defineVal = std::to_string(1.0f*(int)mapEnum);
+//        
+//}
 
 std::string osgEarth::StandardPBRMaterial::getDefaultDefineName(TextureEnum mapEnum)
 {
-    std::string name;
-    switch (mapEnum)
+    if (textureDefines.find(mapEnum) == textureDefines.end())
     {
-    case osgEarth::StandardPBRMaterial::BaseColorMap:
-        name = "OE_ENABLE_BASECOLOR_MAP";
-        break;
-    case osgEarth::StandardPBRMaterial::EmissiveMap:
-        name = "OE_ENABLE_EMISSIVE_MAP";
-        break;
-    case osgEarth::StandardPBRMaterial::OcclusionMap:
-        name = "OE_ENABLE_AO_MAP";
-        break;
-    case osgEarth::StandardPBRMaterial::NormalMap:
-        name = "OE_ENABLE_NORMAL_MAP";
-        break;
-    case osgEarth::StandardPBRMaterial::MetalRoughenssMap:
-        name = "OE_ENABLE_MR_MAP";
-        break;
-    default:
-        break;
+        return "";
     }
-    return name;
+    return textureDefines.at(mapEnum);
 }
 
-bool osgEarth::StandardPBRMaterial::setTextures(const TextureMaps& maps)
-{
-    this->_maps = maps;
-    return true;
-}
+//bool osgEarth::StandardPBRMaterial::setTextures(const TextureMaps& maps)
+//{
+//    this->_maps = maps;
+//    return true;
+//}
+
 
 void osgEarth::StandardPBRMaterial::apply(State& state) const
 {
@@ -69,17 +68,37 @@ void osgEarth::StandardPBRMaterial::apply(State& state) const
     state.Color(mBaseColorFactor.r(), mBaseColorFactor.g(), mBaseColorFactor.b(), mBaseColorFactor.a());
 }
 
-
-void osgEarth::StandardPBRMaterial::setTextureEnable(TextureEnum mapEnum, StateAttribute::OverrideValue enable)
+void osgEarth::StandardPBRMaterial::setMaterialImage(TextureEnum mapEnum, osg::Image* image)
 {
-    for (unsigned int i = 0; i < this->getNumParents(); i++)
-    {
-        osg::StateSet* stateSet = getParent(i);
-        const auto& info = _maps[mapEnum];
-        stateSet->setDefine(info._defineKey, info._defineVal, enable);
-    }
-
+   
+    int layer = _maps.size();
+    std::cout << "dff" << image->s() << " " << image->t() << " " << image->r()<<" " << layer << std::endl;
+    mTextureAtlas->setImage(layer, image);
+    _maps[mapEnum] = TextureInfo{ layer };
 }
+
+void osgEarth::StandardPBRMaterial::setMaterialImage(TextureEnum mapEnum, const std::string& imageUrl)
+{
+    osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(imageUrl, _options.get());
+
+    if (image.valid() == false)
+    {
+        return;
+    }
+    setMaterialImage(mapEnum, image.get());
+}
+
+
+//void osgEarth::StandardPBRMaterial::setTextureEnable(TextureEnum mapEnum, StateAttribute::OverrideValue enable)
+//{
+//    for (unsigned int i = 0; i < this->getNumParents(); i++)
+//    {
+//        osg::StateSet* stateSet = getParent(i);
+//        const auto& info = _maps[mapEnum];
+//        stateSet->setDefine(info._defineKey, info._defineVal, enable);
+//    }
+//
+//}
 
 osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& imagePath)
 {
@@ -106,70 +125,54 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& im
     return tex;
 }
 
-osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
-{
-    // Creates a texture array containing all the billboard images.
-    // Each image is included only once.
-    osg::Texture2DArray* tex = new osg::Texture2DArray();
+//osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
+//{
+//    // Creates a texture array containing all the billboard images.
+//    // Each image is included only once.
+//    osg::Texture2DArray* tex = new osg::Texture2DArray();
+//
+//    float s = -1.0f, t = -1.0f;
+//    size_t imageSize = _maps.size();
+//    //std::cout << "image" << imageSize << std::endl;
+//    tex->setTextureDepth(imageSize);
+//    unsigned int layer = 0;
+//
+//    for (auto iter = _maps.begin(); iter != _maps.end(); iter++)
+//    {
+//        auto& info = iter->second;
+//
+//        osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(info._path, _options.get());
+//        info._imageValid = image.valid();
+//        //osg::ref_ptr<osg::Image> temp;
+//
+//        if (image.valid() == false)
+//        {
+//            std::cout << "info._path" << info._path << "is not valid!" << std::endl;
+//            continue;
+//        }
+//
+//        std::cout << info._path << " valid" << std::endl;
+//        info._defineVal = std::to_string(layer * 1.0f);
+//        //std::cout << "info._defineVal layer" << layer << std::endl;
+//        tex->setImage(layer, image.get());
+//        layer++;
+//    }
+//    //std::cout << "layer count" << layer << std::endl;
+//
+//
+//
+//   // OE_INFO << LC << "Created atlas with " << _atlasImages.size() << " unique images" << std::endl;
+//
+//    tex->setFilter(tex->MIN_FILTER, tex->LINEAR);
+//    tex->setFilter(tex->MAG_FILTER, tex->LINEAR);
+//    tex->setWrap(tex->WRAP_S, tex->REPEAT);
+//    tex->setWrap(tex->WRAP_T, tex->REPEAT);
+//    tex->setUnRefImageDataAfterApply(true);
+//    tex->setResizeNonPowerOfTwoHint(false);
+//
+//    return tex;
+//}
 
-    float s = -1.0f, t = -1.0f;
-    size_t imageSize = _maps.size();
-    //std::cout << "image" << imageSize << std::endl;
-    tex->setTextureDepth(imageSize);
-    unsigned int layer = 0;
-
-    for (auto iter = _maps.begin(); iter != _maps.end(); iter++)
-    {
-        auto& info = iter->second;
-
-        osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(info._path, _options.get());
-        info._imageValid = image.valid();
-        //osg::ref_ptr<osg::Image> temp;
-
-        if (image.valid() == false)
-        {
-            std::cout << "info._path" << info._path << "is not valid!" << std::endl;
-            continue;
-        }
-
-        std::cout << info._path << " valid" << std::endl;
-        //if (s < 0)
-        //{
-        //    s = osgEarth::nextPowerOf2(image->s());
-        //    t = osgEarth::nextPowerOf2(image->t());
-        //    tex->setTextureSize(s, t, imageSize);
-        //}
-
-        //if (image->s() != s || image->t() != t)
-        //{
-        //    ImageUtils::resizeImage(image, s, t, temp);
-        //    //std::cout << "image" << image->getFileName() << std::endl;
-        //}
-        //else
-        //{
-        //    temp = image;
-        //    //std::cout << "temp" << temp->getFileName()<<std::endl;
-        //}
-        info._defineVal = std::to_string(layer * 1.0f);
-        //std::cout << "info._defineVal layer" << layer << std::endl;
-        tex->setImage(layer, image.get());
-        layer++;
-    }
-    //std::cout << "layer count" << layer << std::endl;
-
-
-
-   // OE_INFO << LC << "Created atlas with " << _atlasImages.size() << " unique images" << std::endl;
-
-    tex->setFilter(tex->MIN_FILTER, tex->LINEAR);
-    tex->setFilter(tex->MAG_FILTER, tex->LINEAR);
-    tex->setWrap(tex->WRAP_S, tex->REPEAT);
-    tex->setWrap(tex->WRAP_T, tex->REPEAT);
-    tex->setUnRefImageDataAfterApply(true);
-    tex->setResizeNonPowerOfTwoHint(false);
-
-    return tex;
-}
 void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
 {
 
@@ -195,25 +198,26 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
         stateSet->getOrCreateUniform(ALPHAMASKCUTOFF, osg::Uniform::FLOAT)->set(material->getAlphaMaskCutoff());
         stateSet->getOrCreateUniform(AMBIENTOCCLUSION, osg::Uniform::FLOAT)->set(material->getAoStrength());
         
-
-        osg::Texture* tex = material->createTextureAtlas();
+        osg::Texture* tex = material->getTextureAtlas();
         stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
         stateSet->getOrCreateUniform("pbrMaps", osg::Uniform::SAMPLER_2D_ARRAY)->set(material->texUnitCnt());
         material->incementTexUnit();
-        for (auto iter = material->_maps.begin(); iter != material->_maps.end(); iter++)
+
+        for (const auto iter : material->_maps)
         {
-            auto textureInfo = iter->second;
-           
-            bool enable = textureInfo._imageValid ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
-            stateSet->setDefine(textureInfo._defineKey, textureInfo._defineVal, enable);
+            auto define = material->getDefaultDefineName(iter.first);
+            float layer = iter.second.layer * 1.0f;
+            stateSet->setDefine(define, std::to_string(layer), osg::StateAttribute::ON);
+            
         }
+     
 
     }
 }
 
 void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
 {
-    PBRMaterialCallback::operator()(attr, nv);
+    PBRMaterialCallback::operator()(attr, nv); /*
     osgEarth::ExtensionedMaterial* material = static_cast<osgEarth::ExtensionedMaterial*>(attr);
     for (unsigned int i = 0; i < attr->getNumParents(); i++)
     {
@@ -233,5 +237,5 @@ void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr
             auto textureInfo = iter->second;
             stateSet->setDefine(textureInfo._defineKey, textureInfo._defineVal, osg::StateAttribute::ON);
         }
-    }
+    }*/
 }

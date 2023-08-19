@@ -153,6 +153,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AdvancedMaterial.cpp" />
     <ClCompile Include="EnvLight.cpp" />
     <ClCompile Include="IBLBaker.cpp" />
     <ClCompile Include="imgui.cpp" />
