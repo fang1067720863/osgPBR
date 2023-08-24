@@ -4,7 +4,7 @@
 
 
 #ifdef cascade
-     oe_texcoord = vec2(oe_texcoord.x, 1.0f - oe_texcoord.y);
+     //oe_texcoord = vec2(oe_texcoord.x, 1.0f - oe_texcoord.y);
     #ifdef OE_ENABLE_BASECOLOR_MAP
         diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
       //  color.rgb = diffuseColor;

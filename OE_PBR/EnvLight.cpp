@@ -10,9 +10,7 @@
 
 #include<osg/MatrixTransform>
 #include"PbrMaterial.h"
-
-
-
+#include"AdvancedMaterial.h"
 
    
 
@@ -237,13 +235,24 @@ void GenerateEnvLightUniforms::apply(osg::Node& node)
             if (rap)
             {
                 osgEarth::StandardPBRMaterial* material = dynamic_cast<osgEarth::StandardPBRMaterial*>(rap->first.get());
+                auto  envCB = new EnvLightGL3UniformCallback();
                 if (material)
                 {
                     if (material->getUpdateCallback())
                     {
-                        return;
+                        if (auto aMat = dynamic_cast<osgEarth::AdvancedMaterial*>(material))
+                        {
+                            aMat->addUpdateCallback("env", envCB);
+                        }
+                        else {
+                            
+                        }
+                       
                     }
-                    material->setUpdateCallback(new EnvLightGL3UniformCallback());  
+                    else {
+                        material->setUpdateCallback(envCB);
+                    }
+                   
                 }
 
                 // mark this stateset as visited.

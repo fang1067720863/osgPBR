@@ -366,14 +366,41 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
 
 std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
 {
-    std::vector<osg::ref_ptr<AdvancedMaterial>> result;
-    osg::ref_ptr<osgEarth::AdvancedMaterial> m = new osgEarth::AdvancedMaterial();
+    auto absolutePath = osgEarth::getAbsolutePath("Asset/Material");
+    osg::ref_ptr<osgDB::Options> dbo = new osgDB::Options();
+    if (osgDB::fileExists(absolutePath))
+    {
+        dbo->setDatabasePath(absolutePath);
+    }
 
-    m->setUseSheen(true);
-    m->setSheenColor(osg::Vec3f(1.0f, 0.0f, 1.0f));
-    m->setSheenRoughness(0.5f);
-    result.push_back(m);
+    std::vector<osg::ref_ptr<AdvancedMaterial>> result;
+    { 
+        osg::ref_ptr<osgEarth::AdvancedMaterial> m = new osgEarth::AdvancedMaterial();
+        m->setDataBaseOption(dbo);
+        m->setUseSheen(true);
+        m->setSheenColor(osg::Vec3f(1.0f, 0.0f, 1.0f));
+        m->setSheenRoughness(0.5f);
+        m->addUpdateCallback("pbr", new PBRMaterialCallback());
+        result.push_back(m); 
+       
+    }
+    {
+        osg::ref_ptr<osgEarth::AdvancedMaterial> m1 = new osgEarth::AdvancedMaterial();
+        m1->setDataBaseOption(dbo);
+        m1->setUseClearcoat(true);
+        m1->setClearcoat(1.0f);
+        m1->setClearcoatRoughness(0.1f);
+        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::NormalMap, "carbon/Carbon_Normal.png");
+        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::BaseColorMap, "carbon/Carbon.png");
+        m1->addUpdateCallback("pbr", new PBRMaterialCallback());
+        result.push_back(m1);
+
+       
+    }
     return result;
+
+
+
 }
 osg::ref_ptr<osg::Group> createMaterialSpheres(int matType =1)
 {
@@ -646,7 +673,7 @@ int main(int argc, char** argv)
     //Sponza BoomBox
     
    
-    auto gltfModel = reader.read("Helmet\\DamagedHelmet.gltf", false, modelDB);
+    auto gltfModel = reader.read("BoomBox\\BoomBox.gltf", false, modelDB);
     //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza  Sheen\\SheenChair.glb
     auto node = gltfModel.getNode();
     auto* pbrEffect = new PbrLightEffect();
@@ -655,10 +682,10 @@ int main(int argc, char** argv)
     vp->setShaderLogging(true);
 
 
-    auto materialSpheres = createMaterialSpheres(2);
+    auto materialSpheres = createMaterialSpheres(3);
 
-    //group->addChild(createSkyBox());
-	group->addChild(node);
+    group->addChild(createSkyBox());
+	group->addChild(materialSpheres);
    
 
 

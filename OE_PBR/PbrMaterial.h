@@ -100,6 +100,16 @@ public:
 	int texUnitCnt() const { return _texUnitCnt; }
 	void incementTexUnit() { _texUnitCnt++; }
 
+	int getOrCreateTexUnit(const std::string& name)
+	{
+		if (_texUnitMap.find(name) == _texUnitMap.end())
+		{
+			_texUnitMap[name] = _texUnitCnt++;
+		}
+		return _texUnitMap[name];
+	}
+	std::unordered_map<std::string, int> _texUnitMap;
+
 	PROPERTY_DEFAULT(Vec4, BaseColorFactor, Vec4(1.0, 1.0, 1.0, 1.0))
 	PROPERTY_DEFAULT(Vec3, EmissiveFactor, Vec3(0.1, 0.1, 0.1))
 	PROPERTY_DEFAULT(float, RoughnessFactor, 0.2f)
@@ -120,6 +130,8 @@ protected:
 private:
 	std::string getDefaultDefineName(TextureEnum mapEnum);
 	TextureMaps _maps;
+	int texWidth = -1;
+	int texHeight = -1;
 	osg::ref_ptr<osgDB::Options> _options;
 
 	int _texUnitCnt{0};

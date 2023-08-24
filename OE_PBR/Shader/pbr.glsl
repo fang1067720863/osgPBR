@@ -39,7 +39,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
-#pragma import_defines(USE_SHEEN)
+#pragma import_defines(USE_SHEEN,USE_CLEARCOAT)
 #pragma include BRDF.glsl
 #pragma include light_functions.glsl
 #pragma include struct.glsl
@@ -121,7 +121,14 @@ void fragment_main_pbr(inout vec4 color)
     material.aoStrength=ao;
 #ifdef USE_SHEEN
     material.sheenColor = oe_pbr.sheenColor;
-    material.sheenRoughness = oe_pbr.sheenRoughness;
+    material.sheenRoughness = clamp( oe_pbr.sheenRoughness, 0.07, 1.0 ); ;
+#endif
+#ifdef USE_CLEARCOAT
+    geometry.clearcoatNormal = geometry.normal;
+    material.clearcoat = oe_pbr.clearcoat;
+	material.clearcoatRoughness = 0.1f;
+    material.clearcoatF0 = vec3(0.04);
+    material.clearcoatF90 = 1.0f;
 #endif
 
     ReflectedLight reflectedLight;
@@ -133,14 +140,6 @@ void fragment_main_pbr(inout vec4 color)
 
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
-        // vec3 l = normalize(-osg_LightSource[i].spotDirection.xyz);
-        // vec3 h = normalize(l + v);
-
-        // float NdotL = max(dot(n, l), 0.0f);
-        // float VdotH = max(dot(h, v), 0.0f);
-        // float NdotH = max(dot(n, h), 0.0f);
-        // float NdotV = max(dot(n, v), 0.0f);
-        
         RE_Direct_Physical( osg_LightSource[i], geometry, f0, material, reflectedLight);
     }
 
@@ -181,6 +180,16 @@ void fragment_main_pbr(inout vec4 color)
 		color.rgb = color.rgb * sheenEnergyComp + reflectedLight.sheenSpecular;
 	#endif
 
+    #ifdef USE_CLEARCOAT
+
+		float dotNVcc = saturate( dot( geometry.clearcoatNormal, geometry.viewDir ) );
+
+		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
+        // color.rgb * ( 1.0 - material.clearcoat * Fcc ) + 
+
+		color.rgb =  reflectedLight.clearcoatSpecular;
+
+	#endif
 
    
 

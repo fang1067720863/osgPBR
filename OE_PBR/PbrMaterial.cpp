@@ -70,10 +70,30 @@ void osgEarth::StandardPBRMaterial::apply(State& state) const
 
 void osgEarth::StandardPBRMaterial::setMaterialImage(TextureEnum mapEnum, osg::Image* image)
 {
-   
     int layer = _maps.size();
-    std::cout << "dff" << image->s() << " " << image->t() << " " << image->r()<<" " << layer << std::endl;
-    mTextureAtlas->setImage(layer, image);
+    if (_maps.find(mapEnum) != _maps.end())
+    {
+        layer = _maps[mapEnum].layer;
+    }
+    osg::ref_ptr<osg::Image> temp;
+    if (texWidth < 0 && texHeight < 0)
+    {
+        texWidth = image->s();
+        texHeight = image->t();
+        temp = image;
+    }
+    else {
+        if (texWidth != image->s() || texHeight != image->t())
+        {
+            ImageUtils::resizeImage(image, texWidth, texHeight, temp);
+        }
+        else {
+            temp = image;
+        }
+    }
+   
+    std::cout << "dff" << temp->s() << " " << temp->t() << " " << temp->r()<<" " << layer << std::endl;
+    mTextureAtlas->setImage(layer, temp.get());
     _maps[mapEnum] = TextureInfo{ layer };
 }
 
@@ -199,9 +219,10 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
         stateSet->getOrCreateUniform(AMBIENTOCCLUSION, osg::Uniform::FLOAT)->set(material->getAoStrength());
         
         osg::Texture* tex = material->getTextureAtlas();
-        stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
-        stateSet->getOrCreateUniform("pbrMaps", osg::Uniform::SAMPLER_2D_ARRAY)->set(material->texUnitCnt());
-        material->incementTexUnit();
+        int unit = material->getOrCreateTexUnit("pbrMaps");
+        stateSet->setTextureAttributeAndModes(unit, tex, osg::StateAttribute::ON);
+        stateSet->getOrCreateUniform("pbrMaps", osg::Uniform::SAMPLER_2D_ARRAY)->set(unit);
+
 
         for (const auto iter : material->_maps)
         {

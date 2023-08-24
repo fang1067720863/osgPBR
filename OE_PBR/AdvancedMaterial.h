@@ -14,16 +14,44 @@ struct SAttrCallback : public osg::StateAttributeCallback
 		{
 			f(attr, nv);
 		}
+		for (auto& cb : _subCallbacks)
+		{
+			cb->operator()(attr, nv);
+		}
 	}
 	std::vector<F> _funList;
+	std::vector<osg::ref_ptr<osg::StateAttributeCallback>> _subCallbacks;
+	std::vector<std::string> _techniqueKeys;
 public:
-	void addUpdateCallback(F&& f) { _funList.push_back(std::move(f)); }
+
+	bool exist(const std::string& key)
+	{
+		for (const auto& _key : _techniqueKeys)
+		{
+			if (_key == key)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	void addUpdateCallback(const std::string& key, F&& f) {
+		if (exist(key)) return;
+		_funList.push_back(std::move(f)); }
+	void addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f) {
+		if (exist(key)) return; 
+		_subCallbacks.push_back(f);
+	}
 };
+
 
 class OE_MATERIAL_PULGIN AdvancedMaterial : public StandardPBRMaterial
 {
 public:
 	AdvancedMaterial();
+
+	void addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f);
+
 	enum TextureEnum
 	{
 		CLEARCOATMAP = 6,
@@ -48,10 +76,14 @@ public:
 	};
 	PROPERTY_DEFAULT(float, IOR, 0.1f)
 
+	PROPERTY_DEFAULT(bool, UseClearcoat, false)
 	PROPERTY_DEFAULT(float, Clearcoat, 0.1f)
 	PROPERTY_DEFAULT(float, ClearcoatRoughness, 0.1f)
-	PROPERTY_DEFAULT(Vec3f, ClearcoatF0, Vec3(0.0f, 0.0f, 0.0f))
-	PROPERTY_DEFAULT(float, ClearcoatF90, 0.1f)
+	PROPERTY_DEFAULT(Vec3f, ClearcoatF0, Vec3(0.04f, 0.04f, 0.04f))
+	PROPERTY_DEFAULT(float, ClearcoatF90, 1.0f)
+	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ClearcoatRoughnessMap, 0)
+	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ClearcoatNormalMap, 0)
+	PROPERTY_DEFAULT(Vec2f, ClearcoatNormalScale, osg::Vec2f(0.0f,0.0f))
 
 	PROPERTY_DEFAULT(float, Iridescence, 0.1f)
 	PROPERTY_DEFAULT(float, IridescenceIOR, 0.1f)
@@ -71,10 +103,12 @@ public:
 	PROPERTY_DEFAULT(float, AttenuationDistance, 0.1f)
 	PROPERTY_DEFAULT(Vec3f, AttenuationColor, Vec3(0.0f, 0.0f, 0.0f))
 
+	
+
 protected:
 
 	void initTechniqueCallback();
-	void addUpdateCallback();
+	
 
 	osg::ref_ptr<SAttrCallback> _techniqueCallbacks;
 	static constexpr const char* IOR = "IOR";

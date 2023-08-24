@@ -29,6 +29,7 @@
 
 #include"Export.h"
 #include"PbrMaterial.h"
+#include"AdvancedMaterial.h"
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -413,7 +414,33 @@ public:
 
             return top;
         }
+        osg::ref_ptr<osg::Image> makeImageFromModel(int imageIndex)const
+        {
+            const tinygltf::Image& image = model.images[imageIndex];
+            bool imageEmbedded =
+                tinygltf::IsDataURI(image.uri) ||
+                image.image.size() > 0;
 
+            osgEarth::URI imageURI(image.uri, env.referrer);
+
+            OE_DEBUG << "New Texture: " << imageURI.full() << ", embedded=" << imageEmbedded << std::endl;
+
+            // First load the image
+            osg::ref_ptr<osg::Image> img;
+
+            if (image.image.size() > 0)
+            {
+                GLenum format = GL_RGB, texFormat = GL_RGB8;
+                if (image.component == 4) format = GL_RGBA, texFormat = GL_RGBA8;
+
+                img = new osg::Image();
+                //OE_NOTICE << "Loading image of size " << image.width << "x" << image.height << " components = " << image.component << " totalSize=" << image.image.size() << std::endl;
+                unsigned char* imgData = new unsigned char[image.image.size()];
+                memcpy(imgData, &image.image[0], image.image.size());
+                img->setImage(image.width, image.height, 1, texFormat, format, GL_UNSIGNED_BYTE, imgData, osg::Image::AllocationMode::USE_NEW_DELETE);
+            }
+            return img;
+        }
         osg::Texture2D* makeTextureFromModel(const tinygltf::Texture& texture) const
 
         {
@@ -500,14 +527,35 @@ public:
                 return matItr->second.get();
             }
             osg::Vec4 baseColorFactor(1.0f, 1.0f, 1.0f, 1.0f);
-            osg::ref_ptr<osgEarth::StandardPBRMaterial> pbrMat= new osgEarth::StandardPBRMaterial();
+
+            osg::ref_ptr<osgEarth::StandardPBRMaterial> pbrMat;
+            
             if (materialIndex >= 0 && materialIndex < model.materials.size())
             {
-
                 const tinygltf::Material& material = model.materials[materialIndex];
-
-                // Todo Extentioned&Addtional Value
-
+                auto extIter = material.extensions.begin();
+                for (auto extIter : material.extensions)
+                {
+                    if (extIter.first == "KHR_materials_sheen")
+                    {
+                        pbrMat = new osgEarth::AdvancedMaterial();
+                        auto mat = dynamic_cast<osgEarth::AdvancedMaterial*>(pbrMat.get());
+                        mat->setUseSheen(true);
+                        auto color = extIter.second.Get("sheenColorFactor").Get<tinygltf::Value::Array>();
+                        mat->setSheenColor(osg::Vec3f((float)color[0].GetNumberAsDouble(), (float)color[1].GetNumberAsDouble(), (float)color[2].GetNumberAsDouble()));
+                        double sheenRoughnessFactor = extIter.second.Get("sheenRoughnessFactor").GetNumberAsDouble();
+                        mat->setSheenRoughness((float)sheenRoughnessFactor);
+                        std::cout << "fasdf " << mat->getSheenColor()<<" "<<mat->getSheenRoughness() << std::endl;
+                    }
+                    else {
+                        //todo
+                    }
+                }
+                if (!pbrMat.valid())
+                {
+                    pbrMat = new osgEarth::StandardPBRMaterial();
+                }
+                
                 OE_DEBUG << "additionalValues=" << material.additionalValues.size() << std::endl;
                 for (tinygltf::ParameterMap::const_iterator paramItr = material.additionalValues.begin(); paramItr != material.additionalValues.end(); ++paramItr)
                 {
@@ -515,32 +563,31 @@ public:
                 }
                 pbrMat->setEmissiveFactor(osg::Vec3(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]));
 
-                int index = material.emissiveTexture.index;
-                if (index > 0)
-                {
-                    const tinygltf::Texture& texture = model.textures[index];
-                    const tinygltf::Image& image = model.images[texture.source];
-                    osgEarth::URI imageURI(image.uri, env.referrer);
-                    pbrMat->setMaterialImage(StandardPBRMaterial::EmissiveMap, imageURI.full());
-                }
+                //int index = material.emissiveTexture.index;
 
-                index = material.occlusionTexture.index;
-                if (index > 0)
+                auto setMateialImage = [this, pbrMat](StandardPBRMaterial::TextureEnum texEnum, int index)
                 {
-                    const tinygltf::Texture& texture = model.textures[index];
-                    const tinygltf::Image& image = model.images[texture.source];
-                    osgEarth::URI imageURI(image.uri, env.referrer);
-                    pbrMat->setMaterialImage(StandardPBRMaterial::OcclusionMap, imageURI.full());
-                }
-                index = material.normalTexture.index;
-                if (index > 0)
-                {
-                    const tinygltf::Texture& texture = model.textures[index];
-                    const tinygltf::Image& image = model.images[texture.source];
-                    osgEarth::URI imageURI(image.uri, env.referrer);
-                    pbrMat->setMaterialImage(StandardPBRMaterial::NormalMap, imageURI.full());
-                }
-
+                    if (index > -1)
+                    {
+                      const tinygltf::Texture& texture = model.textures[index];
+                        const tinygltf::Image& image = model.images[texture.source];
+                        auto img = makeImageFromModel(texture.source);
+                        if (img.valid())
+                        {
+                            pbrMat->setMaterialImage(texEnum, img.get());
+                        }
+                        else {
+                            osgEarth::URI imageURI(image.uri, env.referrer);
+                            pbrMat->setMaterialImage(texEnum, imageURI.full());
+                        }
+                       
+                    }
+                  
+                };
+                setMateialImage(StandardPBRMaterial::EmissiveMap, material.emissiveTexture.index);
+                setMateialImage(StandardPBRMaterial::OcclusionMap, material.occlusionTexture.index);
+                setMateialImage(StandardPBRMaterial::NormalMap, material.normalTexture.index);
+           
 
                 
 
@@ -548,9 +595,6 @@ public:
                 {
                     if (material.alphaMode == "BLEND")
                     {
-                        /*geom->getOrCreateStateSet()->setMode(GL_BLEND, osg::StateAttribute::ON);
-                        geom->getOrCreateStateSet()->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
-                        osgEarth::Util::DiscardAlphaFragments().install(geom->getOrCreateStateSet(), 0.15);*/
                         pbrMat->setAlphaMode(StandardPBRMaterial::AlphaMode::Blend);
                     }
                     else if (material.alphaMode == "MASK")
@@ -598,11 +642,7 @@ public:
                         std::map< std::string, double>::const_iterator i = paramItr->second.json_double_value.find("index");
                         if (i != paramItr->second.json_double_value.end())
                         {
-                            int index = i->second;
-                            const tinygltf::Texture& texture = model.textures[index];
-                            const tinygltf::Image& image = model.images[texture.source];
-                            osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setMaterialImage(StandardPBRMaterial::BaseColorMap, imageURI.full());
+                            setMateialImage(StandardPBRMaterial::BaseColorMap, i->second);
                         }
 
                     }
@@ -611,11 +651,7 @@ public:
                         std::map< std::string, double>::const_iterator i = paramItr->second.json_double_value.find("index");
                         if (i != paramItr->second.json_double_value.end())
                         {
-                            int index = i->second;
-                            const tinygltf::Texture& texture = model.textures[index];
-                            const tinygltf::Image& image = model.images[texture.source];
-                            osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setMaterialImage(StandardPBRMaterial::NormalMap, imageURI.full());
+                            setMateialImage(StandardPBRMaterial::NormalMap, i->second);
                         }
 
                     }
@@ -624,11 +660,7 @@ public:
                         std::map< std::string, double>::const_iterator i = paramItr->second.json_double_value.find("index");
                         if (i != paramItr->second.json_double_value.end())
                         {
-                            int index = i->second;
-                            const tinygltf::Texture& texture = model.textures[index];
-                            const tinygltf::Image& image = model.images[texture.source];
-                            osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setMaterialImage(StandardPBRMaterial::MetalRoughenssMap, imageURI.full());
+                            setMateialImage(StandardPBRMaterial::MetalRoughenssMap, i->second);
                         }
 
                     }
@@ -637,11 +669,7 @@ public:
                         std::map< std::string, double>::const_iterator i = paramItr->second.json_double_value.find("index");
                         if (i != paramItr->second.json_double_value.end())
                         {
-                            int index = i->second;
-                            const tinygltf::Texture& texture = model.textures[index];
-                            const tinygltf::Image& image = model.images[texture.source];
-                            osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setMaterialImage(StandardPBRMaterial::OcclusionMap, imageURI.full());
+                            setMateialImage(StandardPBRMaterial::OcclusionMap, i->second);
                         }
 
                     }
@@ -650,11 +678,7 @@ public:
                         std::map< std::string, double>::const_iterator i = paramItr->second.json_double_value.find("index");
                         if (i != paramItr->second.json_double_value.end())
                         {
-                            int index = i->second;
-                            const tinygltf::Texture& texture = model.textures[index];
-                            const tinygltf::Image& image = model.images[texture.source];
-                            osgEarth::URI imageURI(image.uri, env.referrer);
-                            pbrMat->setMaterialImage(StandardPBRMaterial::EmissiveMap, imageURI.full());
+                            setMateialImage(StandardPBRMaterial::EmissiveMap, i->second);
                         }
 
                     }

@@ -22,6 +22,13 @@ vec2 DFGApprox( const in vec3 normal, const in vec3 viewDir, const in float roug
 
 }
 
+vec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {
+
+	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );
+	return f0 * ( 1.0 - fresnel ) + ( f90 * fresnel );
+
+} // validated
+
 void computeMultiscattering( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, \
 									const in float roughness, inout vec3 singleScatter, inout vec3 multiScatter ) {
 
@@ -141,43 +148,7 @@ vec2 sphericalUV(vec3 v)
 #endif
 
 
-uniform sampler2D brdfLUT;
-void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance,const in vec3 f0,
-								const in GeometricContext geometry, const in pbr_Material material, inout ReflectedLight reflectedLight)
-{
 
-	// USE_CLEARCOAT USE_SHEEN USE_IRIDESCENCE
-
-	vec3 singleScattering = vec3( 0.0 );
-	vec3 multiScattering = vec3( 0.0 );
-	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
-
-    vec3 specularColor =vec3(1.0);
-    computeMultiscattering( geometry.normal, geometry.viewDir, specularColor, material.metallicFactor, material.roughnessFactor, singleScattering, multiScattering);
-     float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
-    vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
-    vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
-    singleScattering = (F * brdf.x + brdf.y);
-
-
-	vec3 scattering = singleScattering + multiScattering;
-	vec3 diffuse = material.baseColorFactor.rgb * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) ); 
-
-	reflectedLight.indirectSpecular += singleScattering * radiance; 
-   
-   
-	reflectedLight.indirectSpecular += multiScattering * cosineWeightedIrradiance;
-
-	reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;
-	return;
-
-}
-
-void RE_IndirectDiffuse_Physical(vec3 irradiance, vec3 diffuseColor, inout ReflectedLight reflectedLight)
-{
-	reflectedLight.indirectDiffuse =  irradiance * RECIPROCAL_PI * diffuseColor;
-	return;
-}
 
 
 vec3 BRDF_GGX(
@@ -214,12 +185,13 @@ vec3 BRDF_GGX(
     
 }
 
+float saturate(float v)
+{
+    return max(v,0.0f);
+}
+
 #ifdef USE_SHEEN
 
-    float saturate(float v)
-    {
-        return max(v,0.0f);
-    }
 
     float D_Charlie( float roughness, float dotNH ) {
 
@@ -256,6 +228,22 @@ vec3 BRDF_GGX(
 
     }
 
+    float IBLSheenBRDF( const in vec3 normal, const in vec3 viewDir, const in float roughness ) {
+
+        float dotNV = saturate( dot( normal, viewDir ) );
+
+        float r2 = roughness * roughness;
+
+        float a = roughness < 0.25 ? -339.2 * r2 + 161.4 * roughness - 25.9 : -8.48 * r2 + 14.3 * roughness - 9.95;
+
+        float b = roughness < 0.25 ? 44.0 * r2 - 23.7 * roughness + 3.26 : 1.97 * r2 - 3.27 * roughness + 0.72;
+
+        float DG = exp( a * dotNV + b ) + ( roughness < 0.25 ? 0.0 : 0.1 * ( roughness - 0.25 ) );
+
+        return saturate( DG * RECIPROCAL_PI );
+
+    }
+
 #endif
 
 
@@ -271,7 +259,56 @@ void RE_Direct_Physical( const in osg_LightSourceParameters directLight, const i
         reflectedLight.sheenSpecular += sheenSpecular;
 	#endif
 
+    #ifdef USE_CLEARCOAT
+       	float dotNLcc = saturate( dot( geometry.clearcoatNormal, lightDir ) );
+		vec3 ccIrradiance = dotNLcc * directLight.diffuse.rgb;
+        
+		reflectedLight.clearcoatSpecular += ccIrradiance * BRDF_GGX( lightDir, geometry.viewDir, geometry.clearcoatNormal, material.clearcoatF90, material.clearcoatRoughness,material.clearcoatF0 );
+    #endif
+
 
 	reflectedLight.directSpecular += irradiance * BRDF_GGX(lightDir, geometry.viewDir, geometry.normal, material.roughnessFactor, material.metallicFactor, f0 );
 	reflectedLight.directDiffuse += irradiance * BRDF_Diffuse_Lambert( material.baseColorFactor.rgb );
+}
+
+uniform sampler2D brdfLUT;
+void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance,const in vec3 f0,
+								const in GeometricContext geometry, const in pbr_Material material, inout ReflectedLight reflectedLight)
+{
+
+	#ifdef USE_SHEEN
+
+		reflectedLight.sheenSpecular += irradiance * material.sheenColor * IBLSheenBRDF( geometry.normal, geometry.viewDir, material.sheenRoughness );
+
+	#endif
+
+	vec3 singleScattering = vec3( 0.0 );
+	vec3 multiScattering = vec3( 0.0 );
+	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
+
+    vec3 specularColor =vec3(1.0);
+    computeMultiscattering( geometry.normal, geometry.viewDir, specularColor, material.metallicFactor, material.roughnessFactor, singleScattering, multiScattering);
+     float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
+    vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
+    vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
+    singleScattering = (F * brdf.x + brdf.y);
+
+
+	vec3 scattering = singleScattering + multiScattering;
+	vec3 diffuse = material.baseColorFactor.rgb * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) ); 
+
+	reflectedLight.indirectSpecular += singleScattering * radiance; 
+   
+   
+	reflectedLight.indirectSpecular += multiScattering * cosineWeightedIrradiance;
+
+	reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;
+	return;
+
+}
+
+void RE_IndirectDiffuse_Physical(vec3 irradiance, vec3 diffuseColor, inout ReflectedLight reflectedLight)
+{
+	reflectedLight.indirectDiffuse =  irradiance * RECIPROCAL_PI * diffuseColor;
+	return;
 }

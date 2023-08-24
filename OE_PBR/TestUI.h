@@ -34,6 +34,9 @@ public:
         UniformSpec aoStrength{ "oe_pbr.aoStrength" ,0.0f,1.0f,0.5f };
         UniformSpec alphaMask{ "oe_pbr.alphaMask" ,0.0f,1.0f,0.99f };
         DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true };
+       
+        UniformSpec sheenRoughness{ "oe_pbr.sheenRoughness" ,0.0f,1.0f,0.5f };
+
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true };
         DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true };
         DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"1", true };
@@ -44,6 +47,7 @@ public:
         _uniforms.emplace_back(roughness);
         _uniforms.emplace_back(aoStrength);
         _uniforms.emplace_back(alphaMask);
+        _uniforms.emplace_back(sheenRoughness);
 
         _defines.emplace_back(normal);
         _defines.emplace_back(mr);
@@ -61,12 +65,17 @@ public:
         osg::Node* child = node->getChild(0);
         strcpy(material, node->getName().c_str());
         _node = child;
+        if (auto mat = dynamic_cast<osg::MatrixTransform*>(child))
+        {
+            _node = mat->getChild(0);
+        }
+
         for (auto& def : _uniforms)
         {
             if (def._name == "oe_pbr.metallicFactor")
             {
                 float metallicFactor;
-                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.metallicFactor");
+                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.metallicFactor");
                 if (u)
                 {
                     u->get(metallicFactor);
@@ -76,7 +85,7 @@ public:
             if (def._name == "oe_pbr.roughnessFactor")
             {
                 float roughnessFactor;
-                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.roughnessFactor");
+                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.roughnessFactor");
                 if (u)
                 {
                     u->get(roughnessFactor);
@@ -86,7 +95,7 @@ public:
             if (def._name == "oe_pbr.aoStrength")
             {
                 float aoStrength;
-                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.aoStrength");
+                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.aoStrength");
                 if (u)
                 {
                     u->get(aoStrength);
@@ -96,11 +105,21 @@ public:
             if (def._name == "oe_pbr.alphaMask")
             {
                 float alphaMask;
-                auto u = child->getOrCreateStateSet()->getUniform("oe_pbr.alphaMask");
+                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.alphaMask");
                 if (u)
                 {
                     u->get(alphaMask);
                     def._value = alphaMask;
+                }
+            }
+            if (def._name == "oe_pbr.sheenRoughness")
+            {
+                float sheenRoughness;
+                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.sheenRoughness");
+                if (u)
+                {
+                    u->get(sheenRoughness);
+                    def._value = sheenRoughness;
                 }
             }
         }

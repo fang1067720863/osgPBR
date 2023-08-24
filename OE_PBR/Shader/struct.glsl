@@ -12,6 +12,12 @@ struct pbr_Material
     vec3 sheenColor;
     float sheenRoughness;
 #endif
+#ifdef USE_CLEARCOAT
+    float clearcoat;
+	float clearcoatRoughness;
+    vec3 clearcoatF0;
+    float clearcoatF90;
+#endif
 };
 
 struct ReflectedLight
@@ -23,11 +29,17 @@ struct ReflectedLight
 #ifdef USE_SHEEN
     vec3 sheenSpecular;
 #endif
+#ifdef USE_CLEARCOAT
+    vec3 clearcoatSpecular;
+#endif
 };
 struct GeometricContext
 {
 	vec3 normal;
 	vec3 viewDir;
+#ifdef USE_CLEARCOAT
+    vec3 clearcoatNormal;
+#endif
 };
 struct osg_LightSourceParameters 
 {   
