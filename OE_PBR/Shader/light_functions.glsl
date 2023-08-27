@@ -22,6 +22,14 @@ vec2 DFGApprox( const in vec3 normal, const in vec3 viewDir, const in float roug
 
 }
 
+vec3 EnvironmentBRDF( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness ) {
+
+	vec2 fab = DFGApprox( normal, viewDir, roughness );
+
+	return specularColor * fab.x + specularF90 * fab.y;
+
+}
+
 vec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {
 
 	float fresnel = exp2( ( - 5.55473 * dotVH - 6.98316 ) * dotVH );
@@ -272,7 +280,7 @@ void RE_Direct_Physical( const in osg_LightSourceParameters directLight, const i
 }
 
 uniform sampler2D brdfLUT;
-void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance,const in vec3 f0,
+void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradiance, const in vec3 clearcoatRadiance,const in vec3 f0,
 								const in GeometricContext geometry, const in pbr_Material material, inout ReflectedLight reflectedLight)
 {
 
@@ -281,6 +289,10 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 		reflectedLight.sheenSpecular += irradiance * material.sheenColor * IBLSheenBRDF( geometry.normal, geometry.viewDir, material.sheenRoughness );
 
 	#endif
+
+    #ifdef USE_CLEARCOAT
+        reflectedLight.clearcoatSpecular += clearcoatRadiance * EnvironmentBRDF(geometry.clearcoatNormal, geometry.viewDir, material.clearcoatF0, material.clearcoatF90, material.clearcoatRoughness);
+    #endif
 
 	vec3 singleScattering = vec3( 0.0 );
 	vec3 multiScattering = vec3( 0.0 );

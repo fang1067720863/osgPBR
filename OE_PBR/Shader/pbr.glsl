@@ -126,7 +126,7 @@ void fragment_main_pbr(inout vec4 color)
 #ifdef USE_CLEARCOAT
     geometry.clearcoatNormal = geometry.normal;
     material.clearcoat = oe_pbr.clearcoat;
-	material.clearcoatRoughness = 0.1f;
+	material.clearcoatRoughness = oe_pbr.clearcoatRoughness;
     material.clearcoatF0 = vec3(0.04);
     material.clearcoatF90 = 1.0f;
 #endif
@@ -155,11 +155,15 @@ void fragment_main_pbr(inout vec4 color)
     vec3 radianceIBL = vec3(0.0);
 
     
-
+    vec3 clearcoatRadiance = vec3(0.0);
 #ifdef USE_ENV_MAP
     radianceIBL = getIBLRadiance(n, roughness,v);
     RE_IndirectDiffuse_Physical(irradiance, diffuseColor, reflectedLight);
-    RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,f0,geometry, material, reflectedLight);
+
+    #ifdef USE_CLEARCOAT
+      clearcoatRadiance = getIBLRadiance(geometry.clearcoatNormal, material.clearcoatRoughness, v);
+    #endif
+     RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,clearcoatRadiance,f0,geometry, material, reflectedLight);
 
 #endif
 
@@ -185,9 +189,8 @@ void fragment_main_pbr(inout vec4 color)
 		float dotNVcc = saturate( dot( geometry.clearcoatNormal, geometry.viewDir ) );
 
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
-        // color.rgb * ( 1.0 - material.clearcoat * Fcc ) + 
 
-		color.rgb =  reflectedLight.clearcoatSpecular;
+		color.rgb =  color.rgb * ( 1.0 - material.clearcoat * Fcc ) + reflectedLight.clearcoatSpecular;
 
 	#endif
 
