@@ -25,26 +25,6 @@ osgEarth::StandardPBRMaterial::StandardPBRMaterial()
     mTextureAtlas->setResizeNonPowerOfTwoHint(false);
 }
 
-//void osgEarth::StandardPBRMaterial::setMaterialImage(osg::Image* image, TextureEnum mapEnum)
-//{
-//   
-//}
-
-//void osgEarth::StandardPBRMaterial::setTextureAttribute(TextureEnum mapEnum, const std::string& fileName, const std::string& defineName, StateAttribute::OverrideValue value)
-//{
-//	 
-//    if (_maps.find(mapEnum) == _maps.end())
-//    {
-//        _maps[mapEnum] = TextureInfo();
-//               
-//    }
-//    auto& info = _maps[mapEnum];
-//    info._path = fileName;
-//    info._defineKey = defineName.empty() ? getDefaultDefineName(mapEnum) : defineName;
-//    info._defineVal = std::to_string(1.0f*(int)mapEnum);
-//        
-//}
-
 std::string osgEarth::StandardPBRMaterial::getDefaultDefineName(TextureEnum mapEnum)
 {
     if (textureDefines.find(mapEnum) == textureDefines.end())
@@ -53,12 +33,6 @@ std::string osgEarth::StandardPBRMaterial::getDefaultDefineName(TextureEnum mapE
     }
     return textureDefines.at(mapEnum);
 }
-
-//bool osgEarth::StandardPBRMaterial::setTextures(const TextureMaps& maps)
-//{
-//    this->_maps = maps;
-//    return true;
-//}
 
 
 void osgEarth::StandardPBRMaterial::apply(State& state) const
@@ -108,18 +82,6 @@ void osgEarth::StandardPBRMaterial::setMaterialImage(TextureEnum mapEnum, const 
     setMaterialImage(mapEnum, image.get());
 }
 
-
-//void osgEarth::StandardPBRMaterial::setTextureEnable(TextureEnum mapEnum, StateAttribute::OverrideValue enable)
-//{
-//    for (unsigned int i = 0; i < this->getNumParents(); i++)
-//    {
-//        osg::StateSet* stateSet = getParent(i);
-//        const auto& info = _maps[mapEnum];
-//        stateSet->setDefine(info._defineKey, info._defineVal, enable);
-//    }
-//
-//}
-
 osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& imagePath)
 {
     float s = -1.0f, t = -1.0f;
@@ -144,54 +106,6 @@ osg::Texture* osgEarth::StandardPBRMaterial::createTexture(const std::string& im
 
     return tex;
 }
-
-//osg::Texture* osgEarth::StandardPBRMaterial::createTextureAtlas()
-//{
-//    // Creates a texture array containing all the billboard images.
-//    // Each image is included only once.
-//    osg::Texture2DArray* tex = new osg::Texture2DArray();
-//
-//    float s = -1.0f, t = -1.0f;
-//    size_t imageSize = _maps.size();
-//    //std::cout << "image" << imageSize << std::endl;
-//    tex->setTextureDepth(imageSize);
-//    unsigned int layer = 0;
-//
-//    for (auto iter = _maps.begin(); iter != _maps.end(); iter++)
-//    {
-//        auto& info = iter->second;
-//
-//        osg::ref_ptr<osg::Image> image = osgDB::readRefImageFile(info._path, _options.get());
-//        info._imageValid = image.valid();
-//        //osg::ref_ptr<osg::Image> temp;
-//
-//        if (image.valid() == false)
-//        {
-//            std::cout << "info._path" << info._path << "is not valid!" << std::endl;
-//            continue;
-//        }
-//
-//        std::cout << info._path << " valid" << std::endl;
-//        info._defineVal = std::to_string(layer * 1.0f);
-//        //std::cout << "info._defineVal layer" << layer << std::endl;
-//        tex->setImage(layer, image.get());
-//        layer++;
-//    }
-//    //std::cout << "layer count" << layer << std::endl;
-//
-//
-//
-//   // OE_INFO << LC << "Created atlas with " << _atlasImages.size() << " unique images" << std::endl;
-//
-//    tex->setFilter(tex->MIN_FILTER, tex->LINEAR);
-//    tex->setFilter(tex->MAG_FILTER, tex->LINEAR);
-//    tex->setWrap(tex->WRAP_S, tex->REPEAT);
-//    tex->setWrap(tex->WRAP_T, tex->REPEAT);
-//    tex->setUnRefImageDataAfterApply(true);
-//    tex->setResizeNonPowerOfTwoHint(false);
-//
-//    return tex;
-//}
 
 void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
 {
@@ -238,25 +152,33 @@ void osgEarth::PBRMaterialCallback::operator()(osg::StateAttribute* attr, osg::N
 
 void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
 {
-    PBRMaterialCallback::operator()(attr, nv); /*
-    osgEarth::ExtensionedMaterial* material = static_cast<osgEarth::ExtensionedMaterial*>(attr);
+   PBRMaterialCallback::operator()(attr, nv); 
+   osgEarth::ExtensionedMaterial* material = static_cast<osgEarth::ExtensionedMaterial*>(attr);
     for (unsigned int i = 0; i < attr->getNumParents(); i++)
     {
-        const auto& maps = material->customMaps();
+        const auto& maps = material->_customMaps;
         auto iter = maps.begin();
-        material->incementTexUnit();
+        osg::StateSet* stateSet = attr->getParent(i);
         for (; iter != maps.end(); iter++)
         {
-            osg::StateSet* stateSet = attr->getParent(i);
             auto uniformKey = iter->first;
+            //osg::Texture* tex = material->createTexture("grass/metallic.png");
+            int unit = material->getOrCreateTexUnit(uniformKey);
+            stateSet->setTextureAttributeAndModes(unit, iter->second, osg::StateAttribute::ON);
+            stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D)->set(unit);
 
-            osg::Texture* tex = material->createTexture(iter->second._path);
-            stateSet->setTextureAttributeAndModes(material->texUnitCnt(), tex, osg::StateAttribute::ON);
-            stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D)->set(material->texUnitCnt());
-            material->incementTexUnit();
-            
-            auto textureInfo = iter->second;
-            stateSet->setDefine(textureInfo._defineKey, textureInfo._defineVal, osg::StateAttribute::ON);
         }
-    }*/
+        for (const auto& define : material->customDefines())
+        {
+            stateSet->setDefine(define, "1", osg::StateAttribute::ON);
+        }
+    }
+}
+
+void osgEarth::ExtensionedMaterial::extTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName, unsigned int uvChannel, StateAttribute::OverrideValue value)
+{
+    //osg::ref_ptr<osg::Texture> tex= 
+    _customMaps[name] = createTexture(fileName);
+    _customDefines.push_back(defineName);
+
 }

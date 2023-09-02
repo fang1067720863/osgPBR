@@ -99,9 +99,9 @@ void fragment_main_pbr(inout vec4 color)
 #endif
 
     
-    diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
+    
     f0 = mix(f0, diffuseColor, vec3(metallic));
-    diffuseColor *= (1.0 - metallic);
+    
     
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);

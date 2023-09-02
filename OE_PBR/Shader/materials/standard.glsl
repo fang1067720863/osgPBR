@@ -5,16 +5,17 @@
 
 #ifdef cascade
      //oe_texcoord = vec2(oe_texcoord.x, 1.0f - oe_texcoord.y);
-    #ifdef OE_ENABLE_BASECOLOR_MAP
-        diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
-      //  color.rgb = diffuseColor;
-      //  return;
-    #endif
 
     #ifdef OE_ENABLE_MR_MAP
         vec3 tmp =  texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_MR_MAP)).rgb;
         metallic = tmp.b;
         roughness = tmp.g;
+    #endif
+
+    #ifdef OE_ENABLE_BASECOLOR_MAP
+        diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
+        diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
+        diffuseColor *= (1.0 - metallic);
     #endif
 
     #ifdef OE_ENABLE_NORMAL_MAP

@@ -145,28 +145,20 @@ public:
 
 class OE_MATERIAL_PULGIN ExtensionedMaterial : public StandardPBRMaterial
 {
-	using CustomTextureMaps = std::map<std::string, TextureInfo>;
+	using CustomTextureMaps = std::map<std::string, osg::Texture*>;
 
 public:
 	const std::string& materialFile() const { return _materialPath; }
 	const CustomTextureMaps customMaps() const { return _customMaps; }
+	const std::vector<std::string> customDefines() const{ return _customDefines; }
 	void setMaterialFile(const std::string& file) { _materialPath = file; } // shader中不要出现中文字符串
 
 	void extTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName,
-	                         unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON)
-	{
-		/*if (_customMaps.find(name) == _customMaps.end())
-		{
-			_customMaps[name] = TextureInfo();
-		}
-		auto& info = _customMaps[name];
-		info._path = fileName;
-		info._defineKey = defineName;*/
-	}
+		unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON);
 
-private:
 	std::string _materialPath;
 	CustomTextureMaps _customMaps;
+	std::vector<std::string> _customDefines;
 };
 
 class OE_MATERIAL_PULGIN ExtensionedMaterialCallback : public PBRMaterialCallback

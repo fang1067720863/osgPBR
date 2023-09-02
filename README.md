@@ -1,5 +1,6 @@
 # OSGEARTH PBR MATERIAL LIB
 
+Tutorial:https://zhuanlan.zhihu.com/p/653871547
 ## V1.0
 - 提供osgEarth::StandardPBRMaterial
 - GLTFReaderV2读取gltf2.0模型
@@ -14,7 +15,6 @@
  ## V1.2
 - 提供osgEarth::ExtensionedMaterial 可自定义材质
 - 实现了waterial example from ue
-- 提供osg自己的材质资产格式 .omat
 - 可以切换 HDR specularHDR 可设置mipmap
 - OPAQUE
 
@@ -25,10 +25,10 @@
 - 完成relection probe cubeCamera以支持transmission
 
 # TODO
-- 直接通过mipmap Texture 写入到硬盘
 - 透明材质
 - 后处理
-- 高级材质
+- 提供osg自己的材质资产格式 .omat
+- gltf插件和dds插件编译好
 
 - sheen tranmission ior anisotropy variants iridescence 
 - exposure

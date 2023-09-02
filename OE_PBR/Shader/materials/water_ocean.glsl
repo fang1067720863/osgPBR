@@ -1,5 +1,4 @@
-
-//uniform float osg_FrameTime;
+uniform float osg_FrameTime;
 uniform sampler2D water_N;
 uniform sampler2D water_M;
 uniform sampler2D perlin_Noise;
