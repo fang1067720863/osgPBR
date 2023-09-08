@@ -390,10 +390,11 @@ std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
         osg::ref_ptr<osgEarth::AdvancedMaterial> m1 = new osgEarth::AdvancedMaterial();
         m1->setDataBaseOption(dbo);
         m1->setUseClearcoat(true);
-        m1->setClearcoat(0.5f);
+        m1->setMetallicFactor(0.1);
+        m1->setClearcoat(1.0f);
         m1->setClearcoatRoughness(0.1f);
-        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::NormalMap, "carbon/Carbon_Normal.png");
-        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::BaseColorMap, "carbon/Carbon.png");
+        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::NormalMap, "brick/T_Brick_Clay_New_N.tga");
+        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::BaseColorMap, "brick/T_Brick_Clay_New_D.tga");
         m1->addUpdateCallback("pbr", new PBRMaterialCallback());
         result.push_back(m1);
 
@@ -684,10 +685,10 @@ int main(int argc, char** argv)
     vp->setShaderLogging(true);
 
 
-    auto materialSpheres = createMaterialSpheres(2);
+    auto materialSpheres = createMaterialSpheres(3);
 
     group->addChild(createSkyBox());
-	group->addChild(node);
+	group->addChild(materialSpheres);
    
 
 

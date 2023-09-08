@@ -268,10 +268,11 @@ void RE_Direct_Physical( const in osg_LightSourceParameters directLight, const i
 	#endif
 
     #ifdef USE_CLEARCOAT
-       	float dotNLcc = saturate( dot( geometry.clearcoatNormal, lightDir ) );
+        vec3 clearcoatNormal = vec3(1.0,0.0,0.0);
+       	float dotNLcc = saturate( dot( clearcoatNormal, lightDir ) );
 		vec3 ccIrradiance = dotNLcc * directLight.diffuse.rgb;
         
-		reflectedLight.clearcoatSpecular += ccIrradiance * BRDF_GGX( lightDir, geometry.viewDir, geometry.clearcoatNormal, material.clearcoatF90, material.clearcoatRoughness,material.clearcoatF0 );
+		reflectedLight.clearcoatSpecular += ccIrradiance * BRDF_GGX( lightDir, geometry.viewDir, clearcoatNormal,material.clearcoatRoughness, material.clearcoatF90,material.clearcoatF0 );
     #endif
 
 
@@ -286,7 +287,7 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 
 	#ifdef USE_SHEEN
 
-		reflectedLight.sheenSpecular += irradiance * material.sheenColor * IBLSheenBRDF( geometry.normal, geometry.viewDir, material.sheenRoughness );
+		//reflectedLight.sheenSpecular += irradiance * material.sheenColor * IBLSheenBRDF( geometry.normal, geometry.viewDir, material.sheenRoughness );
 
 	#endif
 

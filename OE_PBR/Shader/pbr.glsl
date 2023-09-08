@@ -93,16 +93,18 @@ void fragment_main_pbr(inout vec4 color)
     vec3 emissive = oe_pbr.emissiveFactor;
     vec3 diffuseColor =vec3(1.0);
 
+    
+
     # MATERIAL_BODY
 #ifdef debug_texture
     return;
 #endif
-
-    
     
     f0 = mix(f0, diffuseColor, vec3(metallic));
-    
-    
+    diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
+    diffuseColor *= (1.0 - metallic);
+   
+
     vec3 n = normalize(normal);
     vec3 v = normalize(-oe_posView);
     float NdotV = max(dot(n, v), 0.0f);
@@ -190,7 +192,7 @@ void fragment_main_pbr(inout vec4 color)
 
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
 
-		color.rgb =  color.rgb * ( 1.0 - material.clearcoat * Fcc ) + reflectedLight.clearcoatSpecular;
+		color.rgb =  color.rgb * ( 1.0 - material.clearcoat * Fcc ) + material.clearcoat * reflectedLight.clearcoatSpecular;
 
 	#endif
 

@@ -77,13 +77,13 @@ public:
 	PROPERTY_DEFAULT(float, IOR, 0.1f)
 
 	PROPERTY_DEFAULT(bool, UseClearcoat, false)
-	PROPERTY_DEFAULT(float, Clearcoat, 0.1f)
-	PROPERTY_DEFAULT(float, ClearcoatRoughness, 0.1f)
-	PROPERTY_DEFAULT(Vec3f, ClearcoatF0, Vec3(0.04f, 0.04f, 0.04f))
-	PROPERTY_DEFAULT(float, ClearcoatF90, 1.0f)
+	PROPERTY_DEFAULT(float, Clearcoat, 0.5f)
+	PROPERTY_DEFAULT(float, ClearcoatRoughness, 0.5f)
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ClearcoatRoughnessMap, 0)
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ClearcoatNormalMap, 0)
-	PROPERTY_DEFAULT(Vec2f, ClearcoatNormalScale, osg::Vec2f(0.0f,0.0f))
+	PROPERTY_DEFAULT(Vec2f, ClearcoatNormalScale, osg::Vec2f(0.1f,0.1f))
+	/*PROPERTY_DEFAULT(Vec3f, ClearcoatF0, Vec3(0.04f, 0.04f, 0.04f))
+	PROPERTY_DEFAULT(float, ClearcoatF90, 1.0f)*/
 
 	PROPERTY_DEFAULT(float, Iridescence, 0.1f)
 	PROPERTY_DEFAULT(float, IridescenceIOR, 0.1f)

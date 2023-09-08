@@ -14,8 +14,8 @@
 
     #ifdef OE_ENABLE_BASECOLOR_MAP
         diffuseColor = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_BASECOLOR_MAP)).rgb;
-        diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
-        diffuseColor *= (1.0 - metallic);
+        // diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
+        // diffuseColor *= (1.0 - metallic);
     #endif
 
     #ifdef OE_ENABLE_NORMAL_MAP
