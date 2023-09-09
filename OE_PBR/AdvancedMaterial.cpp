@@ -69,13 +69,15 @@ namespace osgEarth
 		};
 		
 		_techniqueCallbacks = new SAttrCallback();
+		_techniqueCallbacks->addUpdateCallback("pbr", new PBRMaterialCallback());
 		_techniqueCallbacks->addUpdateCallback("sheen", sheenCB);
 		_techniqueCallbacks->addUpdateCallback("clearcoat", clearCoatCB);
 		setUpdateCallback(_techniqueCallbacks);
 	}
-	AdvancedMaterial::AdvancedMaterial():StandardPBRMaterial()
+	AdvancedMaterial::AdvancedMaterial():ExtensionedMaterial()
 	{
 		initTechniqueCallback();
+		setMaterialFile("materials/advanced.glsl");
 	}
 
 	void AdvancedMaterial::addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f)

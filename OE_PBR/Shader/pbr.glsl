@@ -40,6 +40,7 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
 #pragma import_defines(USE_SHEEN,USE_CLEARCOAT)
+#pragma include normal_functions.glsl
 #pragma include BRDF.glsl
 #pragma include light_functions.glsl
 #pragma include struct.glsl
@@ -84,55 +85,22 @@ void fragment_main_pbr(inout vec4 color)
     float lightIntensity = 5.0;
     vec3  f0 = vec3(0.04);
 
-    vec3 normal = oe_normal;
-    vec3 normalEC = normal;
 
-    float roughness = oe_pbr.roughnessFactor;
-    float metallic = oe_pbr.metallicFactor;
-    float ao = oe_pbr.aoStrength;
-    vec3 emissive = oe_pbr.emissiveFactor;
-    vec3 diffuseColor =vec3(1.0);
-
-    
+    pbr_Material material;
+    GeometricContext geometry;
 
     # MATERIAL_BODY
 #ifdef debug_texture
     return;
 #endif
-    
-    f0 = mix(f0, diffuseColor, vec3(metallic));
-    diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
-    diffuseColor *= (1.0 - metallic);
    
-
-    vec3 n = normalize(normal);
+    vec3 n = geometry.normal;
     vec3 v = normalize(-oe_posView);
     float NdotV = max(dot(n, v), 0.0f);
     vec3 r = reflect(-v, n); 
-
     vec3 Lo = vec3(0.0);
-
-    GeometricContext geometry;
     geometry.viewDir = v;
-    geometry.normal = n;
-
-    pbr_Material material;
-    material.baseColorFactor=vec4(diffuseColor,1.0);
-    material.metallicFactor=metallic;
-    material.roughnessFactor=roughness;
-    material.aoStrength=ao;
-#ifdef USE_SHEEN
-    material.sheenColor = oe_pbr.sheenColor;
-    material.sheenRoughness = clamp( oe_pbr.sheenRoughness, 0.07, 1.0 ); ;
-#endif
-#ifdef USE_CLEARCOAT
-    geometry.clearcoatNormal = geometry.normal;
-    material.clearcoat = oe_pbr.clearcoat;
-	material.clearcoatRoughness = oe_pbr.clearcoatRoughness;
-    material.clearcoatF0 = vec3(0.04);
-    material.clearcoatF90 = 1.0f;
-#endif
-
+    
     ReflectedLight reflectedLight;
     reflectedLight.indirectDiffuse = vec3(0.0);
     reflectedLight.indirectSpecular = vec3(0.0);
@@ -182,23 +150,15 @@ void fragment_main_pbr(inout vec4 color)
 		// Sheen energy compensation approximation calculation can be found at the end of
 		// https://drive.google.com/file/d/1T0D1VSyR4AllqIJTQAraEIzjlb5h4FKH/view?usp=sharing
 		float sheenEnergyComp = 1.0 - 0.157 * material.sheenColor.r;
-
 		color.rgb = color.rgb * sheenEnergyComp + reflectedLight.sheenSpecular;
 	#endif
 
     #ifdef USE_CLEARCOAT
-
 		float dotNVcc = saturate( dot( geometry.clearcoatNormal, geometry.viewDir ) );
-
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
-
 		color.rgb =  color.rgb * ( 1.0 - material.clearcoat * Fcc ) + material.clearcoat * reflectedLight.clearcoatSpecular;
-
 	#endif
 
-   
-
-    
      // tonemap:
     float exposure = 2.2f;
     color.rgb *= exposure;

@@ -45,7 +45,7 @@ public:
 };
 
 
-class OE_MATERIAL_PULGIN AdvancedMaterial : public StandardPBRMaterial
+class OE_MATERIAL_PULGIN AdvancedMaterial : public ExtensionedMaterial
 {
 public:
 	AdvancedMaterial();
