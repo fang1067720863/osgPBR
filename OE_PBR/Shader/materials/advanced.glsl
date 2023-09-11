@@ -2,6 +2,9 @@ uniform sampler2D sheenColorMap;
 uniform sampler2D sheenRoughnessMap;
 uniform sampler2D clearcoatMap;
 uniform sampler2D clearcoatRoughnessMap;
+uniform mat4 osg_ViewMatrix;
+uniform mat4 osg_ModelViewMatrix;
+uniform mat4 osg_ProjectionMatrix;
 
 #ifdef USE_SHEEN
 
@@ -34,18 +37,59 @@ uniform sampler2D clearcoatRoughnessMap;
     material.clearcoatRoughness = max( clearcoatRoughness, 0.0525 );
     material.clearcoatRoughness = min( material.clearcoatRoughness, 1.0 );
     geometry.clearcoatNormal = geometry.normal;
-
+	
 	#ifdef USE_CLEARCOATMAP
 		material.clearcoat *= texture( clearcoatMap, oe_texcoord ).x;
 	#endif
 
 	#ifdef USE_CLEARCOAT_ROUGHNESSMAP
-		material.clearcoatRoughness *= texture( clearcoatRoughnessMap, oe_texcoord ).y;
+		//material.clearcoatRoughness *= texture( clearcoatRoughnessMap, oe_texcoord ).y;
 	#endif
 
 	material.clearcoat = saturate( material.clearcoat ); // Burley clearcoat model
 	material.clearcoatRoughness = max( material.clearcoatRoughness, 0.0525 );
 	// material.clearcoatRoughness += geometryRoughness;
 	material.clearcoatRoughness = min( material.clearcoatRoughness, 1.0 );
+
+#endif
+
+
+#ifdef USE_TRANSMISSION
+
+	material.transmission = oe_pbr.transmission;
+	material.transmissionAlpha = oe_pbr.transmissionAlpha;
+	material.thickness = oe_pbr.thickness;
+	material.attenuationDistance = oe_pbr.attenuationDistance;
+	material.attenuationColor = oe_pbr.attenuationColor;
+	material.ior = 0.5f;
+
+
+	#ifdef USE_TRANSMISSIONMAP
+
+		material.transmission *= texture( transmissionMap, oe_texcoord ).r;
+
+	#endif
+
+	#ifdef USE_THICKNESSMAP
+
+		material.thickness *= texture( thicknessMap, oe_texcoord ).g;
+
+	#endif
+
+	vec3 pos = oe_pos;
+    vec3 cameraPosition = osg_ViewMatrixInverse[3].xyz;
+    vec3 viewInWC = normalize( cameraPosition - pos);
+	vec3 normalInWC = (osg_ViewMatrixInverse * vec4(oe_normal,1.0)).xyz;
+    mat4 modelMatrix = osg_ModelViewMatrix * osg_ViewMatrixInverse;
+
+	vec4 transmission = getIBLVolumeRefraction(
+		normalInWC, viewInWC, material.roughnessFactor, material.baseColorFactor.xyz, vec3(1.0,1.0,1.0), material.metallicFactor,
+		pos, modelMatrix, osg_ViewMatrix, osg_ProjectionMatrix, material.ior, material.thickness,
+		material.attenuationColor, material.attenuationDistance );
+
+	material.transmissionAlpha = mix( material.transmissionAlpha, transmission.a, material.transmission );
+
+	reflectedLight.backLight = transmission.rgb;
+   
 
 #endif

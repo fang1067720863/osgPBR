@@ -8,7 +8,7 @@ vec3 vp_Normal;  //same as gl_Normal
 
 out vec3 oe_posView;
 out vec2 oe_texcoord;
-out vec3 oe_normal;
+out vec3 oe_normal;  // view space
 out vec3 oe_pos;
 /*vs define attribute binding and how todefine
 */ 
@@ -39,17 +39,19 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
-#pragma import_defines(USE_SHEEN,USE_CLEARCOAT)
+#pragma import_defines(USE_SHEEN,USE_CLEARCOAT,USE_TRANSMISSION)
+#pragma import_defines(USE_CLEARCOATMAP,USE_CLEARCOAT_ROUGHNESSMAP, USE_SHEENCOLORMAP, USE_SHEENROUGHNESSMAP)
 #pragma include normal_functions.glsl
 #pragma include BRDF.glsl
+#pragma include transmission.glsl
 #pragma include light_functions.glsl
 #pragma include struct.glsl
 
 
 in vec3 oe_posView;  // view space
+in vec3 oe_normal;  // view space
 in vec2 oe_texcoord;
-in vec3 oe_normal;  // world space
-in vec3 oe_pos;
+in vec3 oe_pos; // world space
 // stage global
 in vec3 vp_Normal;
 
@@ -88,6 +90,11 @@ void fragment_main_pbr(inout vec4 color)
 
     pbr_Material material;
     GeometricContext geometry;
+    ReflectedLight reflectedLight;
+    reflectedLight.indirectDiffuse = vec3(0.0);
+    reflectedLight.indirectSpecular = vec3(0.0);
+    reflectedLight.directDiffuse = vec3(0.0);
+    reflectedLight.directSpecular = vec3(0.0);
 
     # MATERIAL_BODY
 #ifdef debug_texture
@@ -99,14 +106,8 @@ void fragment_main_pbr(inout vec4 color)
     float NdotV = max(dot(n, v), 0.0f);
     vec3 r = reflect(-v, n); 
     vec3 Lo = vec3(0.0);
+    // view sapce
     geometry.viewDir = v;
-    
-    ReflectedLight reflectedLight;
-    reflectedLight.indirectDiffuse = vec3(0.0);
-    reflectedLight.indirectSpecular = vec3(0.0);
-    reflectedLight.directDiffuse = vec3(0.0);
-    reflectedLight.directSpecular = vec3(0.0);
-
 
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
@@ -134,15 +135,24 @@ void fragment_main_pbr(inout vec4 color)
       clearcoatRadiance = getIBLRadiance(geometry.clearcoatNormal, material.clearcoatRoughness, v);
     #endif
      RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,clearcoatRadiance,f0,geometry, material, reflectedLight);
-
 #endif
 
-    color.rgb = reflectedLight.directDiffuse + reflectedLight.directSpecular;
+    vec3 totalDiffuse = reflectedLight.directDiffuse;
+    vec3 totalSpecular = reflectedLight.directSpecular;
+
+    #ifdef USE_ENV_MAP
+        totalDiffuse += reflectedLight.indirectDiffuse * ao * envLightIntensity;
+        totalSpecular += reflectedLight.indirectSpecular* ao * envLightIntensity;
+    #endif
+
+    #ifdef USE_TRANSMISSION 
+        totalDiffuse = mix( totalDiffuse, reflectedLight.backLight.rgb, material.transmission );
+    #endif
+
+
+    color.rgb = totalDiffuse + totalSpecular;
     #ifdef OE_ENABLE_EMISSIVE_MAP
         color.rgb += emissive;
-    #endif
-    #ifdef USE_ENV_MAP
-        color.rgb += (reflectedLight.indirectSpecular* ao * envLightIntensity + reflectedLight.indirectDiffuse * envLightIntensity);
     #endif
 
     #ifdef USE_SHEEN
@@ -159,6 +169,8 @@ void fragment_main_pbr(inout vec4 color)
 		color.rgb =  color.rgb * ( 1.0 - material.clearcoat * Fcc ) + material.clearcoat * reflectedLight.clearcoatSpecular;
 	#endif
 
+   
+
      // tonemap:
     float exposure = 2.2f;
     color.rgb *= exposure;
@@ -167,6 +179,9 @@ void fragment_main_pbr(inout vec4 color)
     color = linearTosRGB(color);
 
     color.a = oe_pbr.alphaMask;
+     #ifdef USE_TRANSMISSION
+        color.a *= 0.1 + 0.1;
+    #endif
 
     // add in the haze
     //color.rgb += atmos_color;

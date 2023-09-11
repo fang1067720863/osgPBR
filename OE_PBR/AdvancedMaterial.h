@@ -97,11 +97,12 @@ public:
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, SheenColorMap, 0)
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, SheenRoughnessMap, 0)
 
+	PROPERTY_DEFAULT(bool, UseTransmission, false)
 	PROPERTY_DEFAULT(float, Transmission, 0.1f)
 	PROPERTY_DEFAULT(float, TransmissionAlpha, 0.1f)
 	PROPERTY_DEFAULT(float, Thickness, 0.1f)
 	PROPERTY_DEFAULT(float, AttenuationDistance, 0.1f)
-	PROPERTY_DEFAULT(Vec3f, AttenuationColor, Vec3(0.0f, 0.0f, 0.0f))
+	PROPERTY_DEFAULT(Vec3f, AttenuationColor, Vec3(0.5f, 0.5f, 0.5f))
 
 	
 

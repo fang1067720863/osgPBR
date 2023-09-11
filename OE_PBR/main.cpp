@@ -382,7 +382,6 @@ std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
         m->setUseSheen(true);
         m->setSheenColor(osg::Vec3f(1.0f, 0.0f, 1.0f));
         m->setSheenRoughness(0.5f);
-       // m->addUpdateCallback("pbr", new PBRMaterialCallback());
         result.push_back(m); 
        
     }
@@ -395,8 +394,18 @@ std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
         m1->setClearcoatRoughness(0.1f);
         m1->setMaterialImage(StandardPBRMaterial::TextureEnum::NormalMap, "brick/T_Brick_Clay_New_N.tga");
         m1->setMaterialImage(StandardPBRMaterial::TextureEnum::BaseColorMap, "brick/T_Brick_Clay_New_D.tga");
-        //m1->addUpdateCallback("pbr", new PBRMaterialCallback());
+        m1->extTextureAttribute("clearcoatRoughnessMap", "brick/T_Brick_Clay_New_D.tga", "USE_CLEARCOAT_ROUGHNESSMAP");
         result.push_back(m1);
+
+
+        {
+            osg::ref_ptr<osgEarth::AdvancedMaterial> m1 = new osgEarth::AdvancedMaterial();
+            m1->setDataBaseOption(dbo);
+            m1->setUseTransmission(true);
+            m1->setTransmission(0.8);
+            m1->setMetallicFactor(0.1);
+            result.push_back(m1);
+        }
 
        
     }
@@ -685,7 +694,7 @@ int main(int argc, char** argv)
     vp->setShaderLogging(true);
 
 
-    auto materialSpheres = createMaterialSpheres(2);
+    auto materialSpheres = createMaterialSpheres(3);
 
     group->addChild(createSkyBox());
 	group->addChild(materialSpheres);

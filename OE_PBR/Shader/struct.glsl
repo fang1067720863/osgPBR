@@ -18,6 +18,14 @@ struct pbr_Material
     vec3 clearcoatF0;
     float clearcoatF90;
 #endif
+#ifdef USE_TRANSMISSION
+    float transmission;
+    float transmissionAlpha;
+    float thickness;
+    float attenuationDistance;
+    float ior;
+    vec3 attenuationColor;
+#endif
 };
 
 struct ReflectedLight
@@ -32,6 +40,9 @@ struct ReflectedLight
 #ifdef USE_CLEARCOAT
     vec3 clearcoatSpecular;
 #endif
+#ifdef USE_TRANSMISSION
+    vec3 backLight;
+#endif 
 };
 struct GeometricContext
 {

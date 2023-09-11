@@ -162,7 +162,6 @@ void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr
         for (; iter != maps.end(); iter++)
         {
             auto uniformKey = iter->first;
-            //osg::Texture* tex = material->createTexture("grass/metallic.png");
             int unit = material->getOrCreateTexUnit(uniformKey);
             stateSet->setTextureAttributeAndModes(unit, iter->second, osg::StateAttribute::ON);
             stateSet->getOrCreateUniform(uniformKey, osg::Uniform::SAMPLER_2D)->set(unit);
@@ -177,7 +176,6 @@ void osgEarth::ExtensionedMaterialCallback::operator()(osg::StateAttribute* attr
 
 void osgEarth::ExtensionedMaterial::extTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName, unsigned int uvChannel, StateAttribute::OverrideValue value)
 {
-    //osg::ref_ptr<osg::Texture> tex= 
     _customMaps[name] = createTexture(fileName);
     _customDefines.push_back(defineName);
 

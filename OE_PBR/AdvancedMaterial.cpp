@@ -60,18 +60,43 @@ namespace osgEarth
 				{
 					return;
 				}
-			
+				
 				stateSet->getOrCreateUniform(UPREFIX "clearcoat", osg::Uniform::FLOAT)->set(material->getClearcoat());
 				stateSet->getOrCreateUniform(UPREFIX "clearcoatRoughness", osg::Uniform::FLOAT)->set(material->getClearcoatRoughness());
 
 			}
 
 		};
+
+		auto transmissionCB = [](osg::StateAttribute* attr, osg::NodeVisitor* nv)
+		{
+			osgEarth::AdvancedMaterial* material = static_cast<osgEarth::AdvancedMaterial*>(attr);
+			for (unsigned int i = 0; i < attr->getNumParents(); i++)
+			{
+				
+				osg::StateSet* stateSet = attr->getParent(i);
+				auto on = material->getUseTransmission() ? osg::StateAttribute::ON : osg::StateAttribute::OFF;
+				stateSet->setDefine(USE_TRANSMISSION, "1", on);
+				if (!material->getUseTransmission())
+				{
+					return;
+				}
+				stateSet->setMode(GL_BLEND, 1);
+				stateSet->getOrCreateUniform(UPREFIX "transmission", osg::Uniform::FLOAT)->set(material->getTransmission());
+				stateSet->getOrCreateUniform(UPREFIX "transmissionAlpha", osg::Uniform::FLOAT)->set(material->getTransmissionAlpha());
+				stateSet->getOrCreateUniform(UPREFIX "thickness", osg::Uniform::FLOAT)->set(material->getThickness());
+				stateSet->getOrCreateUniform(UPREFIX "attenuationDistance", osg::Uniform::FLOAT)->set(material->getAttenuationDistance());
+				stateSet->getOrCreateUniform(UPREFIX "attenuationColor", osg::Uniform::FLOAT_VEC3)->set(material->getAttenuationColor());
+
+			}
+
+		};
 		
 		_techniqueCallbacks = new SAttrCallback();
-		_techniqueCallbacks->addUpdateCallback("pbr", new PBRMaterialCallback());
+		_techniqueCallbacks->addUpdateCallback("pbr", new ExtensionedMaterialCallback());
 		_techniqueCallbacks->addUpdateCallback("sheen", sheenCB);
 		_techniqueCallbacks->addUpdateCallback("clearcoat", clearCoatCB);
+		_techniqueCallbacks->addUpdateCallback("transmission", transmissionCB);
 		setUpdateCallback(_techniqueCallbacks);
 	}
 	AdvancedMaterial::AdvancedMaterial():ExtensionedMaterial()
