@@ -19,3 +19,5 @@ uniform sampler2D metalMap;
 #endif
 
 f0 = mix(f0, diffuseColor, vec3(metallic));
+material.metallicFactor=metallic;
+material.roughnessFactor=min(roughness,0.04f);

@@ -534,42 +534,24 @@ public:
             {
                 const tinygltf::Material& material = model.materials[materialIndex];
                 auto extIter = material.extensions.begin();
-                for (auto extIter : material.extensions)
+
+               
+                if (material.extensions.size() > 0)
                 {
-                    if (extIter.first == "KHR_materials_sheen")
-                    {
-                        pbrMat = new osgEarth::AdvancedMaterial();
-                        auto mat = dynamic_cast<osgEarth::AdvancedMaterial*>(pbrMat.get());
-                        mat->setUseSheen(true);
-                        auto color = extIter.second.Get("sheenColorFactor").Get<tinygltf::Value::Array>();
-                        mat->setSheenColor(osg::Vec3f((float)color[0].GetNumberAsDouble(), (float)color[1].GetNumberAsDouble(), (float)color[2].GetNumberAsDouble()));
-                        double sheenRoughnessFactor = extIter.second.Get("sheenRoughnessFactor").GetNumberAsDouble();
-                        mat->setSheenRoughness((float)sheenRoughnessFactor);
-                        std::cout << "fasdf " << mat->getSheenColor()<<" "<<mat->getSheenRoughness() << std::endl;
-                    }
-                    else {
-                        //todo
-                    }
+                    pbrMat = new osgEarth::AdvancedMaterial();
                 }
+               
                 if (!pbrMat.valid())
                 {
                     pbrMat = new osgEarth::StandardPBRMaterial();
-                }
-                
-                OE_DEBUG << "additionalValues=" << material.additionalValues.size() << std::endl;
-                for (tinygltf::ParameterMap::const_iterator paramItr = material.additionalValues.begin(); paramItr != material.additionalValues.end(); ++paramItr)
-                {
-                    OE_DEBUG << "    " << paramItr->first << "=" << paramItr->second.string_value << std::endl;
-                }
-                pbrMat->setEmissiveFactor(osg::Vec3(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]));
 
-                //int index = material.emissiveTexture.index;
+                }
 
                 auto setMateialImage = [this, pbrMat](StandardPBRMaterial::TextureEnum texEnum, int index)
                 {
                     if (index > -1)
                     {
-                      const tinygltf::Texture& texture = model.textures[index];
+                        const tinygltf::Texture& texture = model.textures[index];
                         const tinygltf::Image& image = model.images[texture.source];
                         auto img = makeImageFromModel(texture.source);
                         if (img.valid())
@@ -580,17 +562,64 @@ public:
                             osgEarth::URI imageURI(image.uri, env.referrer);
                             pbrMat->setMaterialImage(texEnum, imageURI.full());
                         }
-                       
+
                     }
-                  
+
                 };
-                setMateialImage(StandardPBRMaterial::EmissiveMap, material.emissiveTexture.index);
-                setMateialImage(StandardPBRMaterial::OcclusionMap, material.occlusionTexture.index);
-                setMateialImage(StandardPBRMaterial::NormalMap, material.normalTexture.index);
-           
+
+                for (auto extIter : material.extensions)
+                {
+                    if (extIter.first == "KHR_materials_sheen")
+                    {
+                        auto mat = dynamic_cast<osgEarth::AdvancedMaterial*>(pbrMat.get());
+                        mat->setUseSheen(true);
+                        auto color = extIter.second.Get("sheenColorFactor").Get<tinygltf::Value::Array>();
+                        mat->setSheenColor(osg::Vec3f((float)color[0].GetNumberAsDouble(), (float)color[1].GetNumberAsDouble(), (float)color[2].GetNumberAsDouble()));
+                        double sheenRoughnessFactor = extIter.second.Get("sheenRoughnessFactor").GetNumberAsDouble();
+                        mat->setSheenRoughness((float)sheenRoughnessFactor);
+                    }
+                    if (extIter.first == "KHR_materials_volume") {
+
+                        auto mat = dynamic_cast<osgEarth::AdvancedMaterial*>(pbrMat.get());
+                        mat->setUseTransmission(true);
+
+                        auto attenuationDistance = extIter.second.Get("attenuationDistance").GetNumberAsDouble();
+                        mat->setAttenuationDistance((float)attenuationDistance);
+
+                        auto attenuationColor = extIter.second.Get("attenuationColor").Get<tinygltf::Value::Array>();
+                        mat->setAttenuationColor(osg::Vec3f((float)attenuationColor[0].GetNumberAsDouble(), (float)attenuationColor[1].GetNumberAsDouble(), (float)attenuationColor[2].GetNumberAsDouble()));
+
+                        auto thicknessFactor = extIter.second.Get("thicknessFactor").GetNumberAsDouble();
+                        mat->setThickness((float)thicknessFactor);
+
+                        auto thicknessMap = extIter.second.Get("thicknessTexture");
+                        int thicknessMapIndex = thicknessMap.Get("index").GetNumberAsInt();
+                        int uvChannel = thicknessMap.Get("texCoord").GetNumberAsInt();
+                        auto tex = makeTextureFromModel(model.textures[thicknessMapIndex]);
+                        mat->setThicknessMap(tex);
+                    }
+                    if (extIter.first == "KHR_materials_transmission") {
+                        auto mat = dynamic_cast<osgEarth::AdvancedMaterial*>(pbrMat.get());
+                        mat->setUseTransmission(true);
+
+                        auto transmissionFactor = extIter.second.Get("transmissionFactor").GetNumberAsDouble();
+                        mat->setUseTransmission(true);
+                        mat->setTransmission((float)transmissionFactor);
+                    }
+                }
 
                 
+                OE_DEBUG << "additionalValues=" << material.additionalValues.size() << std::endl;
+                for (tinygltf::ParameterMap::const_iterator paramItr = material.additionalValues.begin(); paramItr != material.additionalValues.end(); ++paramItr)
+                {
+                    OE_DEBUG << "    " << paramItr->first << "=" << paramItr->second.string_value << std::endl;
+                }
+                pbrMat->setEmissiveFactor(osg::Vec3(material.emissiveFactor[0], material.emissiveFactor[1], material.emissiveFactor[2]));
 
+                setMateialImage(osgEarth::StandardPBRMaterial::TextureEnum::EmissiveMap, material.emissiveTexture.index);
+                setMateialImage(osgEarth::StandardPBRMaterial::TextureEnum::OcclusionMap, material.occlusionTexture.index);
+                setMateialImage(osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, material.normalTexture.index);
+           
                 if (material.alphaMode != "OPAQUE")
                 {
                     if (material.alphaMode == "BLEND")
@@ -712,7 +741,8 @@ public:
                 {
                     geom = new osg::Geometry;
                 }
-                geom->setName(typeid(*this).name());
+                
+                geom->setName(mesh.name);
                 geom->setUseVertexBufferObjects(true);
 
                 osg::Geode* geode = new osg::Geode;
@@ -848,6 +878,18 @@ public:
                     }
                 }
                 geom->getOrCreateStateSet()->setAttribute(pbrMat.get(), osg::StateAttribute::ON);
+
+                auto* pbrEffect = new PbrLightEffect();
+                pbrEffect->attach(geom->getOrCreateStateSet());
+                if (auto mat = dynamic_cast<AdvancedMaterial*>(pbrMat.get()))
+                {
+                    if (mat->getUseTransmission())
+                    {
+                        geom->setNodeMask(TRANSLUCENT_MASK);
+                    }
+                }
+                
+
                 PBRMaterialCallback().operator()(pbrMat.get(), 0L);
                 osgEarth::Registry::shaderGenerator().run(geom.get());
             }

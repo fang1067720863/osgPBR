@@ -93,8 +93,8 @@ public:
 
 	virtual void apply(State& state) const;
 	
-	void setMaterialImage(TextureEnum mapEnum, osg::Image* image);
-	void setMaterialImage(TextureEnum mapEnum, const std::string& imageUrl);
+	virtual void setMaterialImage(TextureEnum mapEnum, osg::Image* image);
+	virtual void setMaterialImage(TextureEnum mapEnum, const std::string& imageUrl);
 
 	void setDataBaseOption(osg::ref_ptr<osgDB::Options> options) { _options = options; }
 	int texUnitCnt() const { return _texUnitCnt; }
@@ -121,11 +121,13 @@ public:
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture>, TextureAtlas, 0)
 
 	PROPERTY_DEFAULT(bool, ReceiveEnvLight, true)
+public:
+	osg::Texture* createTexture(const std::string& imagePath);
 
 protected:
 	virtual ~StandardPBRMaterial(){};
 	/*osg::Texture* createTextureAtlas();*/
-	osg::Texture* createTexture(const std::string& imagePath);
+	
 
 private:
 	std::string getDefaultDefineName(TextureEnum mapEnum);

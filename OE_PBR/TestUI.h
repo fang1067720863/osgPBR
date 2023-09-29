@@ -40,6 +40,13 @@ public:
         UniformSpec clearcoat{ "oe_pbr.clearcoat" ,0.0f,1.0f,0.5f };
         UniformSpec clearcoatRoughness{ "oe_pbr.clearcoatRoughness" ,0.0f,1.0f,0.5f };
 
+        UniformSpec transmission{ "oe_pbr.transmission" ,0.0f,1.0f,0.5f };
+        UniformSpec transmissionAlpha{ "oe_pbr.transmissionAlpha" ,0.0f,1.0f,0.5f };
+        UniformSpec thickness{ "oe_pbr.thickness" ,0.0f,1.0f,0.5f };
+        UniformSpec attenuationDistance{ "oe_pbr.attenuationDistance" ,0.0f,1.0f,0.5f };
+        UniformSpec ior{ "oe_pbr.ior" ,0.0f,1.0f,0.5f };
+        
+        
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true };
         DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true };
         DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"1", true };
@@ -54,6 +61,13 @@ public:
         _uniforms.emplace_back(sheenRoughness);
         _uniforms.emplace_back(clearcoat);
         _uniforms.emplace_back(clearcoatRoughness);
+        _uniforms.emplace_back(transmission);
+        _uniforms.emplace_back(transmissionAlpha);
+        _uniforms.emplace_back(thickness);
+        _uniforms.emplace_back(attenuationDistance);
+        _uniforms.emplace_back(ior);
+
+
 
         _defines.emplace_back(normal);
         _defines.emplace_back(mr);
@@ -68,86 +82,34 @@ public:
         {
             return false;
         }
-        osg::Node* child = node->getChild(0);
+        osg::Node* child;
+        if (node->getNumChildren() >= 2)
+        {
+            child = node->getChild(1);
+        }
+        else {
+            child = node->getChild(0);
+        }
+
+        
         strcpy(material, node->getName().c_str());
         _node = child;
         if (auto mat = dynamic_cast<osg::MatrixTransform*>(child))
         {
             _node = mat->getChild(0);
         }
-
+       // std::vector<std::string> uList = { "oe_pbr.metallicFactor","oe_pbr.roughnessFactor" ,"oe_pbr.aoStrength" ,"oe_pbr.alphaMask","oe_pbr.sheenRoughness" ,"oe_pbr.clearcoat","oe_pbr.clearcoatRoughness" };
         for (auto& def : _uniforms)
         {
-            if (def._name == "oe_pbr.metallicFactor")
+            float value;
+            auto u = _node->getOrCreateStateSet()->getUniform(def._name);
+            if (u)
             {
-                float metallicFactor;
-                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.metallicFactor");
-                if (u)
-                {
-                    u->get(metallicFactor);
-                    def._value = metallicFactor;
-                }
+                u->get(value);
+                def._value = value;
             }
-            if (def._name == "oe_pbr.roughnessFactor")
-            {
-                float roughnessFactor;
-                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.roughnessFactor");
-                if (u)
-                {
-                    u->get(roughnessFactor);
-                    def._value = roughnessFactor;
-                }
-            }
-            if (def._name == "oe_pbr.aoStrength")
-            {
-                float aoStrength;
-                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.aoStrength");
-                if (u)
-                {
-                    u->get(aoStrength);
-                    def._value = aoStrength;
-                }
-            }
-            if (def._name == "oe_pbr.alphaMask")
-            {
-                float alphaMask;
-                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.alphaMask");
-                if (u)
-                {
-                    u->get(alphaMask);
-                    def._value = alphaMask;
-                }
-            }
-            if (def._name == "oe_pbr.sheenRoughness")
-            {
-                float sheenRoughness;
-                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.sheenRoughness");
-                if (u)
-                {
-                    u->get(sheenRoughness);
-                    def._value = sheenRoughness;
-                }
-            }
-            if (def._name == "oe_pbr.clearcoat")
-            {
-                float clearcoat;
-                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.clearcoat");
-                if (u)
-                {
-                    u->get(clearcoat);
-                    def._value = clearcoat;
-                }
-            }
-            if (def._name == "oe_pbr.clearcoatRoughness")
-            {
-                float clearcoatRoughness;
-                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.clearcoatRoughness");
-                if (u)
-                {
-                    u->get(clearcoatRoughness);
-                    def._value = clearcoatRoughness;
-                }
-            }
+   
+            
         }
 
         return true;
@@ -171,6 +133,7 @@ public:
                 auto material = _node->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL);
                 if (osgEarth::AdvancedMaterial* mat = dynamic_cast<osgEarth::AdvancedMaterial*>(material))
                 {
+                  
                     if (def._name == "oe_pbr.clearcoat")
                     {
                         mat->setClearcoat(def._value);
@@ -191,7 +154,27 @@ public:
                     {
                         mat->setRoughnessFactor(def._value);
                     }
-                   
+                    if (def._name == "oe_pbr.transmission")
+                    {
+                        mat->setTransmission(def._value);
+                    }
+                    if (def._name == "oe_pbr.transmissionAlpha")
+                    {
+                        mat->setTransmissionAlpha(def._value);
+                    }
+                    if (def._name == "oe_pbr.thickness")
+                    {
+                        mat->setThickness(def._value);
+                    }
+                    if (def._name == "oe_pbr.attenuationDistance")
+                    {
+                        mat->setAttenuationDistance(def._value);
+                    }
+                    if (def._name == "oe_pbr.ior")
+                    {
+                        mat->setIOR(def._value);
+                    }
+                  
                 }
 
                 if (_node)

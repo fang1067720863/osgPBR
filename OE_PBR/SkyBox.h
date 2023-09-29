@@ -182,5 +182,6 @@ extern osg::Node* createSkyBox()
     clearNode->setCullCallback(new TexMatCallback(*tm));
     clearNode->addChild(transform);
 
+    clearNode->setNodeMask(TRANSLUCENT_MASK);
     return clearNode;
 }

@@ -37,20 +37,25 @@ public:
 	}
 	void addUpdateCallback(const std::string& key, F&& f) {
 		if (exist(key)) return;
+		printf("<<<<<<<<<<<<<<<<<<<<<<<<<adProbe%s\n", key.c_str());
 		_funList.push_back(std::move(f)); }
 	void addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f) {
 		if (exist(key)) return; 
+		printf("<<<<<<<<<<<<<<<<<<<<<<<<<adProbe%s\n", key.c_str());
 		_subCallbacks.push_back(f);
 	}
 };
 
+static const unsigned int TRANSLUCENT_MASK = 0x5; // 0100
 
+//1.0£¨air£©¡¢1.33£¨water£©¡¢1.52£¨glass£©ÒÔ¼°2.42£¨diamo	nd£©
 class OE_MATERIAL_PULGIN AdvancedMaterial : public ExtensionedMaterial
 {
 public:
 	AdvancedMaterial();
 
 	void addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f);
+	void addUpdateCallback(const std::string& key, F&& f);
 
 	enum TextureEnum
 	{
@@ -103,9 +108,12 @@ public:
 	PROPERTY_DEFAULT(float, Thickness, 0.1f)
 	PROPERTY_DEFAULT(float, AttenuationDistance, 0.1f)
 	PROPERTY_DEFAULT(Vec3f, AttenuationColor, Vec3(0.5f, 0.5f, 0.5f))
+	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ThicknessMap, 0)
+public:
 
-	
-
+	void setMaterialImage(AdvancedMaterial::TextureEnum mapEnum, osg::Image* image);
+	void setMaterialImage(StandardPBRMaterial::TextureEnum mapEnum, osg::Image* image);
+	void setMaterialImage(StandardPBRMaterial::TextureEnum mapEnum, const std::string& imageUrl);
 protected:
 
 	void initTechniqueCallback();

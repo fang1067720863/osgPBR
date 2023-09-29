@@ -184,7 +184,7 @@ osg::ref_ptr<osg::Node> CreateExtensionedMaterialSphere()
     m->extTextureAttribute("metalMap", dir + "metal" + format, "OE_ENABLE_Metal_MAP");
     m->extTextureAttribute("roughnessMap", dir + "rough" + format, "OE_ENABLE_Roughness_MAP");
 
-    m->setMaterialImage(osgEarth::StandardPBRMaterial::NormalMap, dir + "normal" + format);
+    m->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, dir + "normal" + format);
 
     m->setMaterialFile("materials/metalroughness.glsl");
 
@@ -279,11 +279,11 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     grass->setRoughnessFactor(0.81f);
     grass->setAoStrength(0.15f);
 
-    grass->setMaterialImage(StandardPBRMaterial::MetalRoughenssMap, "grass/metalRoughness.png");
-    grass->setMaterialImage(StandardPBRMaterial::EmissiveMap, "grass/emissive.png");
-    grass->setMaterialImage(StandardPBRMaterial::NormalMap, "grass/normal.png");
-    grass->setMaterialImage(StandardPBRMaterial::OcclusionMap, "grass/ao.png");
-    grass->setMaterialImage(StandardPBRMaterial::BaseColorMap, "grass/albedo.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::MetalRoughenssMap, "grass/metalRoughness.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::EmissiveMap, "grass/emissive.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, "grass/normal.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::OcclusionMap, "grass/ao.png");
+    grass->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::BaseColorMap, "grass/albedo.png");
     grass->setReceiveEnvLight(true);
     
     grass->extTextureAttribute("metalMap", "grass/metallic.png", "OE_ENABLE_Metal_MAP");
@@ -300,7 +300,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     m->setMetallicFactor(1.00f);
     m->setRoughnessFactor(0.108f);
     m->setAoStrength(0.15f);
-    m->setMaterialImage(osgEarth::StandardPBRMaterial::BaseColorMap, "metal/albedo.png");
+    m->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::BaseColorMap, "metal/albedo.png");
     m->setReceiveEnvLight(true);
 
     m->extTextureAttribute("metalMap", "metal/metal.png", "OE_ENABLE_Metal_MAP");
@@ -316,9 +316,10 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     marber->setMetallicFactor(0.08f);
     marber->setRoughnessFactor(0.176f);
     marber->setAoStrength(0.1f);
-    marber->setMaterialImage(osgEarth::StandardPBRMaterial::NormalMap, "gray/normal.png");
-    marber->setMaterialImage(osgEarth::StandardPBRMaterial::OcclusionMap, "gray/ao.png");
-    marber->setMaterialImage(osgEarth::StandardPBRMaterial::BaseColorMap, "gray/albedo.png");
+   
+    marber->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, "gray/normal.png");
+    marber->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::OcclusionMap, "gray/ao.png");
+    marber->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::BaseColorMap, "gray/albedo.png");
     marber->setReceiveEnvLight(true);
 
     marber->extTextureAttribute("metalMap", "gray/metallic.png", "OE_ENABLE_Metal_MAP");
@@ -334,9 +335,9 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     rock->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
     rock->setMetallicFactor(0.5f);
     rock->setRoughnessFactor(0.668f);
-    rock->setMaterialImage(osgEarth::StandardPBRMaterial::NormalMap, "rock/normal.png");
-    rock->setMaterialImage(osgEarth::StandardPBRMaterial::OcclusionMap, "rock/ao.png");
-    rock->setMaterialImage(osgEarth::StandardPBRMaterial::BaseColorMap, "rock/albedo.png");
+    rock->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, "rock/normal.png");
+    rock->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::OcclusionMap, "rock/ao.png");
+    rock->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::BaseColorMap, "rock/albedo.png");
     rock->setReceiveEnvLight(true);
     
     rock->extTextureAttribute("metalMap", "rock/metallic.png", "OE_ENABLE_Metal_MAP");
@@ -392,8 +393,10 @@ std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
         m1->setMetallicFactor(0.1);
         m1->setClearcoat(1.0f);
         m1->setClearcoatRoughness(0.1f);
-        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::NormalMap, "brick/T_Brick_Clay_New_N.tga");
-        m1->setMaterialImage(StandardPBRMaterial::TextureEnum::BaseColorMap, "brick/T_Brick_Clay_New_D.tga");
+       
+       
+        m1->setMaterialImage(StandardPBRMaterial::NormalMap, "brick/T_Brick_Clay_New_N.tga");
+        m1->setMaterialImage(StandardPBRMaterial::BaseColorMap, "brick/T_Brick_Clay_New_D.tga");
         m1->extTextureAttribute("clearcoatRoughnessMap", "brick/T_Brick_Clay_New_D.tga", "USE_CLEARCOAT_ROUGHNESSMAP");
         result.push_back(m1);
 
@@ -685,19 +688,15 @@ int main(int argc, char** argv)
     //Sponza BoomBox
     
    
-    auto gltfModel = reader.read("Helmet\\DamagedHelmet.gltf", false, modelDB);
-    //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza  Sheen\\SheenChair.glb
+    auto gltfModel = reader.read("Dragon\\DragonAttenuation.gltf", false, modelDB);
+    //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza  Sheen\\SheenChair.glb  Dragon\\DragonAttenuation
     auto node = gltfModel.getNode();
-    auto* pbrEffect = new PbrLightEffect();
-    pbrEffect->attach(gltfModel.getNode()->getOrCreateStateSet());
-    auto* vp = osgEarth::VirtualProgram::get(gltfModel.getNode()->getOrCreateStateSet());
-    vp->setShaderLogging(true);
-
+   
 
     auto materialSpheres = createMaterialSpheres(3);
 
     group->addChild(createSkyBox());
-	group->addChild(materialSpheres);
+	group->addChild(node);
    
 
 
@@ -710,7 +709,7 @@ int main(int argc, char** argv)
        node->getName();
        materialPanel->setNode(node);
        return true;
-   };
+   };   
 
 
     auto func = [&](osg::MatrixTransform* node, osg::NodeVisitor* nv)
@@ -729,6 +728,11 @@ int main(int argc, char** argv)
    //probe->setPosition(osg::Vec3(-5.0, 0.0, 0.0));
    //auto cams = probe->getCubeCameras();
    //probe->addReflectedGraph(group);
+   //probe->setCullMask(~TRANSLUCENT_MASK);
+   //ProbeManager::instance()->addProbe(probe);
+
+   TransparentCamera::Ptr tCam = new TransparentCamera();
+  
 
   
     viewer.setReleaseContextAtEndOfFrameHint(false);
@@ -747,12 +751,33 @@ int main(int argc, char** argv)
 
 	osg::Group* sceneData = new osg::Group;
 	sceneData->addChild(group);
-    //sceneData->addChild(probe->getNode());
+  /*  sceneData->addChild(probe->getNode());*/
 
     auto nv = new GenerateEnvLightUniforms();
     group->accept(*nv);
 
+    auto gpNV = new GenerateProbeUniforms();
+    group->accept(*gpNV);
+
+    tCam->setView(&viewer);
+    tCam->setGraph(group);
+    
+    sceneData->addChild(tCam);
     viewer.setSceneData(sceneData);
+  
+
+  
+    
+   
+    //auto cameraUpdate = [probe](osg::Camera* cam, osg::NodeVisitor* nv)
+    //{
+    //    static osg::Vec3d eye, up, center;
+    //    cam->getViewMatrixAsLookAt(eye, center, up);
+    //    probe->setPosition(eye);
+    //};
+
+  //  viewer.getCamera()->addUpdateCallback(new CB<osg::Camera>(cameraUpdate));
+    
     viewer.setCameraManipulator(new osgGA::TrackballManipulator);
     viewer.setUpViewInWindow(100, 100, 800, 600);
     osgViewer::Viewer::Windows windows;

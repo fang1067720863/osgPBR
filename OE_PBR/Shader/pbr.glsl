@@ -9,7 +9,7 @@ vec3 vp_Normal;  //same as gl_Normal
 out vec3 oe_posView;
 out vec2 oe_texcoord;
 out vec3 oe_normal;  // view space
-out vec3 oe_pos;
+out vec3 oe_pos;   // object space
 /*vs define attribute binding and how todefine
 */ 
 void vertex_main_pbr(inout vec4 VertexVIEW)
@@ -60,6 +60,12 @@ in vec3 vp_Normal;
 
 
 uniform osg_LightSourceParameters osg_LightSource[OE_NUM_LIGHTS];
+uniform ProbeData oe_probe;
+uniform samplerCube probeMap;
+uniform sampler2D translucentMap;
+#ifdef USE_TRANSMISSION
+    
+#endif
 
 uniform pbr_Material oe_pbr;
 #ifdef cascade
@@ -180,7 +186,7 @@ void fragment_main_pbr(inout vec4 color)
 
     color.a = oe_pbr.alphaMask;
      #ifdef USE_TRANSMISSION
-        color.a *= 0.1 + 0.1;
+        color.a = 0.1 + 0.1;
     #endif
 
     // add in the haze

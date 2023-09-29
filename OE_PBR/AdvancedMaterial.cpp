@@ -81,8 +81,10 @@ namespace osgEarth
 				{
 					return;
 				}
-				stateSet->setMode(GL_BLEND, 1);
+				
+				//stateSet->setMode(GL_BLEND, 1);
 				stateSet->getOrCreateUniform(UPREFIX "transmission", osg::Uniform::FLOAT)->set(material->getTransmission());
+				stateSet->getOrCreateUniform(UPREFIX "ior", osg::Uniform::FLOAT)->set(material->getIOR());
 				stateSet->getOrCreateUniform(UPREFIX "transmissionAlpha", osg::Uniform::FLOAT)->set(material->getTransmissionAlpha());
 				stateSet->getOrCreateUniform(UPREFIX "thickness", osg::Uniform::FLOAT)->set(material->getThickness());
 				stateSet->getOrCreateUniform(UPREFIX "attenuationDistance", osg::Uniform::FLOAT)->set(material->getAttenuationDistance());
@@ -99,6 +101,19 @@ namespace osgEarth
 		_techniqueCallbacks->addUpdateCallback("transmission", transmissionCB);
 		setUpdateCallback(_techniqueCallbacks);
 	}
+
+	void AdvancedMaterial::setMaterialImage(AdvancedMaterial::TextureEnum mapEnum, osg::Image* image)
+	{
+
+	}
+	void AdvancedMaterial::setMaterialImage(StandardPBRMaterial::TextureEnum mapEnum, osg::Image* image)
+	{
+		StandardPBRMaterial::setMaterialImage(mapEnum, image);
+	}
+	void AdvancedMaterial::setMaterialImage(StandardPBRMaterial::TextureEnum mapEnum, const std::string& imageUrl)
+	{
+		StandardPBRMaterial::setMaterialImage(mapEnum, imageUrl);
+	}
 	AdvancedMaterial::AdvancedMaterial():ExtensionedMaterial()
 	{
 		initTechniqueCallback();
@@ -108,5 +123,9 @@ namespace osgEarth
 	void AdvancedMaterial::addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f)
 	{
 		_techniqueCallbacks->addUpdateCallback(key, f);
+	}
+	void AdvancedMaterial::addUpdateCallback(const std::string& key, F&& f)
+	{	
+		_techniqueCallbacks->addUpdateCallback(key, std::move(f));
 	}
 }

@@ -68,3 +68,9 @@ struct osg_LightSourceParameters
 
    bool enabled;
 };
+
+struct ProbeData
+{
+    vec3 pos;
+    float boxWidth;
+};

@@ -108,7 +108,7 @@ class EnvLightEffect : public osg::Object
 public:
 	META_Object(osgEarth, EnvLightEffect)
 
-	    static osg::ref_ptr<EnvLightEffect>& instance();
+	static osg::ref_ptr<EnvLightEffect>& instance();
 	osg::Texture* getEnvCubeMap() { return _enable ? envCubeMap.get() : nullptr; }
 
 	bool enabled() const { return _enable; }

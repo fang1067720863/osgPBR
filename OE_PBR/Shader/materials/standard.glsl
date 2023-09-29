@@ -44,5 +44,5 @@ diffuseColor *= (1.0 - metallic);
 
 material.baseColorFactor=vec4(diffuseColor,1.0);
 material.metallicFactor=metallic;
-material.roughnessFactor=roughness;
+material.roughnessFactor=max(roughness,0.04f);
 material.aoStrength=ao;
