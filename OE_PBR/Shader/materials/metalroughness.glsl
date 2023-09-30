@@ -18,4 +18,3 @@ uniform sampler2D metalMap;
     roughness *= rough.x;
 #endif
 
-f0 = mix(f0, diffuseColor, vec3(metallic));

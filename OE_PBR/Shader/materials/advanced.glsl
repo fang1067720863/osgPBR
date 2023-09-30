@@ -61,8 +61,13 @@ uniform mat4 osg_ProjectionMatrix;
 	material.thickness = oe_pbr.thickness;
 	material.attenuationDistance = oe_pbr.attenuationDistance;
 	material.attenuationColor = oe_pbr.attenuationColor;
-	material.ior = 0.5f;
+	material.ior = max(1.0, oe_pbr.ior);
 
+	float specularIntensityFactor = 1.0f;
+	vec3 specularColorFactor = vec3( 1.0 );
+	float specularF90 = 1.0;
+	// override
+	f0 = mix( min( pow2( ( material.ior - 1.0 ) / ( material.ior + 1.0 ) ) * specularColorFactor, vec3( 1.0 ) ) * specularIntensityFactor, diffuseColor.rgb, vec3(metallic) );
 
 	#ifdef USE_TRANSMISSIONMAP
 
@@ -83,7 +88,7 @@ uniform mat4 osg_ProjectionMatrix;
     mat4 modelMatrix = osg_ModelViewMatrix * osg_ViewMatrixInverse;
 
 	vec4 transmission = getIBLVolumeRefraction(
-		normalInWC, viewInWC, material.roughnessFactor, material.baseColorFactor.xyz, vec3(1.0,1.0,1.0), material.metallicFactor,
+		oe_normal, viewInWC, material.roughnessFactor, material.baseColorFactor.xyz, f0, specularF90,
 		pos, modelMatrix, osg_ViewMatrix, osg_ProjectionMatrix, material.ior, material.thickness,
 		material.attenuationColor, material.attenuationDistance );
 

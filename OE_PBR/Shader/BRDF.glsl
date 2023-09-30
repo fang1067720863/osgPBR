@@ -3,6 +3,11 @@ float saturate(float v)
     return max(v,0.0f);
 }
 
+float pow2(float v)
+{
+    return v * v;
+}
+
 vec4 SRGBtoLINEAR(vec4 srgbIn)
 {
     vec3 linOut = pow(srgbIn.xyz, vec3(2.2f));

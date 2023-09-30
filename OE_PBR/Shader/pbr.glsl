@@ -172,16 +172,19 @@ void fragment_main_pbr(inout vec4 color)
    
 
      // tonemap:
-    float exposure = 2.2f;
-    color.rgb *= exposure;
-    //color.rgb = color.rgb / (color.rgb + vec3(1.0));
-    
-    color = linearTosRGB(color);
+   
+    #ifdef USE_TRANSMISSION
+        color.a = 0.1 + 0.1;
+    #else
+        float exposure = 2.2f;
+        color.rgb *= exposure;
+        //color.rgb = color.rgb / (color.rgb + vec3(1.0));
+        
+        color = linearTosRGB(color);
 
-    color.a = oe_pbr.alphaMask;
-     #ifdef USE_TRANSMISSION
-        color.a *= 0.1 + 0.1;
+        color.a = oe_pbr.alphaMask;
     #endif
+
 
     // add in the haze
     //color.rgb += atmos_color;
