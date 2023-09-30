@@ -693,10 +693,10 @@ int main(int argc, char** argv)
     auto node = gltfModel.getNode();
    
 
-    auto materialSpheres = createMaterialSpheres(3);
+    auto materialSpheres = createMaterialSpheres(1);
 
     group->addChild(createSkyBox());
-	group->addChild(node);
+	group->addChild(materialSpheres);
    
 
 

@@ -44,7 +44,7 @@ public:
         UniformSpec transmissionAlpha{ "oe_pbr.transmissionAlpha" ,0.0f,1.0f,0.5f };
         UniformSpec thickness{ "oe_pbr.thickness" ,0.0f,1.0f,0.5f };
         UniformSpec attenuationDistance{ "oe_pbr.attenuationDistance" ,0.0f,1.0f,0.5f };
-        UniformSpec ior{ "oe_pbr.ior" ,0.0f,1.0f,0.5f };
+        UniformSpec ior{ "oe_pbr.ior" ,1.0f,2.0f,1.5f };
         
         
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true };

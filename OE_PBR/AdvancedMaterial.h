@@ -79,7 +79,7 @@ public:
 	    {TRANSMISSIONMAP, "USE_TRANSMISSIONMAP"},
 	    {THICKNESSMAP, "USE_THICKNESSMAP"},
 	};
-	PROPERTY_DEFAULT(float, IOR, 0.1f)
+	PROPERTY_DEFAULT(float, IOR, 1.2f)
 
 	PROPERTY_DEFAULT(bool, UseClearcoat, false)
 	PROPERTY_DEFAULT(float, Clearcoat, 0.5f)
