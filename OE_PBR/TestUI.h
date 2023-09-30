@@ -1,7 +1,7 @@
 #pragma once
 #include <osgEarth/ImGui/ImGuiApp>
 #include"EnvLight.h"
-
+#include"AdvancedMaterial.h"
 
 
 class TestGUI :public osgEarth::GUI::BaseGUI
@@ -29,6 +29,7 @@ public:
     TestGUI() :GUI::BaseGUI("PBR Material")
     {
         _node = nullptr;
+
         UniformSpec metallic{ "oe_pbr.metallicFactor" ,0.0f,1.0f,0.5f };
         UniformSpec roughness{ "oe_pbr.roughnessFactor" ,0.0f,1.0f,0.5f };
         UniformSpec aoStrength{ "oe_pbr.aoStrength" ,0.0f,1.0f,0.5f };
@@ -36,18 +37,23 @@ public:
         DefineSpec normal{ "OE_ENABLE_NORMAL_MAP" , "3",true };
        
         UniformSpec sheenRoughness{ "oe_pbr.sheenRoughness" ,0.0f,1.0f,0.5f };
+        UniformSpec clearcoat{ "oe_pbr.clearcoat" ,0.0f,1.0f,0.5f };
+        UniformSpec clearcoatRoughness{ "oe_pbr.clearcoatRoughness" ,0.0f,1.0f,0.5f };
 
         DefineSpec mr{ "OE_ENABLE_MR_MAP" ,"4", true };
         DefineSpec ao{ "OE_ENABLE_AO_MAP" ,"2", true };
         DefineSpec emssive{ "OE_ENABLE_EMISSIVE_MAP" ,"1", true };
         DefineSpec baseColor{ "OE_ENABLE_BASECOLOR_MAP" ,"0", true };
-       // UniformSpec alphaMode{ "oe_pbr.alphaMode" , 1 };
+
 
         _uniforms.emplace_back(metallic);
         _uniforms.emplace_back(roughness);
         _uniforms.emplace_back(aoStrength);
         _uniforms.emplace_back(alphaMask);
+
         _uniforms.emplace_back(sheenRoughness);
+        _uniforms.emplace_back(clearcoat);
+        _uniforms.emplace_back(clearcoatRoughness);
 
         _defines.emplace_back(normal);
         _defines.emplace_back(mr);
@@ -122,6 +128,26 @@ public:
                     def._value = sheenRoughness;
                 }
             }
+            if (def._name == "oe_pbr.clearcoat")
+            {
+                float clearcoat;
+                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.clearcoat");
+                if (u)
+                {
+                    u->get(clearcoat);
+                    def._value = clearcoat;
+                }
+            }
+            if (def._name == "oe_pbr.clearcoatRoughness")
+            {
+                float clearcoatRoughness;
+                auto u = _node->getOrCreateStateSet()->getUniform("oe_pbr.clearcoatRoughness");
+                if (u)
+                {
+                    u->get(clearcoatRoughness);
+                    def._value = clearcoatRoughness;
+                }
+            }
         }
 
         return true;
@@ -142,15 +168,47 @@ public:
         {
             if (ImGui::SliderFloat(def._name.c_str(), &def._value, def._minval, def._maxval))
             {
+                auto material = _node->getOrCreateStateSet()->getAttribute(osg::StateAttribute::MATERIAL);
+                if (osgEarth::AdvancedMaterial* mat = dynamic_cast<osgEarth::AdvancedMaterial*>(material))
+                {
+                    if (def._name == "oe_pbr.clearcoat")
+                    {
+                        mat->setClearcoat(def._value);
+                    }
+                    if (def._name == "oe_pbr.clearcoatRoughness")
+                    {
+                        mat->setClearcoatRoughness(def._value);
+                    }
+                    if (def._name == "oe_pbr.sheenRoughness")
+                    {
+                        mat->setSheenRoughness(def._value);
+                    }
+                    if (def._name == "oe_pbr.metallicFactor")
+                    {
+                        mat->setMetallicFactor(def._value);
+                    }
+                    if (def._name == "oe_pbr.roughnessFactor")
+                    {
+                        mat->setRoughnessFactor(def._value);
+                    }
+                   
+                }
+
                 if (_node)
                 {
                     _node->getOrCreateStateSet()->getOrCreateUniform(def._name, osg::Uniform::FLOAT)->set(def._value);
                     _node->getOrCreateStateSet()->addUniform(new osg::Uniform(def._name.c_str(), def._value), osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
                 }
+                
+                
 
-
+             /*   if (def._name == "oe_pbr.alphaMask")
+                {
+                    ImGui::Spacing();
+                }*/
             }
         }
+       
 
         const char* items[] = { "opaque", "blend" };
         static int item_current = 0;

@@ -3,32 +3,7 @@
 
 #pragma include struct.glsl
 // https://www.unrealengine.com/blog/physically-based-shading-on-mobile
-vec2 DFGApprox( const in vec3 normal, const in vec3 viewDir, const in float roughness ) {
 
-	float dotNV = 0.1;
-    //saturate( dot( normal, viewDir ) );
-
-	const vec4 c0 = vec4( - 1, - 0.0275, - 0.572, 0.022 );
-
-	const vec4 c1 = vec4( 1, 0.0425, 1.04, - 0.04 );
-
-	vec4 r = roughness * c0 + c1;
-
-	float a004 = min( r.x * r.x, exp2( - 9.28 * dotNV ) ) * r.x + r.y;
-
-	vec2 fab = vec2( - 1.04, 1.04 ) * a004 + r.zw;
-
-	return fab;
-
-}
-
-vec3 EnvironmentBRDF( const in vec3 normal, const in vec3 viewDir, const in vec3 specularColor, const in float specularF90, const in float roughness ) {
-
-	vec2 fab = DFGApprox( normal, viewDir, roughness );
-
-	return specularColor * fab.x + specularF90 * fab.y;
-
-}
 
 vec3 F_Schlick( const in vec3 f0, const in float f90, const in float dotVH ) {
 
@@ -159,100 +134,8 @@ vec2 sphericalUV(vec3 v)
 
 
 
-vec3 BRDF_GGX(
-        vec3 direction,
-        vec3 viewDir,
-        vec3 normal,
-        float roughness,
-        float metalness,
-        vec3 f0
-        )
-{
-    vec3 h = normalize(direction + viewDir);
-
-    float NdotL = max(dot(normal, direction), 0.0f);
-    float VdotH = max(dot(h, viewDir), 0.0f);
-    float NdotH = max(dot(normal, h), 0.0f);
-    float NdotV = max(dot(normal, viewDir), 0.0f);
-
-    float D = microfacetDistribution(NdotH, roughness);
-    vec3 F = fresnel_Epic(VdotH, f0);
-    float G = geometricOcclusion(NdotL, NdotV, roughness);
-
-    // vec3 kS = F;
-    // vec3 kD = vec3(1.0) - kS;
-     // vec3 diffuse = BRDF_Diffuse_Lambert(diffuseColor);
-    // vec3 diffuseContrib = diffuse * kD;
-
-    vec3 numerator = D * G * F;
-    float denominator = 4.0 * NdotV * NdotL;
-    vec3 specContrib = numerator / max(denominator, 0.001);
-    return specContrib;
-    //return vec3(0.0f);
-
-    
-}
-
-float saturate(float v)
-{
-    return max(v,0.0f);
-}
-
-#ifdef USE_SHEEN
 
 
-    float D_Charlie( float roughness, float dotNH ) {
-
-        float alpha = roughness * roughness;
-
-        // Estevez and Kulla 2017, "Production Friendly Microfacet Sheen BRDF"
-        float invAlpha = 1.0 / alpha;
-        float cos2h = dotNH * dotNH;
-        float sin2h = max( 1.0 - cos2h, 0.0078125 ); // 2^(-14/2), so sin2h^2 > 0 in fp16
-
-        return ( 2.0 + invAlpha ) * pow( sin2h, invAlpha * 0.5 ) / ( 2.0 * PI );
-
-    }
-
-    float V_Neubelt( float dotNV, float dotNL ) {
-
-        // Neubelt and Pettineo 2013, "Crafting a Next-gen Material Pipeline for The Order: 1886"
-        return saturate( 1.0 / ( 4.0 * ( dotNL + dotNV - dotNL * dotNV ) ) );
-
-    }
-
-    vec3 BRDF_Sheen( const in vec3 lightDir, const in vec3 viewDir, const in vec3 normal, vec3 sheenColor, const in float sheenRoughness ) {
-
-        vec3 halfDir = normalize( lightDir + viewDir );
-
-        float dotNL = saturate( dot( normal, lightDir ) );
-        float dotNV = saturate( dot( normal, viewDir ) );
-        float dotNH = saturate( dot( normal, halfDir ) );
-
-        float D = D_Charlie( sheenRoughness, dotNH );
-        float V = V_Neubelt( dotNV, dotNL );
-
-        return sheenColor * ( D * V );
-
-    }
-
-    float IBLSheenBRDF( const in vec3 normal, const in vec3 viewDir, const in float roughness ) {
-
-        float dotNV = saturate( dot( normal, viewDir ) );
-
-        float r2 = roughness * roughness;
-
-        float a = roughness < 0.25 ? -339.2 * r2 + 161.4 * roughness - 25.9 : -8.48 * r2 + 14.3 * roughness - 9.95;
-
-        float b = roughness < 0.25 ? 44.0 * r2 - 23.7 * roughness + 3.26 : 1.97 * r2 - 3.27 * roughness + 0.72;
-
-        float DG = exp( a * dotNV + b ) + ( roughness < 0.25 ? 0.0 : 0.1 * ( roughness - 0.25 ) );
-
-        return saturate( DG * RECIPROCAL_PI );
-
-    }
-
-#endif
 
 
 void RE_Direct_Physical( const in osg_LightSourceParameters directLight, const in GeometricContext geometry, const in vec3 f0, const in pbr_Material material, inout ReflectedLight reflectedLight) {
@@ -268,10 +151,11 @@ void RE_Direct_Physical( const in osg_LightSourceParameters directLight, const i
 	#endif
 
     #ifdef USE_CLEARCOAT
-       	float dotNLcc = saturate( dot( geometry.clearcoatNormal, lightDir ) );
+        vec3 clearcoatNormal = vec3(1.0,0.0,0.0);
+       	float dotNLcc = saturate( dot( clearcoatNormal, lightDir ) );
 		vec3 ccIrradiance = dotNLcc * directLight.diffuse.rgb;
         
-		reflectedLight.clearcoatSpecular += ccIrradiance * BRDF_GGX( lightDir, geometry.viewDir, geometry.clearcoatNormal, material.clearcoatF90, material.clearcoatRoughness,material.clearcoatF0 );
+		reflectedLight.clearcoatSpecular += ccIrradiance * BRDF_GGX( lightDir, geometry.viewDir, clearcoatNormal,material.clearcoatRoughness, material.clearcoatF90,material.clearcoatF0 );
     #endif
 
 
@@ -286,7 +170,7 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 
 	#ifdef USE_SHEEN
 
-		reflectedLight.sheenSpecular += irradiance * material.sheenColor * IBLSheenBRDF( geometry.normal, geometry.viewDir, material.sheenRoughness );
+		//reflectedLight.sheenSpecular += irradiance * material.sheenColor * IBLSheenBRDF( geometry.normal, geometry.viewDir, material.sheenRoughness );
 
 	#endif
 
