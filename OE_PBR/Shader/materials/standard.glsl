@@ -38,11 +38,11 @@ geometry.normal = normalize(oe_normal);
     #endif
 #endif
 
+
 f0 = mix(f0, diffuseColor, vec3(metallic));
-diffuseColor = SRGBtoLINEAR(vec4(diffuseColor,1.0)).xyz;
 diffuseColor *= (1.0 - metallic);
 
 material.baseColorFactor=vec4(diffuseColor,1.0);
 material.metallicFactor=metallic;
-material.roughnessFactor=max(roughness,0.04f);
+material.roughnessFactor=roughness;
 material.aoStrength=ao;

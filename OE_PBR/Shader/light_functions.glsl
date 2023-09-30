@@ -187,7 +187,8 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
      float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
     vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
     vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
-    singleScattering = (F * brdf.x + brdf.y* vec3(material.metallicFactor));
+    // mark 0929
+    singleScattering = (F * brdf.x + brdf.y);
 
 
 	vec3 scattering = singleScattering + multiScattering;
