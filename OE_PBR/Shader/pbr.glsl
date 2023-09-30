@@ -8,7 +8,7 @@ vec3 vp_Normal;  //same as gl_Normal
 
 out vec3 oe_posView;
 out vec2 oe_texcoord;
-out vec3 oe_normal;  // view space
+out vec3 oe_normal;
 out vec3 oe_pos;
 /*vs define attribute binding and how todefine
 */ 
@@ -39,19 +39,16 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
-#pragma import_defines(USE_SHEEN,USE_CLEARCOAT,USE_TRANSMISSION)
-#pragma import_defines(USE_CLEARCOATMAP,USE_CLEARCOAT_ROUGHNESSMAP, USE_SHEENCOLORMAP, USE_SHEENROUGHNESSMAP)
-#pragma include normal_functions.glsl
+#pragma import_defines(USE_SHEEN,USE_CLEARCOAT)
 #pragma include BRDF.glsl
-#pragma include transmission.glsl
 #pragma include light_functions.glsl
 #pragma include struct.glsl
 
 
 in vec3 oe_posView;  // view space
-in vec3 oe_normal;  // view space
 in vec2 oe_texcoord;
-in vec3 oe_pos; // world space
+in vec3 oe_normal;  // world space
+in vec3 oe_pos;
 // stage global
 in vec3 vp_Normal;
 
@@ -87,27 +84,41 @@ void fragment_main_pbr(inout vec4 color)
     float lightIntensity = 5.0;
     vec3  f0 = vec3(0.04);
 
+    vec3 normal = oe_normal;
+    vec3 normalEC = normal;
+
+    float roughness = oe_pbr.roughnessFactor;
+    float metallic = oe_pbr.metallicFactor;
+    float ao = oe_pbr.aoStrength;
+    vec3 emissive = oe_pbr.emissiveFactor;
+    vec3 diffuseColor =vec3(1.0);
 
     pbr_Material material;
     GeometricContext geometry;
     ReflectedLight reflectedLight;
+    
+    # MATERIAL_BODY
+#ifdef debug_texture
+    return;
+#endif
+
+    vec3 n = normalize(normal);
+    vec3 v = normalize(-oe_posView);
+    float NdotV = max(dot(n, v), 0.0f);
+    vec3 r = reflect(-v, n); 
+
+    vec3 Lo = vec3(0.0);
+
+    
+    geometry.viewDir = v;
+    geometry.normal = n;
+
+    
     reflectedLight.indirectDiffuse = vec3(0.0);
     reflectedLight.indirectSpecular = vec3(0.0);
     reflectedLight.directDiffuse = vec3(0.0);
     reflectedLight.directSpecular = vec3(0.0);
 
-    # MATERIAL_BODY
-#ifdef debug_texture
-    return;
-#endif
-   
-    vec3 n = geometry.normal;
-    vec3 v = normalize(-oe_posView);
-    float NdotV = max(dot(n, v), 0.0f);
-    vec3 r = reflect(-v, n); 
-    vec3 Lo = vec3(0.0);
-    // view sapce
-    geometry.viewDir = v;
 
     for (int i = 0; i < OE_NUM_LIGHTS; ++i)
     {
@@ -135,24 +146,15 @@ void fragment_main_pbr(inout vec4 color)
       clearcoatRadiance = getIBLRadiance(geometry.clearcoatNormal, material.clearcoatRoughness, v);
     #endif
      RE_IndirectSpecular_Physical(radianceIBL, irradianceIBL,clearcoatRadiance,f0,geometry, material, reflectedLight);
+
 #endif
 
-    vec3 totalDiffuse = reflectedLight.directDiffuse;
-    vec3 totalSpecular = reflectedLight.directSpecular;
-
-    #ifdef USE_ENV_MAP
-        totalDiffuse += reflectedLight.indirectDiffuse * ao * envLightIntensity;
-        totalSpecular += reflectedLight.indirectSpecular* ao * envLightIntensity;
-    #endif
-
-    #ifdef USE_TRANSMISSION 
-        totalDiffuse = mix( totalDiffuse, reflectedLight.backLight.rgb, material.transmission );
-    #endif
-
-
-    color.rgb = totalDiffuse + totalSpecular;
+    color.rgb = reflectedLight.directDiffuse + reflectedLight.directSpecular;
     #ifdef OE_ENABLE_EMISSIVE_MAP
         color.rgb += emissive;
+    #endif
+    #ifdef USE_ENV_MAP
+        color.rgb += (reflectedLight.indirectSpecular* ao * envLightIntensity + reflectedLight.indirectDiffuse * envLightIntensity);
     #endif
 
     #ifdef USE_SHEEN
@@ -160,17 +162,23 @@ void fragment_main_pbr(inout vec4 color)
 		// Sheen energy compensation approximation calculation can be found at the end of
 		// https://drive.google.com/file/d/1T0D1VSyR4AllqIJTQAraEIzjlb5h4FKH/view?usp=sharing
 		float sheenEnergyComp = 1.0 - 0.157 * material.sheenColor.r;
+
 		color.rgb = color.rgb * sheenEnergyComp + reflectedLight.sheenSpecular;
 	#endif
 
     #ifdef USE_CLEARCOAT
+
 		float dotNVcc = saturate( dot( geometry.clearcoatNormal, geometry.viewDir ) );
+
 		vec3 Fcc = F_Schlick( material.clearcoatF0, material.clearcoatF90, dotNVcc );
-		color.rgb =  color.rgb * ( 1.0 - material.clearcoat * Fcc ) + material.clearcoat * reflectedLight.clearcoatSpecular;
+
+		color.rgb =  color.rgb * ( 1.0 - material.clearcoat * Fcc ) + reflectedLight.clearcoatSpecular;
+
 	#endif
 
    
 
+    
      // tonemap:
     float exposure = 2.2f;
     color.rgb *= exposure;
@@ -179,9 +187,6 @@ void fragment_main_pbr(inout vec4 color)
     color = linearTosRGB(color);
 
     color.a = oe_pbr.alphaMask;
-     #ifdef USE_TRANSMISSION
-        color.a *= 0.1 + 0.1;
-    #endif
 
     // add in the haze
     //color.rgb += atmos_color;
