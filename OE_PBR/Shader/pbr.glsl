@@ -39,15 +39,18 @@ void vertex_main_pbr(inout vec4 VertexVIEW)
 #pragma import_defines(OE_LIGHTING, OE_USE_PBR, USE_ENV_MAP, USE_ENV_CUBE_UV)
 #pragma import_defines(OE_NUM_LIGHTS)
 #pragma import_defines(cascade, OE_ENABLE_BASECOLOR_MAP,OE_ENABLE_NORMAL_MAP, OE_ENABLE_MR_MAP, OE_ENABLE_AO_MAP, OE_ENABLE_EMISSIVE_MAP)
-#pragma import_defines(USE_SHEEN,USE_CLEARCOAT)
+#pragma import_defines(USE_SHEEN,USE_CLEARCOAT,USE_TRANSMISSION)
+#pragma import_defines(USE_CLEARCOATMAP,USE_CLEARCOAT_ROUGHNESSMAP, USE_SHEENCOLORMAP, USE_SHEENROUGHNESSMAP)
+#pragma include normal_functions.glsl
 #pragma include BRDF.glsl
 #pragma include light_functions.glsl
+#pragma include transmission.glsl
 #pragma include struct.glsl
 
 
 in vec3 oe_posView;  // view space
 in vec2 oe_texcoord;
-in vec3 oe_normal;  // world space
+in vec3 oe_normal;  // view space
 in vec3 oe_pos;
 // stage global
 in vec3 vp_Normal;
@@ -64,6 +67,10 @@ uniform pbr_Material oe_pbr;
 #endif
 #ifdef USE_ENV_MAP
     uniform float envLightIntensity;
+#endif
+
+#ifdef USE_TRANSMISSION
+    uniform sampler2D translucentMap;
 #endif
 
 # MATERIAL_UNIFORMS
@@ -149,13 +156,23 @@ void fragment_main_pbr(inout vec4 color)
 
 #endif
 
-    color.rgb = reflectedLight.directDiffuse + reflectedLight.directSpecular;
+    vec3 totalDiffuse = reflectedLight.directDiffuse;
+    vec3 totalSpecular = reflectedLight.directSpecular;
+
     #ifdef OE_ENABLE_EMISSIVE_MAP
         color.rgb += emissive;
     #endif
     #ifdef USE_ENV_MAP
-        color.rgb += (reflectedLight.indirectSpecular* ao * envLightIntensity + reflectedLight.indirectDiffuse * envLightIntensity);
+        totalDiffuse += reflectedLight.indirectDiffuse * envLightIntensity;
+        totalSpecular += reflectedLight.indirectSpecular* ao * envLightIntensity;
+           
+       
     #endif
+    #ifdef USE_TRANSMISSION 
+        totalDiffuse = mix( totalDiffuse, reflectedLight.backLight.rgb, material.transmission );
+    #endif
+    
+     color.rgb = (totalDiffuse + totalSpecular);
 
     #ifdef USE_SHEEN
 

@@ -8,6 +8,8 @@ struct pbr_Material
     float alphaMask;
     float alphaMaskCutoff;
     float aoStrength;
+    vec3 f0;
+    float test;
 #ifdef USE_SHEEN
     vec3 sheenColor;
     float sheenRoughness;

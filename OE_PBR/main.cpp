@@ -696,7 +696,7 @@ int main(int argc, char** argv)
     auto materialSpheres = createMaterialSpheres(1);
 
     group->addChild(createSkyBox());
-	group->addChild(materialSpheres);
+	group->addChild(node);
    
 
 

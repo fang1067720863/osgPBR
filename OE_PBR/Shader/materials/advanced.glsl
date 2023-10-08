@@ -81,16 +81,20 @@ uniform mat4 osg_ProjectionMatrix;
 
 	#endif
 
-	vec3 pos = oe_pos;
+	mat4 modelMatrix = osg_ViewMatrixInverse * osg_ModelViewMatrix;
+
+	vec4 tmp = modelMatrix * vec4(oe_pos,1.0f);
+	vec3 pos = tmp.xyz;
     vec3 cameraPosition = osg_ViewMatrixInverse[3].xyz;
     vec3 viewInWC = normalize( cameraPosition - pos);
 	vec3 normalInWC = (osg_ViewMatrixInverse * vec4(oe_normal,1.0)).xyz;
-    mat4 modelMatrix = osg_ModelViewMatrix * osg_ViewMatrixInverse;
+    
+	
 
 	vec4 transmission = getIBLVolumeRefraction(
 		oe_normal, viewInWC, material.roughnessFactor, material.baseColorFactor.xyz, f0, specularF90,
-		pos, modelMatrix, osg_ViewMatrix, osg_ProjectionMatrix, material.ior, material.thickness,
-		material.attenuationColor, material.attenuationDistance );
+		pos.xyz, modelMatrix, osg_ViewMatrix, osg_ProjectionMatrix, material.ior, material.thickness,
+		material.attenuationColor, material.attenuationDistance, translucentMap);
 
 	material.transmissionAlpha = mix( material.transmissionAlpha, transmission.a, material.transmission );
 

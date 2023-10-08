@@ -62,7 +62,7 @@ vec3 applyVolumeAttenuation( const in vec3 radiance, const in float transmission
 vec4 getIBLVolumeRefraction( const in vec3 n, const in vec3 v, const in float roughness, const in vec3 diffuseColor,
 	const in vec3 specularColor, const in float specularF90, const in vec3 position, const in mat4 modelMatrix,
 	const in mat4 viewMatrix, const in mat4 projMatrix, const in float ior, const in float thickness,
-	const in vec3 attenuationColor, const in float attenuationDistance, const in vec3 probePos, sampler2D translucentMap, vec2 uv) 
+	const in vec3 attenuationColor, const in float attenuationDistance, sampler2D translucentMap) 
 {
 
 	vec3 transmissionRay = getVolumeTransmissionRay( n, v, thickness, ior, modelMatrix );

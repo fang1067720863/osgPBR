@@ -182,13 +182,13 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 	vec3 multiScattering = vec3( 0.0 );
 	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
 
-    vec3 specularColor =vec3(1.0);
-    computeMultiscattering( geometry.normal, geometry.viewDir, specularColor, material.metallicFactor, material.roughnessFactor, singleScattering, multiScattering);
-     float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
-    vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
-    vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
-    // mark 0929
-    singleScattering = (F * brdf.x + brdf.y);
+    computeMultiscattering( geometry.normal, geometry.viewDir, material.f0, 1.0f, material.roughnessFactor, singleScattering, multiScattering);
+    // singleScattering = vec3( 0.1 );
+    // float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
+    // vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
+    // vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
+    // // mark 0929
+    // singleScattering = (F * brdf.x + brdf.y);
 
 
 	vec3 scattering = singleScattering + multiScattering;
