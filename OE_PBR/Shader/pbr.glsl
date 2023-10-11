@@ -147,6 +147,7 @@ void fragment_main_pbr(inout vec4 color)
     vec3 clearcoatRadiance = vec3(0.0);
 #ifdef USE_ENV_MAP
     radianceIBL = getIBLRadiance(n, roughness,v);
+    irradianceIBL = getIBLIrradiance(n);
     RE_IndirectDiffuse_Physical(irradiance, diffuseColor, reflectedLight);
 
     #ifdef USE_CLEARCOAT

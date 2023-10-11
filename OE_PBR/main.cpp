@@ -681,7 +681,7 @@ int main(int argc, char** argv)
     osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
 
     auto group = new osg::Group();
-    EnvLightEffect::instance()->setEnvMapAtlas({ "pisaHDR\\diffuse.png", "pisaHDR\\specular.dds", "pisaHDR\\env.dds" }, iblDB);
+    EnvLightEffect::instance()->setEnvMapAtlas({ "pisaHDR\\diffuse.dds", "pisaHDR\\specular.dds", "pisaHDR\\env.dds" }, iblDB);
     EnvLightEffect::instance()->setEnable(true);
 
     GLTFReaderV2 reader;

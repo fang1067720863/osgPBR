@@ -58,9 +58,9 @@ vec2 sphericalUV(vec3 v)
         normalWC = normalize(normalWC);
         float envMapIntensity = 1.0;
         #ifdef USE_ENV_CUBE_UV
-            vec3 irradiance = texture(irradianceMap, normal).rgb;
+            vec3 irradiance = texture(irradianceMap, normalWC).rgb;
         #else
-            vec3 irradiance = texture(irradianceMap, sphericalUV(normal)).rgb;
+            vec3 irradiance = texture(irradianceMap, sphericalUV(normalWC)).rgb;
         #endif
         return PI * irradiance * envMapIntensity;
     }
@@ -109,11 +109,7 @@ vec2 sphericalUV(vec3 v)
 
         vec3 r = reflect(-viewDir, normal); 
         float lod = MAX_REFLECTION_LOD;
-        
-
-       
-
-         vec3 reflectWC = (osg_ViewMatrixInverse * vec4(r, 0.0)).rgb;
+        vec3 reflectWC = (osg_ViewMatrixInverse * vec4(r, 0.0)).rgb;
         reflectWC = normalize(reflectWC);
         float mip = roughToMip(roughnessFactor, MAX_REFLECTION_LOD);
         //return vec3(mip/lod);
@@ -182,7 +178,7 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 	vec3 multiScattering = vec3( 0.0 );
 	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
 
-    computeMultiscattering( geometry.normal, geometry.viewDir, material.f0, 1.0f, material.roughnessFactor, singleScattering, multiScattering);
+    computeMultiscattering(geometry.normal, geometry.viewDir, material.specularF0, 0.1f, material.roughnessFactor, singleScattering, multiScattering);
     // singleScattering = vec3( 0.1 );
     // float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
     // vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
@@ -195,9 +191,6 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 	vec3 diffuse = material.baseColorFactor.rgb * ( 1.0 - max( max( scattering.r, scattering.g ), scattering.b ) ); 
 
 	reflectedLight.indirectSpecular += singleScattering * radiance; 
-   
-   
-	reflectedLight.indirectSpecular += multiScattering * cosineWeightedIrradiance;
 
 	reflectedLight.indirectDiffuse += diffuse * cosineWeightedIrradiance;
 	return;
@@ -206,6 +199,6 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 
 void RE_IndirectDiffuse_Physical(vec3 irradiance, vec3 diffuseColor, inout ReflectedLight reflectedLight)
 {
-	reflectedLight.indirectDiffuse =  irradiance * RECIPROCAL_PI * diffuseColor;
+	reflectedLight.indirectDiffuse +=  irradiance * RECIPROCAL_PI * diffuseColor;
 	return;
 }

@@ -8,8 +8,8 @@ struct pbr_Material
     float alphaMask;
     float alphaMaskCutoff;
     float aoStrength;
-    vec3 f0;
-    float test;
+    vec3 specularF0;
+    float specularF90;
 #ifdef USE_SHEEN
     vec3 sheenColor;
     float sheenRoughness;
@@ -27,6 +27,7 @@ struct pbr_Material
     float attenuationDistance;
     float ior;
     vec3 attenuationColor;
+  
 #endif
 };
 

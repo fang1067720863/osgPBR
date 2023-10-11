@@ -68,6 +68,7 @@ uniform mat4 osg_ProjectionMatrix;
 	float specularF90 = 1.0;
 	// override
 	f0 = mix( min( pow2( ( material.ior - 1.0 ) / ( material.ior + 1.0 ) ) * specularColorFactor, vec3( 1.0 ) ) * specularIntensityFactor, diffuseColor.rgb, vec3(metallic) );
+	material.specularF0 = f0;
 
 	#ifdef USE_TRANSMISSIONMAP
 
