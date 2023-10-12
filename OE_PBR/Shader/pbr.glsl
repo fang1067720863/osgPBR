@@ -200,6 +200,11 @@ void fragment_main_pbr(inout vec4 color)
      // tonemap:
    
     #ifdef USE_TRANSMISSION
+        float exposure = 2.2f;
+        color.rgb *= exposure;
+        //color.rgb = color.rgb / (color.rgb + vec3(1.0));
+        
+        color = linearTosRGB(color);
         color.a = 0.1 + 0.1;
     #else
         float exposure = 2.2f;

@@ -39,3 +39,4 @@ material.baseColorFactor=vec4(diffuseColor,1.0);
 material.metallicFactor=metallic;
 material.roughnessFactor=max(roughness, 0.04f);
 material.aoStrength=ao;
+material.specularF0 = f0;

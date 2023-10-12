@@ -21,3 +21,4 @@ uniform sampler2D metalMap;
 f0 = mix(f0, diffuseColor, vec3(metallic));
 material.metallicFactor=metallic;
 material.roughnessFactor=min(roughness,0.04f);
+material.specularF0 = f0;

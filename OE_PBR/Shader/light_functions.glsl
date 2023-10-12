@@ -178,10 +178,10 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 	vec3 multiScattering = vec3( 0.0 );
 	vec3 cosineWeightedIrradiance = irradiance * RECIPROCAL_PI;
 
-    computeMultiscattering(geometry.normal, geometry.viewDir, material.specularF0, 0.1f, material.roughnessFactor, singleScattering, multiScattering);
-    // singleScattering = vec3( 0.1 );
+    computeMultiscattering(geometry.normal, geometry.viewDir, material.specularF0, 1.0f, material.roughnessFactor, singleScattering, multiScattering);
+
     // float NdotV = max(dot( geometry.normal, geometry.viewDir), 0.0);
-    // vec3 F = fresnelSchlickRoughness(NdotV, f0, material.roughnessFactor);
+    // vec3 F = fresnelSchlickRoughness(NdotV, material.specularF0, material.roughnessFactor);
     // vec2 brdf  = texture(brdfLUT, vec2(NdotV, material.roughnessFactor)).rg;
     // // mark 0929
     // singleScattering = (F * brdf.x + brdf.y);
@@ -199,6 +199,6 @@ void RE_IndirectSpecular_Physical(const in vec3 radiance, const in vec3 irradian
 
 void RE_IndirectDiffuse_Physical(vec3 irradiance, vec3 diffuseColor, inout ReflectedLight reflectedLight)
 {
-	reflectedLight.indirectDiffuse +=  irradiance * RECIPROCAL_PI * diffuseColor;
+	//reflectedLight.indirectDiffuse +=  irradiance * RECIPROCAL_PI * diffuseColor;
 	return;
 }

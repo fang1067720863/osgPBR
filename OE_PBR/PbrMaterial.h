@@ -115,7 +115,7 @@ public:
 	PROPERTY_DEFAULT(float, RoughnessFactor, 0.2f)
 	PROPERTY_DEFAULT(float, MetallicFactor, 1.0f)
 	PROPERTY_DEFAULT(float, AlphaMask, 1.0f)
-	PROPERTY_DEFAULT(float, AoStrength, 0.1)
+	PROPERTY_DEFAULT(float, AoStrength, 0.5)
 	PROPERTY_DEFAULT(AlphaMode, AlphaMode, AlphaMode::Opaque)
 	PROPERTY_DEFAULT(float, AlphaMaskCutoff, 0.2)
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture>, TextureAtlas, 0)

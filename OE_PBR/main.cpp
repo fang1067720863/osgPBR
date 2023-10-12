@@ -249,7 +249,6 @@ std::vector<osg::ref_ptr<StandardPBRMaterial>> createNoTexMaterials()
             m->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
             m->setMetallicFactor(0.11f * i+0.01);
             m->setRoughnessFactor(0.11f * j+0.01);
-            m->setAoStrength(0.15f);
             m->setReceiveEnvLight(true);
             result.push_back(m);
         }
@@ -425,14 +424,14 @@ osg::ref_ptr<osg::Group> createMaterialSpheres(int matType =1)
     {
         std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
         int row, col;
-        row = col = 9;
+        row = col = 1;
 
         for (size_t i = 0; i < row; i++)
         {
             for (size_t j = 0; j < col; j++)
             {
                 osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-                osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
+                osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 5.0f));
                 geode->addDrawable(sd);
                 sd->setDrawCallback(new DrawCallback());
                 geode->getOrCreateStateSet()->setAttributeAndModes(materials[i * col + j], osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
