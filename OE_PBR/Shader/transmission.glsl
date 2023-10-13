@@ -84,11 +84,10 @@ vec4 getIBLVolumeRefraction( const in vec3 n, const in vec3 v, const in float ro
 
 	//return transmittedLight;
 
-	//vec4 transmittedLight = vec4(0.5);
 	vec3 attenuatedColor = applyVolumeAttenuation( transmittedLight.rgb, length( transmissionRay ), attenuationColor, attenuationDistance );
 	vec3 F = EnvironmentBRDF( n, v, specularColor, specularF90, roughness );
-
-	return vec4( ( 1.0 - F ) * attenuatedColor.rgb * diffuseColor, transmittedLight.a );
+	// 
+	return vec4(( 1.0 - F ) * attenuatedColor.rgb * diffuseColor, transmittedLight.a );
 
 }
 

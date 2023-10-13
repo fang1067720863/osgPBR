@@ -169,11 +169,20 @@ void fragment_main_pbr(inout vec4 color)
            
        
     #endif
-    #ifdef USE_TRANSMISSION 
-        totalDiffuse = mix( totalDiffuse, reflectedLight.backLight.rgb, material.transmission );
+    #ifdef USE_TRANSMISSION
+        //SRGBtoLINEAR
+        totalDiffuse = mix( totalDiffuse, vec4(reflectedLight.backLight,1.0f).rgb, material.transmission );
+         float exposure = 2.2f;
+        totalSpecular.rgb *= exposure;
+        //color.rgb = color.rgb / (color.rgb + vec3(1.0));
+        
+        totalSpecular = linearTosRGB(vec4(totalSpecular,1.0f)).rgb;
+        color.rgb = (totalDiffuse + totalSpecular);
+    #else
+        color.rgb = (totalDiffuse + totalSpecular);
     #endif
     
-     color.rgb = (totalDiffuse + totalSpecular);
+     
 
     #ifdef USE_SHEEN
 
@@ -200,11 +209,7 @@ void fragment_main_pbr(inout vec4 color)
      // tonemap:
    
     #ifdef USE_TRANSMISSION
-        float exposure = 2.2f;
-        color.rgb *= exposure;
-        //color.rgb = color.rgb / (color.rgb + vec3(1.0));
-        
-        color = linearTosRGB(color);
+       
         color.a = 0.1 + 0.1;
     #else
         float exposure = 2.2f;

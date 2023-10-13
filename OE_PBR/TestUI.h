@@ -42,7 +42,7 @@ public:
 
         UniformSpec transmission{ "oe_pbr.transmission" ,0.0f,1.0f,0.5f };
         UniformSpec transmissionAlpha{ "oe_pbr.transmissionAlpha" ,0.0f,1.0f,0.5f };
-        UniformSpec thickness{ "oe_pbr.thickness" ,0.0f,1.0f,0.5f };
+        UniformSpec thickness{ "oe_pbr.thickness" ,0.0f,5.0f,0.5f };
         UniformSpec attenuationDistance{ "oe_pbr.attenuationDistance" ,0.0f,1.0f,0.5f };
         UniformSpec ior{ "oe_pbr.ior" ,1.0f,2.0f,1.5f };
         

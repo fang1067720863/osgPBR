@@ -93,7 +93,7 @@ uniform mat4 osg_ProjectionMatrix;
 	
 
 	vec4 transmission = getIBLVolumeRefraction(
-		oe_normal, viewInWC, material.roughnessFactor, material.baseColorFactor.xyz, f0, specularF90,
+		normalInWC, viewInWC, material.roughnessFactor, material.baseColorFactor.xyz, f0, specularF90,
 		pos.xyz, modelMatrix, osg_ViewMatrix, osg_ProjectionMatrix, material.ior, material.thickness,
 		material.attenuationColor, material.attenuationDistance, translucentMap);
 
