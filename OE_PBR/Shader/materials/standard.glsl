@@ -15,9 +15,9 @@
 
         vec3 tangent = vec3(1.0,0.0,0.0) * gl_NormalMatrix;
         vec3 mapN = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_NORMAL_MAP)).rgb;  // normal in tangent space
-        vec3 normal = geometry.normal;
+        //vec3 normal = geometry.normal;
         normal = getNormal(normal, mapN);
-        geometry.normal = normalize(normal);
+        
     #endif
 
     #ifdef OE_ENABLE_AO_MAP
@@ -40,3 +40,5 @@ material.metallicFactor=metallic;
 material.roughnessFactor=max(roughness, 0.04f);
 material.aoStrength=ao;
 material.specularF0 = f0;
+
+geometry.normal = normalize(normal);

@@ -6,7 +6,7 @@ uniform sampler2D perlin_Noise;
 
 // calc normal
 	
-	vec3 normal = geometry.normal;
+	//vec3 normal = geometry.normal;
 	const float noiseSpeed = 0.4;
 	// large wave
 	float time = sin(oe_pos.x/150.f + osg_FrameTime * noiseSpeed);
@@ -40,10 +40,8 @@ uniform sampler2D perlin_Noise;
 	smallNormal = getNormal(normal, smallNormal);
 	//BlendAngleCorrectedNormals
 	vec3 finalNormal = normalize(mix(largeNormal, smallNormal, pow(1 - dot(pixelNomal, worldNormal), 2)));
-	geometry.normal = finalNormal;
 
 // calc diffuseColor
-	//float gradient = 0.1f;
 	
 	float mask = texture(water_M, uv_normal).r * texture(water_M, uv_color).r;
 	mask = clamp(mask, 0.0f, 1.0f);
@@ -62,3 +60,4 @@ uniform sampler2D perlin_Noise;
 
 material.baseColorFactor=vec4(diffuseColor,1.0);
 material.roughnessFactor=roughness;
+geometry.normal = finalNormal;

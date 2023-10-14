@@ -109,7 +109,7 @@ void fragment_main_pbr(inout vec4 color)
     return;
 #endif
 
-    vec3 n = normalize(normal);
+    vec3 n = normalize(geometry.normal);
     vec3 v = normalize(-oe_posView);
     float NdotV = max(dot(n, v), 0.0f);
     vec3 r = reflect(-v, n); 

@@ -21,7 +21,7 @@ struct pbr_material_input{
 
     vec3 tangent = vec3(1.0,0.0,0.0);
     vec3 tangentNormal = texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_NORMAL_MAP)).rgb;  // normal in tangent space
-    vec3 normal = tangentNormal;
+    normal = tangentNormal;
 #endif
 
 #ifdef OE_ENABLE_AO_MAP

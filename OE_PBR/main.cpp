@@ -358,8 +358,24 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     water->extTextureAttribute("water_N", "unreal/Textures/T_Water_N.tga", "water_N");
     water->extTextureAttribute("perlin_Noise", "unreal/Textures/T_Perlin_Noise_M.tga", "perlin_Noise");
     water->setMaterialFile("materials/water_ocean.glsl");
-
     result.push_back(water);
+
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> gold = new osgEarth::ExtensionedMaterial();
+    gold->setName("gold");
+    gold->setDataBaseOption(dbo);
+
+    gold->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    gold->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    gold->setMetallicFactor(1.0f);
+    gold->setRoughnessFactor(0.668f);
+    gold->setReceiveEnvLight(true);
+   
+    gold->extTextureAttribute("T_MacroVariation", "gold/T_MacroVariation.tga", "T_MacroVariation");
+    gold->extTextureAttribute("T_Metal_Gold_D", "gold/T_Metal_Gold_D.tga", "T_Metal_Gold_D");
+    gold->extTextureAttribute("T_Metal_Gold_N", "gold/T_Metal_Gold_N.tga", "T_Metal_Gold_N");
+    gold->setMaterialFile("materials/mat_gold.glsl");
+
+    result.push_back(gold);
 
 
     return result;
@@ -424,14 +440,14 @@ osg::ref_ptr<osg::Group> createMaterialSpheres(int matType =1)
     {
         std::vector<osg::ref_ptr<StandardPBRMaterial>> materials = std::move(createNoTexMaterials());
         int row, col;
-        row = col = 1;
+        row = col = 9;
 
         for (size_t i = 0; i < row; i++)
         {
             for (size_t j = 0; j < col; j++)
             {
                 osg::ref_ptr<osg::Geode> geode = new osg::Geode();
-                osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 5.0f));
+                osg::ShapeDrawable* sd = new osg::ShapeDrawable(new osg::Sphere(osg::Vec3f(0.0f, 0.0f, 0.0f), 2.0f));
                 geode->addDrawable(sd);
                 sd->setDrawCallback(new DrawCallback());
                 geode->getOrCreateStateSet()->setAttributeAndModes(materials[i * col + j], osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
@@ -687,15 +703,15 @@ int main(int argc, char** argv)
     //Sponza BoomBox
     
    
-    auto gltfModel = reader.read("Dragon\\DragonAttenuation.gltf", false, modelDB);
+    auto gltfModel = reader.read("Sheen\\SheenChair.glb", true, modelDB);
     //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza  Sheen\\SheenChair.glb  Dragon\\DragonAttenuation
-    auto node = gltfModel.getNode();
+    auto gltfNode = gltfModel.getNode();
    
 
-    auto materialSpheres = createMaterialSpheres(1);
+    auto materialSpheres = createMaterialSpheres(2);
 
     group->addChild(createSkyBox());
-	group->addChild(node);
+	group->addChild(gltfNode);
    
 
 

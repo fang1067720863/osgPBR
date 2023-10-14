@@ -25,6 +25,18 @@ osgEarth::StandardPBRMaterial::StandardPBRMaterial()
     mTextureAtlas->setResizeNonPowerOfTwoHint(false);
 }
 
+osgEarth::StandardPBRMaterial::StandardPBRMaterial(const Config& conf)
+{
+  /*  conf.get("baseColor", mBaseColorFactor);
+    conf.get("emissive", mEmissiveFactor);
+    conf.get("roughness", mRoughnessFactor);
+    conf.get("metallic", mMetallicFactor);
+    conf.get("aoStrength", mAoStrength);
+    conf.get("alphaMask", mAlphaMask);
+    conf.get("alphaMaskCutoff", mAlphaMaskCutoff);*/
+ 
+}
+
 std::string osgEarth::StandardPBRMaterial::getDefaultDefineName(TextureEnum mapEnum)
 {
     if (textureDefines.find(mapEnum) == textureDefines.end())

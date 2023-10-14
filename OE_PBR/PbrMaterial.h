@@ -14,8 +14,10 @@
 #include <osg/Vec4>
 #include <osgDB/Options>
 #include <osgEarth/Common>
+#include<osgEarth/Config>
 #include <osgEarth/Threading>
 #include <set>
+
 
 #include "Export.h"
 
@@ -73,6 +75,7 @@ public:
 	    : StateAttribute(mat, copyop)
 	{
 	}
+	StandardPBRMaterial(const Config& conf);
 	
 #ifdef META_StateAttribute
 	META_StateAttribute(osgEarth, StandardPBRMaterial, OE_MATERIAL)
