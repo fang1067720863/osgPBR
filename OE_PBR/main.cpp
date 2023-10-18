@@ -274,9 +274,8 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
    
     grass->setBaseColorFactor(osg::Vec4f(0.5f, 0.5f, 0.5f, 0.5f));
     grass->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
-    grass->setMetallicFactor(0.29f);
-    grass->setRoughnessFactor(0.81f);
-    grass->setAoStrength(0.15f);
+    grass->setMetallicFactor(1.0f);
+    grass->setRoughnessFactor(1.0f);
 
     grass->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::MetalRoughenssMap, "grass/metalRoughness.png");
     grass->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::EmissiveMap, "grass/emissive.png");
@@ -297,8 +296,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     m->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
     m->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
     m->setMetallicFactor(1.00f);
-    m->setRoughnessFactor(0.108f);
-    m->setAoStrength(0.15f);
+    m->setRoughnessFactor(1.0f);
     m->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::BaseColorMap, "metal/albedo.png");
     m->setReceiveEnvLight(true);
 
@@ -314,7 +312,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     marber->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
     marber->setMetallicFactor(0.08f);
     marber->setRoughnessFactor(0.176f);
-    marber->setAoStrength(0.1f);
+
    
     marber->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, "gray/normal.png");
     marber->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::OcclusionMap, "gray/ao.png");
@@ -360,23 +358,6 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     water->setMaterialFile("materials/water_ocean.glsl");
     result.push_back(water);
 
-    osg::ref_ptr<osgEarth::ExtensionedMaterial> gold = new osgEarth::ExtensionedMaterial();
-    gold->setName("gold");
-    gold->setDataBaseOption(dbo);
-
-    gold->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
-    gold->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
-    gold->setMetallicFactor(1.0f);
-    gold->setRoughnessFactor(0.668f);
-    gold->setReceiveEnvLight(true);
-   
-    gold->extTextureAttribute("T_MacroVariation", "gold/T_MacroVariation.tga", "T_MacroVariation");
-    gold->extTextureAttribute("T_Metal_Gold_D", "gold/T_Metal_Gold_D.tga", "T_Metal_Gold_D");
-    gold->extTextureAttribute("T_Metal_Gold_N", "gold/T_Metal_Gold_N.tga", "T_Metal_Gold_N");
-    gold->setMaterialFile("materials/mat_gold.glsl");
-
-    result.push_back(gold);
-
 
     return result;
    
@@ -394,6 +375,7 @@ std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
     std::vector<osg::ref_ptr<AdvancedMaterial>> result;
     { 
         osg::ref_ptr<osgEarth::AdvancedMaterial> m = new osgEarth::AdvancedMaterial();
+        m->setName("sheen");
         m->setDataBaseOption(dbo);
         m->setUseSheen(true);
         m->setSheenColor(osg::Vec3f(1.0f, 0.0f, 1.0f));
@@ -404,6 +386,7 @@ std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
     {
         osg::ref_ptr<osgEarth::AdvancedMaterial> m1 = new osgEarth::AdvancedMaterial();
         m1->setDataBaseOption(dbo);
+        m1->setName("Clearcoat");
         m1->setUseClearcoat(true);
         m1->setMetallicFactor(0.1);
         m1->setClearcoat(1.0f);
@@ -416,14 +399,17 @@ std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
         result.push_back(m1);
 
 
-        {
-            osg::ref_ptr<osgEarth::AdvancedMaterial> m1 = new osgEarth::AdvancedMaterial();
-            m1->setDataBaseOption(dbo);
-            m1->setUseTransmission(true);
-            m1->setTransmission(0.8);
-            m1->setMetallicFactor(0.1);
-            result.push_back(m1);
-        }
+    {
+        osg::ref_ptr<osgEarth::AdvancedMaterial> m2 = new osgEarth::AdvancedMaterial();
+        m2->setName("Transmission");
+        m2->setDataBaseOption(dbo);
+        m2->setUseTransmission(true);
+        m2->setTransmission(1.0);
+        m2->setThickness(0.1f);
+        m2->setMetallicFactor(0.1);
+        m2->setRoughnessFactor(0.1f);
+        result.push_back(m2);
+    }
 
        
     }
@@ -509,6 +495,10 @@ osg::ref_ptr<osg::Group> createMaterialSpheres(int matType =1)
             matrixT->setMatrix(osg::Matrix::translate((double)i * 5.0, 0.0, 0.0));
             matrixT->addChild(geode);
             matrixT->setName(materials[i]->getName());
+            if (materials[i]->getUseTransmission())
+            {
+                geode->setNodeMask(TRANSLUCENT_MASK);
+            }
          
             auto* pbr = new PbrLightEffect();
             pbr->attach(geode->getOrCreateStateSet());
@@ -711,7 +701,7 @@ int main(int argc, char** argv)
     auto materialSpheres = createMaterialSpheres(2);
 
     group->addChild(createSkyBox());
-	group->addChild(gltfNode);
+	group->addChild(materialSpheres);
    
 
 

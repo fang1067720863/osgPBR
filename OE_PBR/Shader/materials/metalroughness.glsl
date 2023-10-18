@@ -7,7 +7,6 @@ uniform sampler2D metalMap;
 
 
 
-
 #ifdef OE_ENABLE_Metal_MAP
     vec3 metal =  texture(metalMap, oe_texcoord).rgb;
     metallic *= metal.x;
@@ -18,7 +17,7 @@ uniform sampler2D metalMap;
     roughness *= rough.x;
 #endif
 
-f0 = mix(f0, diffuseColor, vec3(metallic));
-material.metallicFactor=metallic;
-material.roughnessFactor=min(roughness,0.04f);
-material.specularF0 = f0;
+// f0 = mix(f0, diffuseColor, vec3(metallic));
+// material.metallicFactor=metallic;
+// material.roughnessFactor=min(roughness,0.04f);
+// material.specularF0 = f0;

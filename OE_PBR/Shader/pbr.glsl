@@ -109,6 +109,17 @@ void fragment_main_pbr(inout vec4 color)
     return;
 #endif
 
+    f0 = mix(f0, diffuseColor, vec3(metallic));
+    diffuseColor *= (1.0 - metallic);
+
+    material.baseColorFactor=vec4(diffuseColor,1.0);
+    material.metallicFactor=metallic;
+    material.roughnessFactor=max(roughness, 0.04f);
+    material.aoStrength=ao;
+    material.specularF0 = f0;
+
+    geometry.normal = normalize(normal);
+
     vec3 n = normalize(geometry.normal);
     vec3 v = normalize(-oe_posView);
     float NdotV = max(dot(n, v), 0.0f);

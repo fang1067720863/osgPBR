@@ -43,12 +43,12 @@ uniform mat4 osg_ProjectionMatrix;
 	#endif
 
 	#ifdef USE_CLEARCOAT_ROUGHNESSMAP
-		//material.clearcoatRoughness *= texture( clearcoatRoughnessMap, oe_texcoord ).y;
+		material.clearcoatRoughness *= texture( clearcoatRoughnessMap, oe_texcoord ).y;
 	#endif
 
 	material.clearcoat = saturate( material.clearcoat ); // Burley clearcoat model
 	material.clearcoatRoughness = max( material.clearcoatRoughness, 0.0525 );
-	// material.clearcoatRoughness += geometryRoughness;
+	//material.clearcoatRoughness += geometryRoughness;
 	material.clearcoatRoughness = min( material.clearcoatRoughness, 1.0 );
 
 #endif

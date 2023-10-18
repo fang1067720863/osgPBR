@@ -40,7 +40,7 @@ uniform sampler2D perlin_Noise;
 	smallNormal = getNormal(normal, smallNormal);
 	//BlendAngleCorrectedNormals
 	vec3 finalNormal = normalize(mix(largeNormal, smallNormal, pow(1 - dot(pixelNomal, worldNormal), 2)));
-
+	normal = finalNormal;
 // calc diffuseColor
 	
 	float mask = texture(water_M, uv_normal).r * texture(water_M, uv_color).r;
@@ -58,6 +58,3 @@ uniform sampler2D perlin_Noise;
     color.rgb = normal;
 #endif
 
-material.baseColorFactor=vec4(diffuseColor,1.0);
-material.roughnessFactor=roughness;
-geometry.normal = finalNormal;
