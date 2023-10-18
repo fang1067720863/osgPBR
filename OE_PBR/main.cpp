@@ -693,7 +693,7 @@ int main(int argc, char** argv)
     //Sponza BoomBox
     
    
-    auto gltfModel = reader.read("Sheen\\SheenChair.glb", true, modelDB);
+    auto gltfModel = reader.read("Dragon\\DragonAttenuation.gltf", false, modelDB);
     //Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza  Sheen\\SheenChair.glb  Dragon\\DragonAttenuation
     auto gltfNode = gltfModel.getNode();
    
@@ -701,7 +701,7 @@ int main(int argc, char** argv)
     auto materialSpheres = createMaterialSpheres(2);
 
     group->addChild(createSkyBox());
-	group->addChild(materialSpheres);
+	group->addChild(gltfNode);
    
 
 
