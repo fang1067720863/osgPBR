@@ -3,8 +3,8 @@
 #ifdef cascade
     #ifdef OE_ENABLE_MR_MAP
         vec3 tmp =  texture(pbrMaps, vec3(oe_texcoord,OE_ENABLE_MR_MAP)).rgb;
-        metallic *= tmp.b;
-        roughness *= tmp.g;
+        metallic = tmp.b;
+        roughness = tmp.g;
     #endif
 
     #ifdef OE_ENABLE_BASECOLOR_MAP

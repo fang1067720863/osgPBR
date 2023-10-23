@@ -62,6 +62,7 @@ uniform mat4 osg_ProjectionMatrix;
 	material.attenuationDistance = oe_pbr.attenuationDistance;
 	material.attenuationColor = oe_pbr.attenuationColor;
 	material.ior = max(1.0, oe_pbr.ior);
+	material.baseColorFactor = vec4(1.0);
 
 	float specularIntensityFactor = 1.0f;
 	vec3 specularColorFactor = vec3( 1.0 );
@@ -100,6 +101,5 @@ uniform mat4 osg_ProjectionMatrix;
 	material.transmissionAlpha = mix( material.transmissionAlpha, transmission.a, material.transmission );
 
 	reflectedLight.backLight = transmission.rgb;
-   
 
 #endif

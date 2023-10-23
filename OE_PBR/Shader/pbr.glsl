@@ -171,9 +171,7 @@ void fragment_main_pbr(inout vec4 color)
     vec3 totalDiffuse = reflectedLight.directDiffuse;
     vec3 totalSpecular = reflectedLight.directSpecular;
 
-    #ifdef OE_ENABLE_EMISSIVE_MAP
-        color.rgb += emissive;
-    #endif
+    
     #ifdef USE_ENV_MAP
         totalDiffuse += reflectedLight.indirectDiffuse * envLightIntensity;
         totalSpecular += reflectedLight.indirectSpecular* ao * envLightIntensity;
@@ -192,7 +190,9 @@ void fragment_main_pbr(inout vec4 color)
     #else
         color.rgb = (totalDiffuse + totalSpecular);
     #endif
-    
+    #ifdef OE_ENABLE_EMISSIVE_MAP
+        color.rgb += emissive;
+    #endif
      
 
     #ifdef USE_SHEEN

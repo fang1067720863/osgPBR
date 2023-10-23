@@ -359,6 +359,23 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
     result.push_back(water);
 
 
+    osg::ref_ptr<osgEarth::ExtensionedMaterial> gold = new osgEarth::ExtensionedMaterial();
+    gold->setName("gold");
+    gold->setDataBaseOption(dbo);
+    
+    gold->setBaseColorFactor(osg::Vec4f(1.0f, 1.0f, 1.0f, 1.0f));
+    gold->setEmissiveFactor(osg::Vec3f(0.0f, 0.0f, 0.0f));
+    gold->setMetallicFactor(0.8f);
+    gold->setRoughnessFactor(0.168f);
+    gold->setReceiveEnvLight(true);
+    
+    gold->extTextureAttribute("T_MacroVariation", "gold/T_MacroVariation.tga", "T_MacroVariation");
+    gold->extTextureAttribute("T_Metal_Gold_D", "gold/T_Metal_Gold_D.tga", "T_Metal_Gold_D");
+    gold->setMaterialImage(osgEarth::StandardPBRMaterial::TextureEnum::NormalMap, "gold/T_Metal_Gold_N.tga");
+    gold->setMaterialFile("materials/mat_gold.glsl");
+    result.push_back(gold);
+
+
     return result;
    
 }
@@ -701,7 +718,7 @@ int main(int argc, char** argv)
     auto materialSpheres = createMaterialSpheres(2);
 
     group->addChild(createSkyBox());
-	group->addChild(gltfNode);
+	group->addChild(materialSpheres);
    
 
 
