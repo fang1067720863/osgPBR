@@ -11,7 +11,7 @@
 #include <osgEarth/Shaders>
 #include <osgEarth/Lighting>
 #include <osgEarth/PhongLightingEffect>
-#include <osgEarth/Math>
+//#include <osgEarth/Math>
 #include <osgEarth/FileUtils>
 
 #include <osgDB/FileUtils>

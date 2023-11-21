@@ -10,9 +10,9 @@
 
 #include <osgEarth/Common>
 #include<osgEarth/Registry>
-#include<osgEarth/Math>
 #include<osgDB/ReadFile>
 #include"EnvLight.h"
+#include<osgEarth/ImageUtils>
 
 osgEarth::StandardPBRMaterial::StandardPBRMaterial()
 {

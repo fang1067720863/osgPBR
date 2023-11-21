@@ -38,7 +38,6 @@
 #include"PbrMaterial.h"
 #include"AdvancedMaterial.h"
 #include"GLTFV2Reader.h"
-#include"FlyCameraManipulator.h"
 #include"EnvLight.h"
 #include"IBLBaker.h"
 #include"CubeToQuad.h"
@@ -261,7 +260,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
 {
     std::vector<osg::ref_ptr<ExtensionedMaterial>> result;
 
-    auto absolutePath = osgEarth::getAbsolutePath("Asset/Material");
+    auto absolutePath = osgEarth::Util::getAbsolutePath("Asset/Material");
     osg::ref_ptr<osgDB::Options> dbo = new osgDB::Options();
     if (osgDB::fileExists(absolutePath))
     {
@@ -382,7 +381,7 @@ std::vector<osg::ref_ptr<ExtensionedMaterial>> createMaterials()
 
 std::vector <osg::ref_ptr<AdvancedMaterial>> createAdvancedMaterials()
 {
-    auto absolutePath = osgEarth::getAbsolutePath("Asset/Material");
+    auto absolutePath = osgEarth::Util::getAbsolutePath("Asset/Material");
     osg::ref_ptr<osgDB::Options> dbo = new osgDB::Options();
     if (osgDB::fileExists(absolutePath))
     {
@@ -691,12 +690,12 @@ int main(int argc, char** argv)
     auto shaderPath2 = "..//OE_PBR//Shader";
 
     osg::ref_ptr< osgDB::Options>  shaderDB = new osgDB::Options();
-    if (osgDB::fileExists(osgEarth::getAbsolutePath(shaderPath)))
+    if (osgDB::fileExists(osgEarth::Util::getAbsolutePath(shaderPath)))
     {
-        shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath));
+        shaderDB->setDatabasePath(osgEarth::Util::getAbsolutePath(shaderPath));
     }
     else {
-        shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath2));
+        shaderDB->setDatabasePath(osgEarth::Util::getAbsolutePath(shaderPath2));
     }
     shaderDB->setName("osgEarthShader");
 
