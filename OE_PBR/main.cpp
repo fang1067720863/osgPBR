@@ -80,37 +80,8 @@ class CullCallback : public osg::NodeCallback
 };
 
 
-int main(int argc, char** argv)
+void SetupSceneGraph(osgViewer::Viewer& viewer)
 {
-
-	osg::ArgumentParser arguments(&argc, argv);
-	int versio = osg::getGLVersionNumber();
-	arguments.getApplicationUsage()->setApplicationName("osgEarth PBR Material");
-	osgViewer::Viewer viewer(arguments);
-	viewer.setReleaseContextAtEndOfFrameHint(false);
-	viewer.getDatabasePager()->setUnrefImageDataAfterApplyPolicy(true, false);
-	auto name = arguments.getApplicationUsage()->getApplicationName();
-
-	const int width(800), height(450);
-	const std::string version("3.0");
-	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
-	traits->x = 20;
-	traits->y = 30;
-	traits->width = width;
-	traits->height = height;
-	traits->windowDecoration = true;
-	traits->glContextProfileMask = 0X1;
-	traits->doubleBuffer = true;
-	traits->readDISPLAY();
-	traits->setUndefinedScreenDetailsToDefaultScreen();
-	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-	osg::setNotifyLevel(osg::NotifySeverity::ALWAYS);
-	if (!gc.valid())
-	{
-		osg::notify(osg::FATAL) << "Unable to create OpenGL v" << version << " context." << std::endl;
-		return (1);
-	}
-
 	osg::ref_ptr<osgDB::Options> modelDB = new osgDB::Options("model");
 	modelDB->setDatabasePath(PROJECT_PATH + "Asset");
 
@@ -120,12 +91,12 @@ int main(int argc, char** argv)
 	osg::ref_ptr<osgDB::Options> shaderDB = new osgDB::Options();
 	shaderDB->setName("osgEarthShader");
 	shaderDB->setDatabasePath(PROJECT_PATH + "Asset//Shader");
-	
+
 
 	osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
 
 	auto group = new osg::Group();
-	EnvLightEffect::instance()->setEnvMapAtlas({"pisaHDR\\diffuse.dds", "pisaHDR\\specular.dds", "pisaHDR\\env.dds"}, iblDB);
+	EnvLightEffect::instance()->setEnvMapAtlas({ "pisaHDR\\diffuse.dds", "pisaHDR\\specular.dds", "pisaHDR\\env.dds" }, iblDB);
 	EnvLightEffect::instance()->setEnable(true);
 
 	GLTFReaderV2 reader;
@@ -164,20 +135,6 @@ int main(int argc, char** argv)
 
 	TransparentCamera::Ptr tCam = new TransparentCamera();
 
-	viewer.setReleaseContextAtEndOfFrameHint(false);
-
-	// viewer.addEventHandler(new osgViewer::HelpHandler(arguments.getApplicationUsage()));
-	viewer.addEventHandler(new RayPicker(&viewer, findCallback));
-
-	// Call this to enable ImGui rendering.
-	// If you use the MapNodeHelper, call this first.
-	viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
-
-	GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
-	gui->add("Demo", materialPanel);
-	gui->add("Demo2", new LightGUI(lightState));
-	gui->add("Demo3", new IndirectLightGUI());
-
 	osg::Group* sceneData = new osg::Group;
 	sceneData->addChild(group);
 	/*  sceneData->addChild(probe->getNode());*/
@@ -193,13 +150,59 @@ int main(int argc, char** argv)
 
 	sceneData->addChild(tCam);
 	viewer.setSceneData(sceneData);
+	viewer.addEventHandler(new RayPicker(&viewer, findCallback));
+
+	GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
+	gui->add("Demo", materialPanel);
+	gui->add("Demo2", new LightGUI(lightState));
+	gui->add("Demo3", new IndirectLightGUI());
+	viewer.getEventHandlers().push_front(gui);
+}
+
+int main(int argc, char** argv)
+{
+
+	osg::ArgumentParser arguments(&argc, argv);
+	int versio = osg::getGLVersionNumber();
+	arguments.getApplicationUsage()->setApplicationName("osgEarth PBR Material");
+	osgViewer::Viewer viewer(arguments);
+	viewer.setReleaseContextAtEndOfFrameHint(false);
+	viewer.getDatabasePager()->setUnrefImageDataAfterApplyPolicy(true, false);
+	auto name = arguments.getApplicationUsage()->getApplicationName();
+
+	const int width(800), height(450);
+	const std::string version("3.0");
+	osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits();
+	traits->x = 20;
+	traits->y = 30;
+	traits->width = width;
+	traits->height = height;
+	traits->windowDecoration = true;
+	traits->glContextProfileMask = 0X1;
+	traits->doubleBuffer = true;
+	traits->readDISPLAY();
+	traits->setUndefinedScreenDetailsToDefaultScreen();
+	osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
+	osg::setNotifyLevel(osg::NotifySeverity::ALWAYS);
+	if (!gc.valid())
+	{
+		osg::notify(osg::FATAL) << "Unable to create OpenGL v" << version << " context." << std::endl;
+		return (1);
+	}	
+
+	viewer.setReleaseContextAtEndOfFrameHint(false);
+	viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
+
+	// Call this to enable ImGui rendering.
+	// If you use the MapNodeHelper, call this first.
+	SetupSceneGraph(viewer);
 
 	viewer.setCameraManipulator(new osgGA::TrackballManipulator);
 	viewer.setUpViewInWindow(100, 100, 800, 600);
 	osgViewer::Viewer::Windows windows;
 	viewer.getWindows(windows);
 	viewer.realize();
-	viewer.getEventHandlers().push_front(gui);
+	
 	Metrics::setEnabled(true);
 	Metrics::setGPUProfilingEnabled(true);
 	return Metrics::run(viewer);
