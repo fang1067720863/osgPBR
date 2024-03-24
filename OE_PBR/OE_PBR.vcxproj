@@ -69,7 +69,6 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\..\osgearthRelease64.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -86,9 +85,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>D:\LocalSDK\osgEarthSDK\include\third_party\tinygltf;D:\LocalSDK\vcpkg\packages\glew_x64-windows\include;D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\include;D:\LocalSDK\osgearth\src\third_party\imgui;D:\LocalSDK\osgearth\src\third_party\imgui\examples;$(IncludePath)</IncludePath>
+    <IncludePath>D:\LocalSDK\osgEarthSDK\include\third_party\tinygltf;D:\LocalSDK\vcpkg\packages\glew_x64-windows\include;D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\include;D:\LocalSDK\osgearth\src\third_party\imgui;D:\LocalSDK\osgearth\src\third_party\imgui\examples;D:\LocalSDK\osgEarthSDK\include;$(IncludePath)</IncludePath>
     <SourcePath>D:\LocalSDK\osgearth\src\osgEarth\ImGui;$(SourcePath)</SourcePath>
-    <LibraryPath>D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\lib;D:\LocalSDK\osgEarthSDK\lib;$(LibraryPath)</LibraryPath>
     <TargetName>osgEarthPBR</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -149,7 +148,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\lib\glew32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>D:\GitProject\osgEarth\osgearth\src\third_party\tinygltf\glew210\lib\glew32.lib;D:\LocalSDK\osgEarthSDK\lib\osgEarth.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -170,6 +169,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AdvancedMaterial.h" />
+    <ClInclude Include="CreateHelper.h" />
     <ClInclude Include="CubeToQuad.h" />
     <ClInclude Include="ddsNew.h" />
     <ClInclude Include="EnvLight.h" />

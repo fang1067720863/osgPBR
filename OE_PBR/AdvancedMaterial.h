@@ -1,15 +1,17 @@
 #pragma once
 #include "PbrMaterial.h"
-#include<vector>
-#include<osg/Texture2D>
+#include <osg/Texture2D>
+#include <vector>
+
 
 namespace osgEarth
 {
 using F = std::function<void(osg::StateAttribute* attr, osg::NodeVisitor* nv)>;
 struct SAttrCallback : public osg::StateAttributeCallback
 {
-	SAttrCallback()  {}
-	void operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv) {
+	SAttrCallback() {}
+	void operator()(osg::StateAttribute* attr, osg::NodeVisitor* nv)
+	{
 		for (auto& f : _funList)
 		{
 			f(attr, nv);
@@ -20,10 +22,10 @@ struct SAttrCallback : public osg::StateAttributeCallback
 		}
 	}
 	std::vector<F> _funList;
-	std::vector<osg::ref_ptr<osg::StateAttributeCallback>> _subCallbacks;
+	std::vector<osg::ref_ptr<osg::StateAttributeCallback> > _subCallbacks;
 	std::vector<std::string> _techniqueKeys;
-public:
 
+public:
 	bool exist(const std::string& key)
 	{
 		for (const auto& _key : _techniqueKeys)
@@ -35,12 +37,17 @@ public:
 		}
 		return false;
 	}
-	void addUpdateCallback(const std::string& key, F&& f) {
-		if (exist(key)) return;
+	void addUpdateCallback(const std::string& key, F&& f)
+	{
+		if (exist(key))
+			return;
 		printf("<<<<<<<<<<<<<<<<<<<<<<<<<adProbe%s\n", key.c_str());
-		_funList.push_back(std::move(f)); }
-	void addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f) {
-		if (exist(key)) return; 
+		_funList.push_back(std::move(f));
+	}
+	void addUpdateCallback(const std::string& key, osg::StateAttributeCallback* f)
+	{
+		if (exist(key))
+			return;
 		printf("<<<<<<<<<<<<<<<<<<<<<<<<<adProbe%s\n", key.c_str());
 		_subCallbacks.push_back(f);
 	}
@@ -48,7 +55,7 @@ public:
 
 static const unsigned int TRANSLUCENT_MASK = 0x5; // 0100
 
-//1.0£¨air£©¡¢1.33£¨water£©¡¢1.52£¨glass£©ÒÔ¼°2.42£¨diamo	nd£©
+// 1.0ï¿½ï¿½airï¿½ï¿½ï¿½ï¿½1.33ï¿½ï¿½waterï¿½ï¿½ï¿½ï¿½1.52ï¿½ï¿½glassï¿½ï¿½ï¿½Ô¼ï¿½2.42ï¿½ï¿½diamo	ndï¿½ï¿½
 class OE_MATERIAL_PULGIN AdvancedMaterial : public ExtensionedMaterial
 {
 public:
@@ -86,7 +93,7 @@ public:
 	PROPERTY_DEFAULT(float, ClearcoatRoughness, 0.5f)
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ClearcoatRoughnessMap, 0)
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ClearcoatNormalMap, 0)
-	PROPERTY_DEFAULT(Vec2f, ClearcoatNormalScale, osg::Vec2f(0.1f,0.1f))
+	PROPERTY_DEFAULT(Vec2f, ClearcoatNormalScale, osg::Vec2f(0.1f, 0.1f))
 	/*PROPERTY_DEFAULT(Vec3f, ClearcoatF0, Vec3(0.04f, 0.04f, 0.04f))
 	PROPERTY_DEFAULT(float, ClearcoatF90, 1.0f)*/
 
@@ -96,7 +103,7 @@ public:
 	PROPERTY_DEFAULT(Vec3f, IridescenceFresnel, Vec3(0.0f, 0.0f, 0.0f))
 	PROPERTY_DEFAULT(float, IridescenceF0, 0.1f)
 
-	PROPERTY_DEFAULT(bool,  UseSheen,false)
+	PROPERTY_DEFAULT(bool, UseSheen, false)
 	PROPERTY_DEFAULT(Vec3f, SheenColor, Vec3(0.0f, 0.5f, 0.0f))
 	PROPERTY_DEFAULT(float, SheenRoughness, 0.1f)
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, SheenColorMap, 0)
@@ -110,14 +117,12 @@ public:
 	PROPERTY_DEFAULT(Vec3f, AttenuationColor, Vec3(0.5f, 0.5f, 0.5f))
 	PROPERTY_DEFAULT(osg::ref_ptr<osg::Texture2D>, ThicknessMap, 0)
 public:
-
 	void setMaterialImage(AdvancedMaterial::TextureEnum mapEnum, osg::Image* image);
 	void setMaterialImage(StandardPBRMaterial::TextureEnum mapEnum, osg::Image* image);
 	void setMaterialImage(StandardPBRMaterial::TextureEnum mapEnum, const std::string& imageUrl);
-protected:
 
+protected:
 	void initTechniqueCallback();
-	
 
 	osg::ref_ptr<SAttrCallback> _techniqueCallbacks;
 	static constexpr const char* IOR = "IOR";
@@ -127,7 +132,6 @@ protected:
 	static constexpr const char* TRANSMISSION = "TRANSMISSION";
 
 	static constexpr const char* SHADER_MODEL = "PRINCIPLE_BSDF";
-
 
 	static const std::string USE_IOR;
 	static const std::string USE_CLEARCOAT;

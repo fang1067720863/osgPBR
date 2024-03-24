@@ -30,6 +30,7 @@
 #include"Export.h"
 #include"PbrMaterial.h"
 #include"AdvancedMaterial.h"
+#include"PbrLightEffect.h"
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION

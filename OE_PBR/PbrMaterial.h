@@ -14,10 +14,9 @@
 #include <osg/Vec4>
 #include <osgDB/Options>
 #include <osgEarth/Common>
-#include<osgEarth/Config>
+#include <osgEarth/Config>
 #include <osgEarth/Threading>
 #include <set>
-
 
 #include "Export.h"
 
@@ -56,11 +55,11 @@ public:
 	};
 
 	const std::unordered_map<TextureEnum, std::string> textureDefines = {
-		{BaseColorMap, "OE_ENABLE_BASECOLOR_MAP"},
-		{EmissiveMap, "OE_ENABLE_EMISSIVE_MAP"},
-		{OcclusionMap, "OE_ENABLE_AO_MAP"},
-		{NormalMap, "OE_ENABLE_NORMAL_MAP"},
-		{MetalRoughenssMap, "OE_ENABLE_MR_MAP"},
+	    {BaseColorMap, "OE_ENABLE_BASECOLOR_MAP"},
+	    {EmissiveMap, "OE_ENABLE_EMISSIVE_MAP"},
+	    {OcclusionMap, "OE_ENABLE_AO_MAP"},
+	    {NormalMap, "OE_ENABLE_NORMAL_MAP"},
+	    {MetalRoughenssMap, "OE_ENABLE_MR_MAP"},
 	};
 
 	struct TextureInfo
@@ -76,7 +75,7 @@ public:
 	{
 	}
 	StandardPBRMaterial(const Config& conf);
-	
+
 #ifdef META_StateAttribute
 	META_StateAttribute(osgEarth, StandardPBRMaterial, OE_MATERIAL)
 #endif // META_StateAttribute
@@ -95,7 +94,7 @@ public:
 	}
 
 	virtual void apply(State& state) const;
-	
+
 	virtual void setMaterialImage(TextureEnum mapEnum, osg::Image* image);
 	virtual void setMaterialImage(TextureEnum mapEnum, const std::string& imageUrl);
 
@@ -130,7 +129,6 @@ public:
 protected:
 	virtual ~StandardPBRMaterial(){};
 	/*osg::Texture* createTextureAtlas();*/
-	
 
 private:
 	std::string getDefaultDefineName(TextureEnum mapEnum);
@@ -155,11 +153,11 @@ class OE_MATERIAL_PULGIN ExtensionedMaterial : public StandardPBRMaterial
 public:
 	const std::string& materialFile() const { return _materialPath; }
 	const CustomTextureMaps customMaps() const { return _customMaps; }
-	const std::vector<std::string> customDefines() const{ return _customDefines; }
+	const std::vector<std::string> customDefines() const { return _customDefines; }
 	void setMaterialFile(const std::string& file) { _materialPath = file; } // shader中不要出现中文字符串
 
 	void extTextureAttribute(const std::string name, const std::string& fileName, const std::string& defineName,
-		unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON);
+	                         unsigned int uvChannel = 0, StateAttribute::OverrideValue value = StateAttribute::ON);
 
 	std::string _materialPath;
 	CustomTextureMaps _customMaps;
