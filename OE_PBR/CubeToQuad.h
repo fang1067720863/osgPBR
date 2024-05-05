@@ -7,7 +7,8 @@
 #include<osg/Geometry>
 #include<osgEarth/VirtualProgram>
 
-
+#include <osgEarth/Config>
+#include <osgEarth/FileUtils>
 #include <osgEarth/Common>
 #include<osgEarth/Threading>
 #include<osgEarth/URI>
@@ -208,12 +209,12 @@ public:
         auto shaderPath2 = "..//OE_PBR//Shader";
 
         osg::ref_ptr< osgDB::Options>  shaderDB = new osgDB::Options();
-        if (osgDB::fileExists(osgEarth::getAbsolutePath(shaderPath)))
+        if (osgDB::fileExists(osgEarth::Util::getAbsolutePath(shaderPath)))
         {
-            shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath));
+            shaderDB->setDatabasePath(osgEarth::Util::getAbsolutePath(shaderPath));
         }
         else {
-            shaderDB->setDatabasePath(osgEarth::getAbsolutePath(shaderPath2));
+            shaderDB->setDatabasePath(osgEarth::Util::getAbsolutePath(shaderPath2));
         }
         shaderDB->setName("osgEarthShader");
 

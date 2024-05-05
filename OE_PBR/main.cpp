@@ -1,8 +1,12 @@
 
 #define NOMINMAX
+//#define EARTH_GUI
+
 #include <Windows.h>
 
+#ifdef EARTH_GUI
 #include "TestUI.h"
+#endif // EARTH_GUI
 
 #include <osg/GLExtensions>
 #include <osg/MatrixTransform>
@@ -142,22 +146,24 @@ void SetupSceneGraph(osgViewer::Viewer& viewer)
 	sceneData->addChild(tCam);
 	viewer.setSceneData(sceneData);
 	
+#ifdef EARTH_GUI
 	// init gui
 	GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
 	auto materialPanel = new MaterialGUI();
 	gui->add("Demo", materialPanel);
 	gui->add("Demo2", new LightGUI(lightState));
 	gui->add("Demo3", new IndirectLightGUI());
-
 	viewer.getEventHandlers().push_front(gui);
 
 	auto findCallback = [materialPanel](osg::MatrixTransform* node)
-	{
-		node->getName();
-		materialPanel->setNode(node);
-		return true;
-	};
+		{
+			node->getName();
+			materialPanel->setNode(node);
+			return true;
+		};
 	viewer.addEventHandler(new RayPicker(&viewer, findCallback));
+#endif // EARTH_GUI
+
 }
 
 
@@ -193,7 +199,10 @@ int main(int argc, char** argv)
 	}	
 
 	viewer.setReleaseContextAtEndOfFrameHint(false);
+
+#ifdef EARTH_GUI
 	viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
+#endif
 
 	SetupSceneGraph(viewer);
 
