@@ -1,6 +1,8 @@
 # OSGEARTH PBR MATERIAL LIB
 
 Tutorial:https://zhuanlan.zhihu.com/p/653871547
+Video: https://www.bilibili.com/video/BV14b41197DL?p=9&vd_source=7bfbfedb02b03e995d21f8ad506f2b86
+
 ## V1.0
 - 提供osgEarth::StandardPBRMaterial
 - GLTFReaderV2读取gltf2.0模型

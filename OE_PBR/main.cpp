@@ -36,10 +36,11 @@
 
 #include "GLTFV2Reader.h"
 #include "CreateHelper.h"
+#include "FlyCameraManipulator.h"
 
 // #define LC "[viewer] "
 
-std::string PROJECT_PATH = "..//OE_PBR//";
+const std::string PROJECT_PATH = "..//OE_PBR//";
 
 template <typename T>
 struct CB : public osg::NodeCallback
@@ -91,36 +92,32 @@ void SetupSceneGraph(osgViewer::Viewer& viewer)
 	osg::ref_ptr<osgDB::Options> shaderDB = new osgDB::Options();
 	shaderDB->setName("osgEarthShader");
 	shaderDB->setDatabasePath(PROJECT_PATH + "Asset//Shader");
-
-
 	osgDB::Registry::instance()->getObjectWrapperManager()->findWrapper("osg::Image");
 
-	auto group = new osg::Group();
+
+	auto baseGraph = new osg::Group();
+
+	// init env light
 	EnvLightEffect::instance()->setEnvMapAtlas({ "pisaHDR\\diffuse.dds", "pisaHDR\\specular.dds", "pisaHDR\\env.dds" }, iblDB);
 	EnvLightEffect::instance()->setEnable(true);
 
+	// init models
 	GLTFReaderV2 reader;
-	// Sponza BoomBox
-
 	auto gltfModel = reader.read("Dragon\\DragonAttenuation.gltf", false, modelDB);
 	// Helmet\\DamagedHelmet   BoomBox\\BoomBox Sponza\\Sponza  Sheen\\SheenChair.glb  Dragon\\DragonAttenuation
 	auto gltfNode = gltfModel.getNode();
 
+	// init material spheres
 	auto materialSpheres = createMaterialSpheres(2);
-	group->addChild(materialSpheres);
+	baseGraph->addChild(materialSpheres);
+	
+	// init skybox
+	baseGraph->addChild(createSkyBox());
 
-	group->addChild(createSkyBox());
-
+	//init lights
 	osg::Light* lightState = new osg::Light;
-	auto light = CreateLight(lightState, group);
-
-	auto materialPanel = new TestGUI();
-	auto findCallback = [materialPanel](osg::MatrixTransform* node)
-	{
-		node->getName();
-		materialPanel->setNode(node);
-		return true;
-	};
+	auto light = CreateLight(lightState, baseGraph);
+	baseGraph->addChild(light);
 
 	auto func = [&](osg::MatrixTransform* node, osg::NodeVisitor* nv)
 	{
@@ -129,35 +126,40 @@ void SetupSceneGraph(osgViewer::Viewer& viewer)
 		node->setMatrix(matrix * osg::Matrix(osg::Quat(0.01, osg::Vec3(0.0, 0.0, 1.0))));
 	};
 
-	// gltfModel.getNode()->addUpdateCallback(new CB<osg::MatrixTransform>(func));
-
-	group->addChild(light);
-
-	TransparentCamera::Ptr tCam = new TransparentCamera();
-
 	osg::Group* sceneData = new osg::Group;
-	sceneData->addChild(group);
-	/*  sceneData->addChild(probe->getNode());*/
+	sceneData->addChild(baseGraph);
 
 	auto nv = new GenerateEnvLightUniforms();
-	group->accept(*nv);
-
+	baseGraph->accept(*nv);
 	auto gpNV = new GenerateProbeUniforms();
-	group->accept(*gpNV);
+	baseGraph->accept(*gpNV);
 
+	// init transparent pass
+	TransparentCamera::Ptr tCam = new TransparentCamera();
 	tCam->setView(&viewer);
-	tCam->setGraph(group);
+	tCam->setGraph(baseGraph);
 
 	sceneData->addChild(tCam);
 	viewer.setSceneData(sceneData);
-	viewer.addEventHandler(new RayPicker(&viewer, findCallback));
-
+	
+	// init gui
 	GUI::ApplicationGUI* gui = new GUI::ApplicationGUI(true);
+	auto materialPanel = new MaterialGUI();
 	gui->add("Demo", materialPanel);
 	gui->add("Demo2", new LightGUI(lightState));
 	gui->add("Demo3", new IndirectLightGUI());
+
 	viewer.getEventHandlers().push_front(gui);
+
+	auto findCallback = [materialPanel](osg::MatrixTransform* node)
+	{
+		node->getName();
+		materialPanel->setNode(node);
+		return true;
+	};
+	viewer.addEventHandler(new RayPicker(&viewer, findCallback));
 }
+
 
 int main(int argc, char** argv)
 {
@@ -193,14 +195,13 @@ int main(int argc, char** argv)
 	viewer.setReleaseContextAtEndOfFrameHint(false);
 	viewer.setRealizeOperation(new GUI::ApplicationGUI::RealizeOperation);
 
-	// Call this to enable ImGui rendering.
-	// If you use the MapNodeHelper, call this first.
 	SetupSceneGraph(viewer);
 
-	viewer.setCameraManipulator(new osgGA::TrackballManipulator);
+	viewer.setCameraManipulator(new osgGA::UnityCameraManipulator);
 	viewer.setUpViewInWindow(100, 100, 800, 600);
 	osgViewer::Viewer::Windows windows;
 	viewer.getWindows(windows);
+	//windows.front()->setCursor(osgViewer::GraphicsWindow::MouseCursor::HandCursor);
 	viewer.realize();
 	
 	Metrics::setEnabled(true);

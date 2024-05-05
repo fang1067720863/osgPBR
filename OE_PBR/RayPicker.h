@@ -8,7 +8,6 @@
 #include<osgGA/GUIEventHandler>
 #include<osgUtil/LineSegmentIntersector>
 
-
 class RayPicker:public osgGA::GUIEventHandler
 {
 

@@ -28,12 +28,11 @@
 #include "ReflectionProbe.h"
 #include "SkyBox.h"
 
-
 struct DrawCallback : public osg::Drawable::DrawCallback
 {
 
 	DrawCallback()
-		: _firstTime(true)
+	    : _firstTime(true)
 	{
 	}
 
@@ -49,7 +48,6 @@ struct DrawCallback : public osg::Drawable::DrawCallback
 
 	mutable bool _firstTime;
 };
-
 
 osg::ref_ptr<osg::Node> CreatePbrSphere()
 {

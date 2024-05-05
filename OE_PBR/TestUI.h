@@ -2,9 +2,10 @@
 #include <osgEarth/ImGui/ImGuiApp>
 #include"EnvLight.h"
 #include"AdvancedMaterial.h"
+#include<string>
 
 
-class TestGUI :public osgEarth::GUI::BaseGUI
+class MaterialGUI :public osgEarth::GUI::BaseGUI
 {
 public:
     float metal = 1.0;
@@ -26,7 +27,7 @@ public:
     char material[256] = "Original text";
     osg::Node* _node;
 public:
-    TestGUI() :GUI::BaseGUI("PBR Material")
+    MaterialGUI() :GUI::BaseGUI("PBR Material")
     {
         _node = nullptr;
 

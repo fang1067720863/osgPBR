@@ -113,8 +113,6 @@ public:
     void setGraph(osg::Node*);
     osg::Node* getGraph() const { return _graph.get(); }
 
-
-
 public: // for debugging
 
     /** For debugging only - creates (if nec.) and returns a texture that captures
@@ -128,8 +126,6 @@ protected:
 
     /** dtor */
     virtual ~TransparentCamera();
-
-   
 
     osg::observer_ptr<osgViewer::View> _view;
     osg::ref_ptr<osg::Image> _pickImage;
